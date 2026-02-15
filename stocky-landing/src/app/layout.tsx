@@ -16,13 +16,13 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Stocky — Your Edge, Automated",
+  title: "Stocky — Precision. Discipline. Edge.",
   description:
-    "AI-powered trading assistant. Execute trades, track portfolios, get signals — all from one place. No fluff. Just data and execution.",
+    "An AI trading engine built for the few who think in payoffs, not predictions. Connected to Zerodha. Governed by your rules.",
   openGraph: {
-    title: "Stocky — Your Edge, Automated",
+    title: "Stocky — Precision. Discipline. Edge.",
     description:
-      "AI-powered trading assistant. Execute trades, track portfolios, get signals — all from one place.",
+      "An AI trading engine built for the few who think in payoffs, not predictions.",
     type: "website",
   },
 };

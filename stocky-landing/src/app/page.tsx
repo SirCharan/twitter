@@ -17,7 +17,7 @@ const FEATURES = [
   {
     title: "AI Chat Interface",
     description:
-      'Talk to Stocky like you talk to ChatGPT. "How is Reliance doing?" "Buy 10 TCS at 3500." Natural language, real execution.',
+      "Speak naturally. \"How is Reliance doing?\" \"Buy 10 TCS at 3500.\" Natural language, real execution.",
     icon: (
       <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" strokeLinecap="round" strokeLinejoin="round" />
@@ -37,7 +37,7 @@ const FEATURES = [
   {
     title: "Trading Signals",
     description:
-      "AI-powered analysis delivered straight to your inbox. Fundamental, technical, and sentiment — scored and ranked.",
+      "AI-powered analysis delivered to your inbox. Fundamental, technical, and sentiment — scored and ranked.",
     icon: (
       <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" strokeLinecap="round" strokeLinejoin="round" />
@@ -84,47 +84,53 @@ export default function Home() {
     <main className="min-h-screen">
       {/* Nav */}
       <nav className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <span className="font-cursive text-2xl tracking-wide" style={{ color: "#1A1A1A" }}>
+        <span className="font-cursive text-2xl tracking-wide" style={{ color: "#F5F0EB" }}>
           Stocky
         </span>
         <span
           className="text-xs tracking-widest uppercase"
-          style={{ color: "#8A8A8A", letterSpacing: "0.2em" }}
+          style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
         >
-          Early Access
+          By Invitation
         </span>
       </nav>
 
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 pt-20 pb-24 text-center">
         <div className="opacity-0 animate-fade-in-up">
-          <h1 className="font-cursive text-7xl md:text-9xl font-medium tracking-tight leading-none">
+          <h1 className="font-cursive text-6xl md:text-8xl font-medium tracking-tight leading-none">
             <span className="gradient-text">Stocky</span>
           </h1>
         </div>
 
         <div className="opacity-0 animate-fade-in-up animate-delay-1">
           <p
-            className="mt-8 text-2xl md:text-3xl font-light leading-snug max-w-2xl mx-auto"
-            style={{ color: "#1A1A1A" }}
+            className="mt-8 text-2xl md:text-3xl font-light leading-snug max-w-2xl mx-auto tracking-wide"
+            style={{ color: "#F5F0EB" }}
           >
-            Your edge, automated.
+            Precision. Discipline. Edge.
           </p>
         </div>
 
         <div className="opacity-0 animate-fade-in-up animate-delay-2">
           <p
-            className="mt-5 text-base md:text-lg leading-relaxed max-w-lg mx-auto"
-            style={{ color: "#8A8A8A" }}
+            className="mt-5 text-base md:text-lg leading-relaxed max-w-lg mx-auto font-light"
+            style={{ color: "#6B6B6B" }}
           >
-            AI that trades for you, watches your portfolio, and never sleeps.
+            An AI trading engine built for the few who think
             <br />
-            Connected to Zerodha. Powered by your rules.
+            in payoffs, not predictions.
+          </p>
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "#4A4A4A" }}
+          >
+            Connected to Zerodha. Governed by your rules.
           </p>
         </div>
 
         {/* Waitlist */}
-        <div className="opacity-0 animate-fade-in-up animate-delay-3 mt-12">
+        <div className="opacity-0 animate-fade-in-up animate-delay-3 mt-14">
           {!submitted ? (
             <form
               onSubmit={handleSubmit}
@@ -138,33 +144,33 @@ export default function Home() {
                 required
                 className="w-full sm:flex-1 px-5 py-3.5 rounded-full text-sm outline-none transition-all"
                 style={{
-                  background: "#FFFFFF",
-                  border: "1px solid #E8E4DF",
-                  color: "#1A1A1A",
+                  background: "#111111",
+                  border: "1px solid #1F1F1F",
+                  color: "#F5F0EB",
                 }}
                 onFocus={(e) => (e.target.style.borderColor = "#C9A96E")}
-                onBlur={(e) => (e.target.style.borderColor = "#E8E4DF")}
+                onBlur={(e) => (e.target.style.borderColor = "#1F1F1F")}
               />
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full sm:w-auto px-8 py-3.5 rounded-full text-sm font-medium transition-all cursor-pointer"
-                style={{ background: "#1A1A1A", color: "#FAF8F5" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#2C2C2C")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#1A1A1A")}
+                style={{ background: "#C9A96E", color: "#0A0A0A" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#D4B87A")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#C9A96E")}
               >
-                {loading ? "..." : "Get Early Access"}
+                {loading ? "..." : "Request Access"}
               </button>
             </form>
           ) : (
             <div
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-sm"
-              style={{ background: "#FFFFFF", border: "1px solid #E8E4DF" }}
+              style={{ background: "#141414", border: "1px solid #1F1F1F" }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2">
                 <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <span style={{ color: "#1A1A1A" }}>You&apos;re in. We&apos;ll reach out soon.</span>
+              <span style={{ color: "#F5F0EB" }}>Your place is reserved.</span>
             </div>
           )}
         </div>
@@ -172,17 +178,17 @@ export default function Home() {
 
       {/* Divider */}
       <div className="max-w-6xl mx-auto px-6">
-        <div style={{ height: "1px", background: "#E8E4DF" }} />
+        <div style={{ height: "1px", background: "#1F1F1F" }} />
       </div>
 
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="font-cursive text-3xl md:text-4xl" style={{ color: "#1A1A1A" }}>
-            What&apos;s coming
+          <h2 className="font-cursive text-3xl md:text-4xl" style={{ color: "#F5F0EB" }}>
+            The Architecture
           </h2>
-          <p className="mt-3 text-sm" style={{ color: "#8A8A8A" }}>
-            Everything a serious trader needs. Nothing they don&apos;t.
+          <p className="mt-3 text-sm" style={{ color: "#6B6B6B", letterSpacing: "0.1em" }}>
+            Six systems. Zero noise.
           </p>
         </div>
 
@@ -192,21 +198,21 @@ export default function Home() {
               key={feature.title}
               className={`card-hover rounded-2xl p-7 opacity-0 animate-fade-in-up`}
               style={{
-                background: "#FFFFFF",
-                border: "1px solid #E8E4DF",
+                background: "#141414",
+                border: "1px solid #1F1F1F",
                 animationDelay: `${(i + 1) * 0.1}s`,
               }}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="p-2.5 rounded-xl" style={{ background: "#FAF8F5", color: "#1A1A1A" }}>
+                <div className="p-2.5 rounded-xl" style={{ background: "#0A0A0A", color: "#C9A96E" }}>
                   {feature.icon}
                 </div>
-                <span className="coming-soon-badge">Coming Soon</span>
+                <span className="coming-soon-badge">Forthcoming</span>
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ color: "#1A1A1A" }}>
+              <h3 className="text-base font-semibold mb-2" style={{ color: "#F5F0EB" }}>
                 {feature.title}
               </h3>
-              <p className="text-sm leading-relaxed" style={{ color: "#8A8A8A" }}>
+              <p className="text-sm leading-relaxed" style={{ color: "#6B6B6B" }}>
                 {feature.description}
               </p>
             </div>
@@ -216,12 +222,12 @@ export default function Home() {
 
       {/* Bottom CTA */}
       <section className="max-w-4xl mx-auto px-6 pb-24 text-center">
-        <div style={{ height: "1px", background: "#E8E4DF", marginBottom: "5rem" }} />
-        <p className="font-cursive text-2xl md:text-3xl mb-3" style={{ color: "#1A1A1A" }}>
-          The market doesn&apos;t wait.
+        <div style={{ height: "1px", background: "#1F1F1F", marginBottom: "5rem" }} />
+        <p className="font-cursive text-2xl md:text-3xl mb-3" style={{ color: "#F5F0EB" }}>
+          Built for those who move first.
         </p>
-        <p className="text-sm mb-8" style={{ color: "#8A8A8A" }}>
-          Neither should you.
+        <p className="text-sm mb-8" style={{ color: "#6B6B6B", letterSpacing: "0.15em" }}>
+          By invitation only.
         </p>
         {!submitted ? (
           <form
@@ -236,40 +242,40 @@ export default function Home() {
               required
               className="w-full sm:flex-1 px-5 py-3.5 rounded-full text-sm outline-none transition-all"
               style={{
-                background: "#FFFFFF",
-                border: "1px solid #E8E4DF",
-                color: "#1A1A1A",
+                background: "#111111",
+                border: "1px solid #1F1F1F",
+                color: "#F5F0EB",
               }}
               onFocus={(e) => (e.target.style.borderColor = "#C9A96E")}
-              onBlur={(e) => (e.target.style.borderColor = "#E8E4DF")}
+              onBlur={(e) => (e.target.style.borderColor = "#1F1F1F")}
             />
             <button
               type="submit"
               disabled={loading}
               className="w-full sm:w-auto px-8 py-3.5 rounded-full text-sm font-medium transition-all cursor-pointer"
-              style={{ background: "#1A1A1A", color: "#FAF8F5" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#2C2C2C")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#1A1A1A")}
+              style={{ background: "#C9A96E", color: "#0A0A0A" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#D4B87A")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#C9A96E")}
             >
-              {loading ? "..." : "Join the Waitlist"}
+              {loading ? "..." : "Reserve Your Place"}
             </button>
           </form>
         ) : (
           <p className="text-sm" style={{ color: "#C9A96E" }}>
-            You&apos;re already on the list. We&apos;ll be in touch.
+            Your place is reserved. We&apos;ll be in touch.
           </p>
         )}
       </section>
 
       {/* Footer */}
       <footer className="max-w-6xl mx-auto px-6 pb-10">
-        <div style={{ height: "1px", background: "#E8E4DF", marginBottom: "2rem" }} />
+        <div style={{ height: "1px", background: "#1F1F1F", marginBottom: "2rem" }} />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-cursive text-lg" style={{ color: "#1A1A1A" }}>
+          <span className="font-cursive text-lg" style={{ color: "#F5F0EB" }}>
             Stocky
           </span>
-          <p className="text-xs" style={{ color: "#8A8A8A" }}>
-            Built for traders who think in payoffs, not predictions.
+          <p className="text-xs" style={{ color: "#4A4A4A", letterSpacing: "0.15em" }}>
+            For the discerning few.
           </p>
         </div>
       </footer>
