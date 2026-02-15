@@ -2,70 +2,6 @@
 
 import { useState } from "react";
 
-const FEATURES = [
-  {
-    title: "Telegram Trading Bot",
-    description:
-      "Execute trades, set stop losses, manage alerts — all from Telegram. Connected to your Zerodha account.",
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M21.198 2.433a2.242 2.242 0 00-1.022.215l-16.5 7.5a2.25 2.25 0 00.168 4.167l5.156 1.718 1.718 5.156a2.25 2.25 0 004.167.168l7.5-16.5a2.25 2.25 0 00-1.187-2.424z" />
-        <path d="M10 14l4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "AI Chat Interface",
-    description:
-      "Speak naturally. \"How is Reliance doing?\" \"Buy 10 TCS at 3500.\" Natural language, real execution.",
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Portfolio Intelligence",
-    description:
-      "Real-time P&L tracking, risk monitoring, max loss protection. Your portfolio on autopilot with guardrails.",
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Trading Signals",
-    description:
-      "AI-powered analysis delivered to your inbox. Fundamental, technical, and sentiment — scored and ranked.",
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Options Exit Engine",
-    description:
-      "Exit options based on underlying price, not option price. The feature Zerodha should have built. We did.",
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Auto-Login via TOTP",
-    description:
-      "No manual tokens. No browser popups. Stocky logs into your Zerodha every morning at 7:40 AM. You just trade.",
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-];
-
 export default function Home() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -181,42 +117,141 @@ export default function Home() {
         <div style={{ height: "1px", background: "#1F1F1F" }} />
       </div>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="font-cursive text-3xl md:text-4xl" style={{ color: "#F5F0EB" }}>
-            The Architecture
-          </h2>
-          <p className="mt-3 text-sm" style={{ color: "#6B6B6B", letterSpacing: "0.1em" }}>
-            Six systems. Zero noise.
+      {/* Performance */}
+      <section className="max-w-5xl mx-auto px-6 py-28">
+        <div className="text-center mb-6 opacity-0 animate-fade-in-up">
+          <p
+            className="text-xs uppercase tracking-widest mb-12"
+            style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
+          >
+            Track Record
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature, i) => (
-            <div
-              key={feature.title}
-              className={`card-hover rounded-2xl p-7 opacity-0 animate-fade-in-up`}
-              style={{
-                background: "#141414",
-                border: "1px solid #1F1F1F",
-                animationDelay: `${(i + 1) * 0.1}s`,
-              }}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="p-2.5 rounded-xl" style={{ background: "#0A0A0A", color: "#C9A96E" }}>
-                  {feature.icon}
-                </div>
-                <span className="coming-soon-badge">Forthcoming</span>
-              </div>
-              <h3 className="text-base font-semibold mb-2" style={{ color: "#F5F0EB" }}>
-                {feature.title}
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: "#6B6B6B" }}>
-                {feature.description}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 text-center">
+          <div className="opacity-0 animate-fade-in-up animate-delay-1">
+            <p className="font-cursive text-5xl md:text-6xl" style={{ color: "#C9A96E" }}>
+              150%+
+            </p>
+            <p className="mt-3 text-sm font-light" style={{ color: "#6B6B6B" }}>
+              Returns since June 2025
+            </p>
+          </div>
+          <div className="opacity-0 animate-fade-in-up animate-delay-2">
+            <p className="font-cursive text-5xl md:text-6xl" style={{ color: "#C9A96E" }}>
+              3.29
+            </p>
+            <p className="mt-3 text-sm font-light" style={{ color: "#6B6B6B" }}>
+              Sharpe Ratio
+            </p>
+          </div>
+          <div className="opacity-0 animate-fade-in-up animate-delay-3">
+            <p className="font-cursive text-5xl md:text-6xl" style={{ color: "#C9A96E" }}>
+              72.9%
+            </p>
+            <p className="mt-3 text-sm font-light" style={{ color: "#6B6B6B" }}>
+              Win Rate
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center mt-16 opacity-0 animate-fade-in-up animate-delay-4">
+          <p className="font-cursive text-xl md:text-2xl font-light" style={{ color: "#F5F0EB" }}>
+            15L to 37.62L. Eight months. One system.
+          </p>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="max-w-6xl mx-auto px-6">
+        <div style={{ height: "1px", background: "#1F1F1F" }} />
+      </div>
+
+      {/* How it works — 3 differentiators */}
+      <section className="max-w-3xl mx-auto px-6 py-24">
+        <div className="space-y-10">
+          <div className="opacity-0 animate-fade-in-up animate-delay-1 flex items-start gap-6">
+            <span className="font-cursive text-2xl mt-0.5" style={{ color: "#C9A96E" }}>01</span>
+            <div>
+              <p className="text-base font-light" style={{ color: "#F5F0EB" }}>
+                Trades via Telegram. Thinks via AI.
+              </p>
+              <p className="mt-1.5 text-sm" style={{ color: "#4A4A4A" }}>
+                Execute, set stops, manage alerts — all from a single chat window.
               </p>
             </div>
-          ))}
+          </div>
+
+          <div className="opacity-0 animate-fade-in-up animate-delay-2 flex items-start gap-6">
+            <span className="font-cursive text-2xl mt-0.5" style={{ color: "#C9A96E" }}>02</span>
+            <div>
+              <p className="text-base font-light" style={{ color: "#F5F0EB" }}>
+                Exits options on underlying price, not option price.
+              </p>
+              <p className="mt-1.5 text-sm" style={{ color: "#4A4A4A" }}>
+                The feature Zerodha should have built. We did.
+              </p>
+            </div>
+          </div>
+
+          <div className="opacity-0 animate-fade-in-up animate-delay-3 flex items-start gap-6">
+            <span className="font-cursive text-2xl mt-0.5" style={{ color: "#C9A96E" }}>03</span>
+            <div>
+              <p className="text-base font-light" style={{ color: "#F5F0EB" }}>
+                Logs in at 7:40 AM. You just trade.
+              </p>
+              <p className="mt-1.5 text-sm" style={{ color: "#4A4A4A" }}>
+                Auto-authentication via TOTP. No tokens. No popups. No friction.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="max-w-6xl mx-auto px-6">
+        <div style={{ height: "1px", background: "#1F1F1F" }} />
+      </div>
+
+      {/* What's Next — Teasers */}
+      <section className="max-w-4xl mx-auto px-6 py-28 text-center">
+        <p
+          className="text-xs uppercase tracking-widest mb-16 opacity-0 animate-fade-in-up"
+          style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
+        >
+          What&apos;s Next
+        </p>
+
+        <div className="space-y-20">
+          <div className="opacity-0 animate-fade-in-up animate-delay-1">
+            <p className="font-cursive text-2xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+              A mind trained on Indian markets.
+            </p>
+            <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
+              A fine-tuned LLM chat interface built on Claude Opus 4.6 — purpose-built for
+              NSE, BSE, and the patterns that move them. Ask anything. Get a take, not a disclaimer.
+            </p>
+          </div>
+
+          <div className="opacity-0 animate-fade-in-up animate-delay-2">
+            <p className="font-cursive text-2xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+              Your portfolio on autopilot.
+            </p>
+            <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
+              Full portfolio automation — from entry logic to risk management to rebalancing.
+              Define your rules once. Stocky executes, monitors, and adapts.
+            </p>
+          </div>
+
+          <div className="opacity-0 animate-fade-in-up animate-delay-3">
+            <p className="font-cursive text-2xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+              Telegram, but autonomous.
+            </p>
+            <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
+              An automator that doesn&apos;t wait for commands. It watches, decides, and acts —
+              within the guardrails you set. You review. It runs.
+            </p>
+          </div>
         </div>
       </section>
 
