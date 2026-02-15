@@ -2,11 +2,12 @@ import random
 import re
 import logging
 
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from bot.auth_check import authorized
-from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, portfolio, stoploss, trading
+from bot import ai_client, database
+from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, portfolio, stoploss, trading, usage
 
 logger = logging.getLogger(__name__)
 
@@ -14,28 +15,6 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Stocky's personality — direct, no-fluff, game-theoretic, confident
 # ---------------------------------------------------------------------------
-
-GREETINGS = [
-    "What's the play today, {name}?",
-    "{name}. Markets are open. What are we doing?",
-    "Let's get to it, {name}. What do you need?",
-    "{name} — what's on the radar?",
-    "Ready when you are, {name}. What's the move?",
-]
-
-THANKS_RESPONSES = [
-    "That's what I'm here for.",
-    "Always.",
-    "Don't mention it. Just make the right trade.",
-    "You know the deal, {name}.",
-]
-
-GOODBYE_RESPONSES = [
-    "Later, {name}. I'll keep watching the numbers.",
-    "Go. I've got the alerts covered.",
-    "See you. The market doesn't sleep, and neither do I.",
-    "Peace, {name}. I'm always here.",
-]
 
 CONFUSED_RESPONSES = [
     "Didn't get that, {name}. Be specific.\n\n"
@@ -68,19 +47,6 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     t = text.strip()
     lower = t.lower()
 
-    # --- Greetings ---
-    if lower in ("hi", "hello", "hey", "yo", "sup", "hii", "hiii", "namaste",
-                  "good morning", "good afternoon", "good evening"):
-        return "greet", []
-
-    # --- Thanks ---
-    if re.match(r"^(thanks?|thank\s*you|ty|thx|appreciate)", lower):
-        return "thanks", []
-
-    # --- Goodbye ---
-    if lower in ("bye", "goodbye", "good night", "cya", "see you", "later", "gn"):
-        return "goodbye", []
-
     # --- Help ---
     if lower in ("help", "commands", "what can you do", "what can you do?",
                   "start", "menu", "what do you do"):
@@ -98,6 +64,10 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     # --- Login ---
     if lower in ("login", "log in", "authenticate"):
         return "login", []
+
+    # --- Usage ---
+    if re.match(r"^(usage|stats|statistics|how much.+used|my usage|token usage|api usage|api calls)$", lower):
+        return "usage", []
 
     # --- Portfolio commands ---
     if re.search(r"\b(portfolio|summary)\b", lower):
@@ -255,7 +225,109 @@ DISPATCH = {
     "maxloss": maxloss.maxloss_command,
     "price": market.price,
     "analyse": analyse.analyse,
+    "usage": usage.usage_command,
 }
+
+
+# ---------------------------------------------------------------------------
+# Groq AI fallback
+# ---------------------------------------------------------------------------
+
+async def _ai_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str, name: str):
+    """Try Groq AI to interpret. On error, offer fixed responses or commands."""
+    try:
+        parsed = await ai_client.interpret_intent(text, user_name=name)
+    except Exception as e:
+        logger.error(f"Groq fallback failed: {e}")
+        await _offer_fallback_choices(update, name)
+        return
+
+    if not parsed:
+        # Groq unavailable (no API key)
+        await update.message.reply_text(
+            random.choice(CONFUSED_RESPONSES).format(name=name),
+            parse_mode="HTML",
+        )
+        return
+
+    intent = parsed.get("intent", "chat")
+    args = parsed.get("args", [])
+    reply = parsed.get("reply", "")
+
+    # Chat intent — AI just wants to talk
+    if intent == "chat":
+        if reply:
+            await update.message.reply_text(reply)
+        else:
+            # Shouldn't happen, but fallback
+            try:
+                ai_reply = await ai_client.chat(text, user_name=name)
+                if ai_reply:
+                    await update.message.reply_text(ai_reply)
+                    return
+            except Exception:
+                pass
+            await update.message.reply_text(
+                random.choice(CONFUSED_RESPONSES).format(name=name),
+                parse_mode="HTML",
+            )
+        return
+
+    # AI recognized a command intent — dispatch it
+    handler = DISPATCH.get(intent)
+    if not handler:
+        # Unknown intent from AI, just reply with whatever it said
+        if reply:
+            await update.message.reply_text(reply)
+        else:
+            await update.message.reply_text(
+                random.choice(CONFUSED_RESPONSES).format(name=name),
+                parse_mode="HTML",
+            )
+        return
+
+    # Ensure args are strings
+    context.args = [str(a) for a in args] if args else []
+    logger.info(f"AI NLP: '{text}' -> /{intent} {' '.join(context.args)}")
+    await database.log_command(intent, " ".join(context.args), source="ai")
+
+    fn = handler.__wrapped__ if hasattr(handler, "__wrapped__") else handler
+    await fn(update, context)
+
+
+async def _offer_fallback_choices(update: Update, name: str):
+    """When Groq errors out, ask user to pick a quick action."""
+    keyboard = [
+        [
+            InlineKeyboardButton("Portfolio", callback_data="fallback_portfolio"),
+            InlineKeyboardButton("Positions", callback_data="fallback_positions"),
+        ],
+        [
+            InlineKeyboardButton("Holdings", callback_data="fallback_holdings"),
+            InlineKeyboardButton("Orders", callback_data="fallback_orders"),
+        ],
+        [
+            InlineKeyboardButton("Help", callback_data="fallback_help"),
+            InlineKeyboardButton("Usage", callback_data="fallback_usage"),
+        ],
+    ]
+    await update.message.reply_text(
+        f"Couldn't process that, {name}. Pick an action or use a /command directly.",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+
+async def fallback_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle fallback button presses."""
+    query = update.callback_query
+    await query.answer()
+
+    action = query.data.replace("fallback_", "")
+    handler = DISPATCH.get(action)
+    if handler:
+        context.args = []
+        fn = handler.__wrapped__ if hasattr(handler, "__wrapped__") else handler
+        await fn(update, context)
 
 
 # ---------------------------------------------------------------------------
@@ -272,45 +344,33 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = _get_name(update)
     result = _parse_natural(text)
 
-    # --- Conversational responses ---
-    if result and result[0] == "greet":
-        await update.message.reply_text(random.choice(GREETINGS).format(name=name))
+    # --- Regex matched a command — dispatch directly ---
+    if result is not None:
+        intent, args = result
+
+        # whoami is handled inline
+        if intent == "whoami":
+            await update.message.reply_text(
+                f"I'm <b>Stocky</b>.\n\n"
+                "I analyse stocks, execute trades on your Zerodha, "
+                "track your portfolio, watch price levels, and enforce your risk limits.\n\n"
+                "No fluff. No opinions you didn't ask for. Just data and execution.\n\n"
+                "Type <b>help</b> to see what I can do.",
+                parse_mode="HTML",
+            )
+            return
+
+        handler = DISPATCH.get(intent)
+        if not handler:
+            return
+
+        context.args = args
+        logger.info(f"NLP: '{text}' -> /{intent} {' '.join(args)}")
+        await database.log_command(intent, " ".join(args), source="nlp")
+
+        fn = handler.__wrapped__ if hasattr(handler, "__wrapped__") else handler
+        await fn(update, context)
         return
 
-    if result and result[0] == "thanks":
-        await update.message.reply_text(random.choice(THANKS_RESPONSES).format(name=name))
-        return
-
-    if result and result[0] == "goodbye":
-        await update.message.reply_text(random.choice(GOODBYE_RESPONSES).format(name=name))
-        return
-
-    if result and result[0] == "whoami":
-        await update.message.reply_text(
-            f"I'm <b>Stocky</b>.\n\n"
-            "I analyse stocks, execute trades on your Zerodha, "
-            "track your portfolio, watch price levels, and enforce your risk limits.\n\n"
-            "No fluff. No opinions you didn't ask for. Just data and execution.\n\n"
-            "Type <b>help</b> to see what I can do.",
-            parse_mode="HTML",
-        )
-        return
-
-    # --- Didn't understand ---
-    if result is None:
-        await update.message.reply_text(
-            random.choice(CONFUSED_RESPONSES).format(name=name),
-            parse_mode="HTML",
-        )
-        return
-
-    intent, args = result
-    handler = DISPATCH.get(intent)
-    if not handler:
-        return
-
-    context.args = args
-    logger.info(f"NLP: '{text}' -> /{intent} {' '.join(args)}")
-
-    fn = handler.__wrapped__ if hasattr(handler, "__wrapped__") else handler
-    await fn(update, context)
+    # --- Regex didn't match — ask Groq AI ---
+    await _ai_fallback(update, context, text, name)

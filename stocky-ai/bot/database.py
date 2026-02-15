@@ -62,7 +62,28 @@ async def init_db():
             VALUES (1, 0, 0, 0);
 
             INSERT OR IGNORE INTO kite_session (id) VALUES (1);
+
+            CREATE TABLE IF NOT EXISTS command_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                command TEXT NOT NULL,
+                args TEXT,
+                source TEXT DEFAULT 'command',
+                ts TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS api_call_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                service TEXT NOT NULL,
+                endpoint TEXT NOT NULL,
+                tokens INTEGER DEFAULT 0,
+                ts TEXT DEFAULT (datetime('now'))
+            );
         """)
+        # Migration: add tokens column if missing (for existing DBs)
+        try:
+            await db.execute("ALTER TABLE api_call_log ADD COLUMN tokens INTEGER DEFAULT 0")
+        except Exception:
+            pass  # column already exists
         await db.commit()
 
 
@@ -235,3 +256,119 @@ async def clear_session():
             "UPDATE kite_session SET access_token = NULL, login_time = NULL WHERE id = 1"
         )
         await db.commit()
+
+
+# --- Command Log ---
+
+async def log_command(command: str, args: str = "", source: str = "command"):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO command_log (command, args, source) VALUES (?, ?, ?)",
+            (command, args, source),
+        )
+        await db.commit()
+
+
+async def get_usage_today() -> list[tuple[str, int]]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT command, COUNT(*) as cnt FROM command_log "
+            "WHERE date(ts) = date('now') GROUP BY command ORDER BY cnt DESC"
+        )
+        return await cursor.fetchall()
+
+
+async def get_usage_alltime() -> list[tuple[str, int]]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT command, COUNT(*) as cnt FROM command_log "
+            "GROUP BY command ORDER BY cnt DESC"
+        )
+        return await cursor.fetchall()
+
+
+async def get_usage_totals() -> tuple[int, int]:
+    """Returns (today_total, alltime_total)."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT COUNT(*) FROM command_log WHERE date(ts) = date('now')"
+        )
+        today = (await cursor.fetchone())[0]
+        cursor = await db.execute("SELECT COUNT(*) FROM command_log")
+        alltime = (await cursor.fetchone())[0]
+        return today, alltime
+
+
+# --- API Call Log ---
+
+async def log_api_call(service: str, endpoint: str, tokens: int = 0):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO api_call_log (service, endpoint, tokens) VALUES (?, ?, ?)",
+            (service, endpoint, tokens),
+        )
+        await db.commit()
+
+
+async def get_api_usage_today() -> list[tuple[str, str, int]]:
+    """Returns [(service, endpoint, count)] for today."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT service, endpoint, COUNT(*) as cnt FROM api_call_log "
+            "WHERE date(ts) = date('now') GROUP BY service, endpoint ORDER BY cnt DESC"
+        )
+        return await cursor.fetchall()
+
+
+async def get_api_usage_alltime() -> list[tuple[str, str, int]]:
+    """Returns [(service, endpoint, count)] all time."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT service, endpoint, COUNT(*) as cnt FROM api_call_log "
+            "GROUP BY service, endpoint ORDER BY cnt DESC"
+        )
+        return await cursor.fetchall()
+
+
+async def get_api_totals() -> tuple[int, int]:
+    """Returns (today_total, alltime_total) API calls."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT COUNT(*) FROM api_call_log WHERE date(ts) = date('now')"
+        )
+        today = (await cursor.fetchone())[0]
+        cursor = await db.execute("SELECT COUNT(*) FROM api_call_log")
+        alltime = (await cursor.fetchone())[0]
+        return today, alltime
+
+
+async def get_api_totals_by_service() -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
+    """Returns (today_by_service, alltime_by_service) as [(service, count)]."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT service, COUNT(*) as cnt FROM api_call_log "
+            "WHERE date(ts) = date('now') GROUP BY service ORDER BY cnt DESC"
+        )
+        today = await cursor.fetchall()
+        cursor = await db.execute(
+            "SELECT service, COUNT(*) as cnt FROM api_call_log "
+            "GROUP BY service ORDER BY cnt DESC"
+        )
+        alltime = await cursor.fetchall()
+        return today, alltime
+
+
+async def get_ai_token_totals() -> tuple[int, int]:
+    """Returns (today_tokens, alltime_tokens) for groq AI calls."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log "
+            "WHERE service = 'groq' AND date(ts) = date('now')"
+        )
+        today = (await cursor.fetchone())[0]
+        cursor = await db.execute(
+            "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log "
+            "WHERE service = 'groq'"
+        )
+        alltime = (await cursor.fetchone())[0]
+        return today, alltime

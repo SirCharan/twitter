@@ -9,6 +9,8 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.auth_check import authorized
+from bot.database import log_api_call
+from bot import ai_client
 
 logger = logging.getLogger(__name__)
 
@@ -537,6 +539,7 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loop = asyncio.get_event_loop()
 
     # Validate ticker (try .NS then .BO)
+    await log_api_call("yfinance", "validate_ticker")
     valid_symbol = await loop.run_in_executor(None, _validate_yf_ticker, yf_symbol)
     if valid_symbol:
         yf_symbol = valid_symbol
@@ -544,12 +547,15 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ticker = yf.Ticker(yf_symbol)
 
     # Run all three analyses
+    await log_api_call("yfinance", "fundamental_data")
     fundamental_text, fundamental_score = await loop.run_in_executor(
         None, _get_fundamental_data, ticker
     )
+    await log_api_call("yfinance", "technical_data")
     technical_text, technical_score = await loop.run_in_executor(
         None, _get_technical_data, yf_symbol
     )
+    await log_api_call("rss", "news_feeds")
     news_text, news_score = await loop.run_in_executor(
         None, _get_news_data, news_terms
     )
@@ -563,8 +569,21 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         name = stock_input.upper()
 
-    # Stocky's verdict — direct, no-fluff
-    if overall >= 21:
+    # Stocky's verdict — try AI first, fall back to hardcoded
+    data_summary = (
+        f"Fundamental: {fundamental_score}/10\n{fundamental_text}\n\n"
+        f"Technical: {technical_score}/10\n{technical_text}\n\n"
+        f"News: {news_score}/10\n{news_text}\n\n"
+        f"Overall: {overall}/30"
+    )
+    try:
+        ai_verdict = await ai_client.analyse_verdict(name, data_summary)
+    except Exception:
+        ai_verdict = None
+
+    if ai_verdict:
+        verdict = ai_verdict
+    elif overall >= 21:
         verdict = "Trend, fundamentals, sentiment — all pointing the same way. The payoff is asymmetric in your favour."
     elif overall >= 16:
         verdict = "More right than wrong here. Not a perfect setup, but the odds lean positive."

@@ -23,3 +23,7 @@ ALERT_CHECK_INTERVAL_SECONDS = int(os.environ.get("ALERT_CHECK_INTERVAL_SECONDS"
 # Max Loss defaults
 DEFAULT_MAX_LOSS_DAILY = float(os.environ.get("DEFAULT_MAX_LOSS_DAILY", "0"))
 DEFAULT_MAX_LOSS_OVERALL = float(os.environ.get("DEFAULT_MAX_LOSS_OVERALL", "0"))
+
+# Groq AI
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")

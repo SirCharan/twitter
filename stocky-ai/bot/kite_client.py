@@ -23,6 +23,13 @@ class KiteClient:
 
     async def _run(self, func, *args, **kwargs):
         loop = asyncio.get_event_loop()
+        # Log the API call
+        endpoint = getattr(func, "__name__", str(func))
+        try:
+            from bot.database import log_api_call
+            await log_api_call("kite", endpoint)
+        except Exception:
+            pass
         return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
     # --- Orders ---

@@ -39,7 +39,8 @@ Talk to me in plain English or use commands.
 <b>Risk:</b>
   /maxloss [daily|overall &lt;amount&gt; | off]
 
-<b>Auth:</b>
+<b>Other:</b>
+  /usage — API token usage (today + all time)
   /login / /status"""
 
 

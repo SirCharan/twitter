@@ -65,6 +65,7 @@ def _auto_login_sync() -> str:
 async def auto_login() -> str:
     """Async auto-login. Returns access_token."""
     loop = asyncio.get_event_loop()
+    await database.log_api_call("kite", "auto_login")
     access_token = await loop.run_in_executor(None, _auto_login_sync)
     await database.save_session(access_token, datetime.now().isoformat())
     logger.info("Auto-login successful")
@@ -79,6 +80,7 @@ def get_login_url() -> str:
 
 async def exchange_token(request_token: str) -> str:
     """Manual token exchange. Returns access_token."""
+    await database.log_api_call("kite", "exchange_token")
     loop = asyncio.get_event_loop()
     kite = KiteConnect(api_key=KITE_API_KEY)
     session = await loop.run_in_executor(
@@ -106,6 +108,7 @@ async def ensure_authenticated() -> KiteConnect:
     if kite:
         # Quick validation
         try:
+            await database.log_api_call("kite", "profile")
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, kite.profile)
             return kite
