@@ -37,28 +37,71 @@ body {
   background-clip: text;
 }
 
-.card-hover {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+/* Shimmer effect on gradient text */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 50px rgba(201, 169, 110, 0.06);
-  border-color: #2A2A2A !important;
+.gradient-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #F5F0EB 0%,
+    #C9A96E 25%,
+    #F5F0EB 50%,
+    #C9A96E 75%,
+    #F5F0EB 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s linear infinite;
 }
 
-.coming-soon-badge {
-  background: transparent;
-  color: var(--accent-dim);
-  font-size: 0.6rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  padding: 0.25rem 0.7rem;
-  border-radius: 9999px;
-  border: 1px solid var(--accent-dim);
+/* Subtle glow pulse on CTA */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(201, 169, 110, 0); }
+  50% { box-shadow: 0 0 30px rgba(201, 169, 110, 0.15); }
 }
 
+.cta-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Scroll-triggered reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.15s; }
+.reveal-delay-2 { transition-delay: 0.3s; }
+.reveal-delay-3 { transition-delay: 0.45s; }
+
+/* Divider line animation */
+@keyframes expand-line {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #1F1F1F 20%, #1F1F1F 80%, transparent);
+  transform-origin: center;
+}
+
+.divider-line.visible {
+  animation: expand-line 1s ease-out forwards;
+}
+
+/* Fade in up for hero elements */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -80,6 +123,20 @@ body {
 .animate-delay-4 { animation-delay: 0.6s; }
 .animate-delay-5 { animation-delay: 0.75s; }
 .animate-delay-6 { animation-delay: 0.9s; }
+
+/* Gentle float for stat numbers */
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.stat-float {
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+.stat-float-delay-1 { animation-delay: 0s; }
+.stat-float-delay-2 { animation-delay: 1.3s; }
+.stat-float-delay-3 { animation-delay: 2.6s; }
 
 input::placeholder {
   color: var(--muted);
