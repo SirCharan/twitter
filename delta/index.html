@@ -580,6 +580,46 @@
       .mobile-gate { display: flex; }
       .top-nav, .date-bar, .main { display: none !important; }
     }
+
+    /* ── Mobile Landscape ─────────────────────────── */
+    @media (max-width: 932px) and (orientation: landscape) {
+      .date-bar { display: none; }
+      .main { height: calc(100vh - 40px); }
+
+      .top-nav { height: 34px; padding: 0 8px; gap: 8px; }
+      .nav-tab { height: 34px; padding: 0 6px; font-size: 11px; }
+
+      /* Compact option chain: show only Bid, Ask, Strike */
+      .oc-table th:nth-child(2),
+      .oc-table td:nth-child(2),
+      .oc-table th:nth-child(4),
+      .oc-table td:nth-child(4),
+      .oc-table th:nth-child(5),
+      .oc-table td:nth-child(5),
+      .oc-table th:nth-child(7),
+      .oc-table td:nth-child(7),
+      .oc-table th:nth-child(8),
+      .oc-table td:nth-child(8),
+      .oc-table th:nth-child(10),
+      .oc-table td:nth-child(10) { display: none; }
+
+      .oc-table { table-layout: auto; }
+      .oc-table td { padding: 2px 4px; font-size: 11px; }
+      .oc-table th { font-size: 9px; padding: 3px 4px 2px; }
+      .oc-table .strike-cell { font-size: 12px; }
+      .iv-line { display: none; }
+
+      .oc-info-bar { height: 26px; font-size: 10px; gap: 8px; padding: 0 8px; }
+      .oc-info-bar .tte { display: none; }
+
+      .panel-left { width: 40%; }
+      .panel-right { flex: 1; }
+
+      .positions-tabs { height: 28px; }
+      .pos-tab { font-size: 10px; padding: 4px 8px; }
+      .pos-table th, .pos-table td { padding: 4px 6px; font-size: 10px; }
+      .chart-area { min-height: 0; }
+    }
   </style>
 </head>
 <body>
