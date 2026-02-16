@@ -496,6 +496,41 @@
       color: var(--text-dim);
       font-size: 12px;
     }
+
+    /* Buy/Sell hover popup */
+    .bs-popup {
+      position: fixed;
+      z-index: 100;
+      display: flex;
+      gap: 4px;
+      padding: 5px 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .bs-popup.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .bs-popup .bs-btn {
+      font-family: var(--font);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      transition: filter 0.15s ease;
+    }
+    .bs-popup .bs-btn:hover { filter: brightness(1.15); }
+    .bs-popup .bs-buy { background: var(--buy); color: #0F1115; }
+    .bs-popup .bs-sell { background: var(--sell); color: #fff; }
   </style>
 </head>
 <body>
@@ -752,18 +787,18 @@
       renderChartOverlay();
     }
 
-    function addPosition(strike, type, entryPrice, markPrice) {
+    function addPosition(strike, type, entryPrice, markPrice, side) {
       const contract = `BTC-27FEB26-${strike}-${type}`;
-      const existing = openPositions.find(p => p.contract === contract);
+      const existing = openPositions.find(p => p.contract === contract && p.side === side);
       if (existing) {
         existing.size = (parseFloat(existing.size) + 0.10).toFixed(2) + ' BTC';
         existing.isNew = true;
       } else {
-        const pnl = (markPrice - entryPrice) * 0.10;
-        const roe = ((markPrice - entryPrice) / entryPrice) * 100;
+        const pnl = (markPrice - entryPrice) * 0.10 * (side === 'Short' ? -1 : 1);
+        const roe = ((markPrice - entryPrice) / entryPrice) * 100 * (side === 'Short' ? -1 : 1);
         openPositions.push({
           contract,
-          side: 'Long',
+          side,
           optionType: type,
           strike: strike,
           size: '0.10 BTC',
@@ -808,20 +843,61 @@
       tbody.appendChild(tr);
     });
 
-    /* ── Option Chain Click → Add Position ────────── */
-    tbody.addEventListener('click', (e) => {
+    /* ── Buy/Sell Hover Popup ──────────────────────── */
+    const popup = document.createElement('div');
+    popup.className = 'bs-popup';
+    popup.innerHTML = '<button class="bs-btn bs-buy">Buy</button><button class="bs-btn bs-sell">Sell</button>';
+    document.body.appendChild(popup);
+
+    let popupTarget = null;
+    let popupHideTimer = null;
+
+    function showPopup(td) {
+      clearTimeout(popupHideTimer);
+      popupTarget = td;
+      const rect = td.getBoundingClientRect();
+      popup.style.left = (rect.left + rect.width / 2 - 60) + 'px';
+      popup.style.top = (rect.bottom + 4) + 'px';
+      popup.classList.add('visible');
+    }
+
+    function scheduleHide() {
+      popupHideTimer = setTimeout(() => {
+        popup.classList.remove('visible');
+        popupTarget = null;
+      }, 200);
+    }
+
+    tbody.addEventListener('mouseover', (e) => {
       const td = e.target.closest('td[data-action]');
       if (!td) return;
+      showPopup(td);
+    });
 
-      const action = td.dataset.action; // 'call' or 'put'
+    tbody.addEventListener('mouseout', (e) => {
+      const td = e.target.closest('td[data-action]');
+      if (td) scheduleHide();
+    });
+
+    popup.addEventListener('mouseenter', () => clearTimeout(popupHideTimer));
+    popup.addEventListener('mouseleave', () => scheduleHide());
+
+    popup.addEventListener('click', (e) => {
+      const btn = e.target.closest('.bs-btn');
+      if (!btn || !popupTarget) return;
+
+      const td = popupTarget;
+      const action = td.dataset.action;
       const strike = parseInt(td.dataset.strike);
       const ask = parseFloat(td.dataset.ask);
       const mark = parseFloat(td.dataset.mark);
       const type = action === 'call' ? 'C' : 'P';
+      const side = btn.classList.contains('bs-buy') ? 'Long' : 'Short';
 
-      addPosition(strike, type, ask, mark);
+      addPosition(strike, type, ask, mark, side);
+      popup.classList.remove('visible');
+      popupTarget = null;
 
-      // Scroll positions into view
       document.querySelector('.positions-wrap').scrollTop = 99999;
     });
 
