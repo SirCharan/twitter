@@ -538,6 +538,105 @@
     .bs-popup .bs-btn:hover { filter: brightness(1.15); }
     .bs-popup .bs-buy { background: var(--buy); color: #121212; }
     .bs-popup .bs-sell { background: var(--sell); color: #121212; }
+
+    /* ── Mobile Panel Switcher (bottom tab bar) ──── */
+    .mobile-tabs {
+      display: none;
+      height: 40px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+    .mobile-tab {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      padding: 10px 0;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all var(--transition);
+      font-family: var(--font);
+    }
+    .mobile-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 768px) {
+      body { overflow: hidden; }
+
+      .top-nav { padding: 0 8px; gap: 8px; height: 36px; }
+      .nav-tab { padding: 0 6px; font-size: 11px; height: 36px; }
+      .nav-divider { display: none; }
+
+      .mobile-tabs { display: flex; }
+
+      .date-bar {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0 8px;
+      }
+      .date-bar::-webkit-scrollbar { display: none; }
+      .date-tab { padding: 4px 8px; font-size: 10px; flex-shrink: 0; }
+
+      .main {
+        flex-direction: column;
+        height: calc(100vh - 108px); /* nav + mobile-tabs + date-bar */
+      }
+
+      .panel-left {
+        width: 100%;
+        height: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-right {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Hide panels by default on mobile — JS controls visibility */
+      .panel-left.m-hidden,
+      .panel-right.m-hidden { display: none !important; }
+
+      /* When showing chart panel only */
+      .panel-right.m-chart-only .positions-panel { display: none; }
+      .panel-right.m-chart-only .chart-panel { flex: 1; }
+
+      /* When showing positions only */
+      .panel-right.m-positions-only .chart-panel { display: none; }
+      .panel-right.m-positions-only .positions-panel { height: 100%; flex: 1; }
+
+      .oc-info-bar { font-size: 11px; gap: 8px; padding: 0 8px; }
+      .oc-info-bar .tte { display: none; }
+
+      .oc-wrap { overflow-x: auto; }
+      .oc-table { table-layout: auto; min-width: 700px; }
+
+      .chart-area { min-height: 300px; }
+
+      .positions-tabs { overflow-x: auto; scrollbar-width: none; padding: 0 8px; }
+      .positions-tabs::-webkit-scrollbar { display: none; }
+      .pos-tab { flex-shrink: 0; }
+
+      .pos-table th, .pos-table td { padding: 5px 6px; font-size: 11px; }
+
+      /* Bigger touch targets for buy/sell */
+      .bs-popup .bs-btn { padding: 8px 20px; font-size: 12px; }
+    }
+
+    @media (max-width: 480px) {
+      .top-nav { gap: 4px; padding: 0 6px; }
+      .nav-tab-label { display: none; }
+      .asset-btn { padding: 4px 12px; font-size: 11px; }
+      .oc-table { min-width: 600px; }
+      .oc-table td { font-size: 11px; padding: 2px 4px; }
+      .oc-table th { font-size: 9px; padding: 3px 4px 2px; }
+    }
   </style>
 </head>
 <body>
@@ -574,6 +673,13 @@
       <button>&lsaquo;</button>
       <button>&rsaquo;</button>
     </div>
+  </div>
+
+  <!-- Mobile Panel Switcher -->
+  <div class="mobile-tabs" id="mobile-tabs">
+    <div class="mobile-tab active" data-panel="chain">Options</div>
+    <div class="mobile-tab" data-panel="chart">Chart</div>
+    <div class="mobile-tab" data-panel="positions">Positions</div>
   </div>
 
   <!-- Main -->
@@ -1167,6 +1273,38 @@
     setupTabs('.date-bar .date-tab');
     setupTabs('.asset-toggle .asset-btn');
     setupTabs('.top-nav .nav-tab');
+
+    /* ── Mobile Panel Switching ─────────────────── */
+    const panelLeft = document.querySelector('.panel-left');
+    const panelRight = document.querySelector('.panel-right');
+    const mobileTabs = document.querySelectorAll('.mobile-tab');
+
+    function switchMobilePanel(panel) {
+      mobileTabs.forEach(t => t.classList.remove('active'));
+      document.querySelector(`.mobile-tab[data-panel="${panel}"]`).classList.add('active');
+
+      panelLeft.classList.remove('m-hidden');
+      panelRight.classList.remove('m-hidden', 'm-chart-only', 'm-positions-only');
+
+      if (panel === 'chain') {
+        panelRight.classList.add('m-hidden');
+      } else if (panel === 'chart') {
+        panelLeft.classList.add('m-hidden');
+        panelRight.classList.add('m-chart-only');
+      } else if (panel === 'positions') {
+        panelLeft.classList.add('m-hidden');
+        panelRight.classList.add('m-positions-only');
+      }
+    }
+
+    mobileTabs.forEach(tab => {
+      tab.addEventListener('click', () => switchMobilePanel(tab.dataset.panel));
+    });
+
+    // Set initial mobile state
+    if (window.innerWidth <= 768) {
+      switchMobilePanel('chain');
+    }
   </script>
 </body>
 </html>
