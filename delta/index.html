@@ -497,6 +497,18 @@
       font-size: 12px;
     }
 
+    /* Payoff chart */
+    .payoff-wrap {
+      flex: 1;
+      padding: 8px;
+      position: relative;
+    }
+    .payoff-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
     /* Buy/Sell hover popup — overlays on the hovered cell */
     .bs-popup {
       position: fixed;
@@ -619,8 +631,9 @@
           <div class="pos-tab">Open Orders <span class="count">0</span></div>
           <div class="pos-tab">Order History</div>
           <div class="pos-tab">Trade History</div>
+          <div class="pos-tab" id="payoff-tab">Payoff Chart</div>
         </div>
-        <div class="positions-wrap">
+        <div class="positions-wrap" id="positions-content">
           <table class="pos-table">
             <thead>
               <tr>
@@ -637,6 +650,9 @@
             </thead>
             <tbody id="pos-body"></tbody>
           </table>
+        </div>
+        <div class="payoff-wrap" id="payoff-content" style="display:none">
+          <canvas id="payoff-canvas"></canvas>
         </div>
       </div>
     </div>
@@ -902,6 +918,244 @@
       document.querySelector('.positions-wrap').scrollTop = 99999;
     });
 
+    /* ── Payoff Chart ──────────────────────────────── */
+    const payoffCanvas = document.getElementById('payoff-canvas');
+    const payoffCtx = payoffCanvas.getContext('2d');
+    const positionsContent = document.getElementById('positions-content');
+    const payoffContent = document.getElementById('payoff-content');
+    const payoffTab = document.getElementById('payoff-tab');
+    let payoffVisible = false;
+
+    payoffTab.addEventListener('click', () => {
+      payoffVisible = !payoffVisible;
+      if (payoffVisible) {
+        positionsContent.style.display = 'none';
+        payoffContent.style.display = '';
+        payoffTab.classList.add('active');
+        // Remove active from Positions tab
+        document.querySelector('.positions-tabs .pos-tab.active:not(#payoff-tab)')?.classList.remove('active');
+        drawPayoff();
+      } else {
+        payoffContent.style.display = 'none';
+        positionsContent.style.display = '';
+        payoffTab.classList.remove('active');
+        document.querySelector('.positions-tabs .pos-tab:first-child').classList.add('active');
+      }
+    });
+
+    // Also switch back when clicking the Positions tab
+    document.querySelector('.positions-tabs .pos-tab:first-child').addEventListener('click', () => {
+      if (payoffVisible) {
+        payoffVisible = false;
+        payoffContent.style.display = 'none';
+        positionsContent.style.display = '';
+        payoffTab.classList.remove('active');
+      }
+    });
+
+    function computePayoff(price) {
+      let total = 0;
+      openPositions.forEach(p => {
+        const size = parseFloat(p.size);
+        const K = p.strike;
+        const premium = p.entry;
+        const dir = p.side === 'Long' ? 1 : -1;
+
+        let intrinsic = 0;
+        if (p.optionType === 'C') {
+          intrinsic = Math.max(0, price - K);
+        } else {
+          intrinsic = Math.max(0, K - price);
+        }
+        total += dir * (intrinsic - premium) * size;
+      });
+      return total;
+    }
+
+    function drawPayoff() {
+      const wrap = payoffContent;
+      const dpr = window.devicePixelRatio || 1;
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      payoffCanvas.width = w * dpr;
+      payoffCanvas.height = h * dpr;
+      payoffCanvas.style.width = w + 'px';
+      payoffCanvas.style.height = h + 'px';
+      const ctx = payoffCtx;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Clear
+      ctx.fillStyle = '#0F1115';
+      ctx.fillRect(0, 0, w, h);
+
+      if (openPositions.length === 0) {
+        ctx.fillStyle = '#505860';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Add positions to see payoff chart', w / 2, h / 2);
+        return;
+      }
+
+      // Chart margins
+      const ml = 60, mr = 16, mt = 16, mb = 36;
+      const cw = w - ml - mr;
+      const ch = h - mt - mb;
+
+      // Price range: 15% around spot
+      const lo = spotPrice * 0.85;
+      const hi = spotPrice * 1.15;
+      const steps = 200;
+
+      // Compute payoff values
+      const points = [];
+      let minPnl = Infinity, maxPnl = -Infinity;
+      for (let i = 0; i <= steps; i++) {
+        const price = lo + (hi - lo) * (i / steps);
+        const pnl = computePayoff(price);
+        points.push({ price, pnl });
+        if (pnl < minPnl) minPnl = pnl;
+        if (pnl > maxPnl) maxPnl = pnl;
+      }
+
+      // Add padding to Y range
+      const yRange = maxPnl - minPnl || 1;
+      const yPad = yRange * 0.15;
+      const yMin = minPnl - yPad;
+      const yMax = maxPnl + yPad;
+
+      function xOf(price) { return ml + ((price - lo) / (hi - lo)) * cw; }
+      function yOf(pnl) { return mt + (1 - (pnl - yMin) / (yMax - yMin)) * ch; }
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      const yTicks = 5;
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      for (let i = 0; i <= yTicks; i++) {
+        const val = yMin + (yMax - yMin) * (i / yTicks);
+        const y = yOf(val);
+        ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(w - mr, y); ctx.stroke();
+        ctx.fillStyle = '#707880';
+        ctx.fillText('$' + val.toFixed(0), ml - 8, y + 3);
+      }
+
+      // X axis labels
+      ctx.textAlign = 'center';
+      const xTicks = 5;
+      for (let i = 0; i <= xTicks; i++) {
+        const price = lo + (hi - lo) * (i / xTicks);
+        const x = xOf(price);
+        ctx.beginPath(); ctx.moveTo(x, mt); ctx.lineTo(x, mt + ch); ctx.stroke();
+        ctx.fillStyle = '#707880';
+        ctx.fillText('$' + (price / 1000).toFixed(1) + 'K', x, mt + ch + 18);
+      }
+
+      // Zero line
+      if (yMin < 0 && yMax > 0) {
+        const zeroY = yOf(0);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(ml, zeroY); ctx.lineTo(w - mr, zeroY); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Spot price vertical line
+      const spotX = xOf(spotPrice);
+      ctx.strokeStyle = 'rgba(255, 138, 0, 0.4)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(spotX, mt); ctx.lineTo(spotX, mt + ch); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#FF8A00';
+      ctx.font = '9px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SPOT', spotX, mt + ch + 30);
+
+      // Draw payoff line — green above zero, red below
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+
+      // Fill areas
+      const zeroY = yOf(0);
+
+      // Green fill (profit)
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i <= steps; i++) {
+        const x = xOf(points[i].price);
+        const y = Math.min(yOf(points[i].pnl), zeroY);
+        if (!started) { ctx.moveTo(x, zeroY); started = true; }
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(xOf(points[steps].price), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0, 192, 118, 0.08)';
+      ctx.fill();
+
+      // Red fill (loss)
+      ctx.beginPath();
+      started = false;
+      for (let i = 0; i <= steps; i++) {
+        const x = xOf(points[i].price);
+        const y = Math.max(yOf(points[i].pnl), zeroY);
+        if (!started) { ctx.moveTo(x, zeroY); started = true; }
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(xOf(points[steps].price), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(246, 70, 93, 0.08)';
+      ctx.fill();
+
+      // Draw the line itself with gradient coloring
+      for (let i = 0; i < steps; i++) {
+        const x1 = xOf(points[i].price), y1 = yOf(points[i].pnl);
+        const x2 = xOf(points[i + 1].price), y2 = yOf(points[i + 1].pnl);
+        const avgPnl = (points[i].pnl + points[i + 1].pnl) / 2;
+        ctx.strokeStyle = avgPnl >= 0 ? '#00C076' : '#F6465D';
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+
+      // Strike markers
+      openPositions.forEach(p => {
+        const sx = xOf(p.strike);
+        if (sx >= ml && sx <= w - mr) {
+          ctx.strokeStyle = p.optionType === 'C' ? 'rgba(0,192,118,0.3)' : 'rgba(246,70,93,0.3)';
+          ctx.setLineDash([2, 3]);
+          ctx.beginPath(); ctx.moveTo(sx, mt); ctx.lineTo(sx, mt + ch); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = p.optionType === 'C' ? '#00C076' : '#F6465D';
+          ctx.font = '8px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.strike + ' ' + (p.optionType === 'C' ? 'C' : 'P'), sx, mt + 10);
+        }
+      });
+
+      // Max profit / loss labels
+      ctx.font = '10px Inter, sans-serif';
+      const maxPt = points.reduce((a, b) => b.pnl > a.pnl ? b : a);
+      const minPt = points.reduce((a, b) => b.pnl < a.pnl ? b : a);
+      if (maxPt.pnl > 0) {
+        ctx.fillStyle = '#00C076';
+        ctx.textAlign = 'left';
+        ctx.fillText('Max +$' + maxPt.pnl.toFixed(1), xOf(maxPt.price) + 4, yOf(maxPt.pnl) - 6);
+      }
+      if (minPt.pnl < 0) {
+        ctx.fillStyle = '#F6465D';
+        ctx.textAlign = 'left';
+        ctx.fillText('Max -$' + Math.abs(minPt.pnl).toFixed(1), xOf(minPt.price) + 4, yOf(minPt.pnl) + 14);
+      }
+    }
+
+    // Redraw payoff when positions change
+    const origRenderPositions = renderPositions;
+    renderPositions = function() {
+      origRenderPositions();
+      if (payoffVisible) drawPayoff();
+    };
+
+    // Handle resize
+    window.addEventListener('resize', () => { if (payoffVisible) drawPayoff(); });
+
     /* ── Tab interactions ─────────────────────────── */
     function setupTabs(selector) {
       document.querySelectorAll(selector).forEach(tab => {
@@ -913,7 +1167,6 @@
     }
     setupTabs('.date-bar .date-tab');
     setupTabs('.asset-toggle .asset-btn');
-    setupTabs('.positions-tabs .pos-tab');
     setupTabs('.top-nav .nav-tab');
   </script>
 </body>
