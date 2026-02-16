@@ -10,36 +10,36 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg-base: #0F1115;
-      --bg-surface: #14181F;
-      --bg-surface-alt: #11151A;
-      --bg-elevated: #1A1F28;
-      --bg-header: #0B0D12;
-      --bg-row-hover: #161B22;
-      --bg-row-highlight: #1C2028;
-      --bg-atm: rgba(255, 138, 0, 0.08);
-      --bg-itm-call: rgba(0, 192, 118, 0.05);
-      --bg-itm-put: rgba(246, 70, 93, 0.05);
+      --bg-base: #121212;
+      --bg-surface: #1A1A1A;
+      --bg-surface-alt: #1A1A1A;
+      --bg-elevated: #222222;
+      --bg-header: #0E0E0E;
+      --bg-row-hover: #1E1E1E;
+      --bg-row-highlight: #242424;
+      --bg-atm: rgba(243, 132, 30, 0.10);
+      --bg-itm-call: rgba(0, 192, 135, 0.05);
+      --bg-itm-put: rgba(255, 77, 77, 0.05);
 
-      --text-primary: #D0D4D9;
-      --text-secondary: #A0A8B0;
-      --text-tertiary: #707880;
-      --text-dim: #505860;
+      --text-primary: #FFFFFF;
+      --text-secondary: #8E8E8E;
+      --text-tertiary: #6A6A6A;
+      --text-dim: #4A4A4A;
 
-      --accent: #0052FF;
-      --accent-muted: rgba(0, 82, 255, 0.18);
+      --accent: #F3841E;
+      --accent-muted: rgba(243, 132, 30, 0.18);
 
-      --buy: #00C076;
-      --buy-muted: rgba(0, 192, 118, 0.10);
-      --sell: #F6465D;
-      --sell-muted: rgba(246, 70, 93, 0.10);
+      --buy: #00C087;
+      --buy-muted: rgba(0, 192, 135, 0.10);
+      --sell: #FF4D4D;
+      --sell-muted: rgba(255, 77, 77, 0.10);
 
-      --border: #1C2028;
-      --border-subtle: #161A22;
-      --border-strong: #282E38;
+      --border: #262626;
+      --border-subtle: #1E1E1E;
+      --border-strong: #333333;
 
-      --warning: #FFA726;
-      --atm-orange: #FF8A00;
+      --warning: #F3841E;
+      --atm-orange: #F3841E;
 
       --font: "Inter", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
       --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -234,16 +234,16 @@
     .oc-table th.oi-th-put { text-align: left; }
 
     .oc-table td {
-      padding: 3px 6px;
+      padding: 2px 5px;
       font-size: 12px;
       border-bottom: 1px solid var(--border-subtle);
       white-space: nowrap;
       vertical-align: middle;
-      line-height: 1.3;
+      line-height: 1.2;
     }
     .oc-table tr:hover td { background: var(--bg-row-hover) !important; cursor: pointer; }
-    .oc-table tr td.call-side:hover { background: rgba(0, 192, 118, 0.10) !important; }
-    .oc-table tr td.put-side:hover { background: rgba(246, 70, 93, 0.10) !important; }
+    .oc-table tr td.call-side:hover { background: rgba(0, 192, 135, 0.10) !important; }
+    .oc-table tr td.put-side:hover { background: rgba(255, 77, 77, 0.10) !important; }
 
     /* Cell types */
     .oc-table .c-r { text-align: right; }
@@ -254,7 +254,7 @@
       text-align: center;
       font-weight: 600;
       font-size: 14px;
-      color: #E0E4E9;
+      color: #FFFFFF;
       background: var(--bg-surface-alt);
       border-left: 1px solid var(--border);
       border-right: 1px solid var(--border);
@@ -271,10 +271,10 @@
       color: var(--text-dim);
       margin-top: 0px;
     }
-    .ask-price { background: rgba(0, 192, 118, 0.08) !important; }
+    .ask-price { background: rgba(0, 192, 135, 0.08) !important; }
     .ask-price .price-line { color: var(--buy); }
     .bid-price-put .price-line { color: var(--buy); }
-    .ask-price-put { background: rgba(246, 70, 93, 0.08) !important; }
+    .ask-price-put { background: rgba(255, 77, 77, 0.08) !important; }
     .ask-price-put .price-line { color: var(--sell); }
 
     .oi-val { color: var(--text-tertiary); font-size: 11px; font-weight: 400; }
@@ -283,7 +283,7 @@
     /* ATM row — orange/amber highlight per Deribit style */
     .oc-table tr.atm td { background: var(--bg-atm); }
     .oc-table tr.atm td.strike-cell {
-      background: rgba(255, 138, 0, 0.15);
+      background: rgba(243, 132, 30, 0.15);
       color: var(--atm-orange);
       font-weight: 700;
       border-left-color: var(--atm-orange);
@@ -380,17 +380,17 @@
       cursor: default;
     }
     /* Call Buy (Long Call) — bright green */
-    .strike-line.call-buy .line { border-color: #00C076; }
-    .strike-line.call-buy .tag { background: #00C076; color: #0F1115; }
+    .strike-line.call-buy .line { border-color: #00C087; }
+    .strike-line.call-buy .tag { background: #00C087; color: #121212; }
     /* Call Sell (Short Call) — dull green */
     .strike-line.call-sell .line { border-color: #3D7A5C; }
-    .strike-line.call-sell .tag { background: #3D7A5C; color: #D0D4D9; }
+    .strike-line.call-sell .tag { background: #3D7A5C; color: #FFFFFF; }
     /* Put Buy (Long Put) — bright red */
-    .strike-line.put-buy .line { border-color: #F6465D; }
-    .strike-line.put-buy .tag { background: #F6465D; color: #0F1115; }
+    .strike-line.put-buy .line { border-color: #FF4D4D; }
+    .strike-line.put-buy .tag { background: #FF4D4D; color: #121212; }
     /* Put Sell (Short Put) — dull red */
     .strike-line.put-sell .line { border-color: #8B4049; }
-    .strike-line.put-sell .tag { background: #8B4049; color: #D0D4D9; }
+    .strike-line.put-sell .tag { background: #8B4049; color: #FFFFFF; }
 
     /* Positions */
     .positions-panel {
@@ -484,7 +484,7 @@
 
     /* Position flash animation */
     @keyframes pos-flash {
-      0% { background: rgba(0, 192, 118, 0.20); }
+      0% { background: rgba(243, 132, 30, 0.20); }
       100% { background: transparent; }
     }
     .pos-table tr.flash td { animation: pos-flash 0.8s ease-out; }
@@ -536,8 +536,8 @@
       transition: filter 0.15s ease;
     }
     .bs-popup .bs-btn:hover { filter: brightness(1.15); }
-    .bs-popup .bs-buy { background: var(--buy); color: #0F1115; }
-    .bs-popup .bs-sell { background: var(--sell); color: #fff; }
+    .bs-popup .bs-buy { background: var(--buy); color: #121212; }
+    .bs-popup .bs-sell { background: var(--sell); color: #121212; }
   </style>
 </head>
 <body>
@@ -670,23 +670,23 @@
       theme: 'dark',
       style: '1',
       locale: 'en',
-      toolbar_bg: '#0F1115',
+      toolbar_bg: '#121212',
       enable_publishing: false,
       hide_top_toolbar: false,
       hide_legend: false,
       save_image: false,
-      backgroundColor: '#0F1115',
+      backgroundColor: '#121212',
       gridColor: 'rgba(255,255,255,0.03)',
       hide_volume: false,
       overrides: {
-        'paneProperties.background': '#0F1115',
+        'paneProperties.background': '#121212',
         'paneProperties.backgroundType': 'solid',
-        'mainSeriesProperties.candleStyle.upColor': '#00C076',
-        'mainSeriesProperties.candleStyle.downColor': '#F6465D',
-        'mainSeriesProperties.candleStyle.borderUpColor': '#00C076',
-        'mainSeriesProperties.candleStyle.borderDownColor': '#F6465D',
-        'mainSeriesProperties.candleStyle.wickUpColor': '#00C076',
-        'mainSeriesProperties.candleStyle.wickDownColor': '#F6465D',
+        'mainSeriesProperties.candleStyle.upColor': '#00C087',
+        'mainSeriesProperties.candleStyle.downColor': '#FF4D4D',
+        'mainSeriesProperties.candleStyle.borderUpColor': '#00C087',
+        'mainSeriesProperties.candleStyle.borderDownColor': '#FF4D4D',
+        'mainSeriesProperties.candleStyle.wickUpColor': '#00C087',
+        'mainSeriesProperties.candleStyle.wickDownColor': '#FF4D4D',
       }
     });
 
@@ -984,7 +984,7 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Clear
-      ctx.fillStyle = '#0F1115';
+      ctx.fillStyle = '#121212';
       ctx.fillRect(0, 0, w, h);
 
       if (openPositions.length === 0) {
@@ -1061,11 +1061,11 @@
 
       // Spot price vertical line
       const spotX = xOf(spotPrice);
-      ctx.strokeStyle = 'rgba(255, 138, 0, 0.4)';
+      ctx.strokeStyle = 'rgba(243, 132, 30, 0.4)';
       ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.moveTo(spotX, mt); ctx.lineTo(spotX, mt + ch); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#FF8A00';
+      ctx.fillStyle = '#F3841E';
       ctx.font = '9px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('SPOT', spotX, mt + ch + 30);
@@ -1088,7 +1088,7 @@
       }
       ctx.lineTo(xOf(points[steps].price), zeroY);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(0, 192, 118, 0.08)';
+      ctx.fillStyle = 'rgba(0, 192, 135, 0.08)';
       ctx.fill();
 
       // Red fill (loss)
@@ -1102,7 +1102,7 @@
       }
       ctx.lineTo(xOf(points[steps].price), zeroY);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(246, 70, 93, 0.08)';
+      ctx.fillStyle = 'rgba(255, 77, 77, 0.08)';
       ctx.fill();
 
       // Draw the line itself with gradient coloring
@@ -1110,7 +1110,7 @@
         const x1 = xOf(points[i].price), y1 = yOf(points[i].pnl);
         const x2 = xOf(points[i + 1].price), y2 = yOf(points[i + 1].pnl);
         const avgPnl = (points[i].pnl + points[i + 1].pnl) / 2;
-        ctx.strokeStyle = avgPnl >= 0 ? '#00C076' : '#F6465D';
+        ctx.strokeStyle = avgPnl >= 0 ? '#00C087' : '#FF4D4D';
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       }
 
@@ -1118,11 +1118,11 @@
       openPositions.forEach(p => {
         const sx = xOf(p.strike);
         if (sx >= ml && sx <= w - mr) {
-          ctx.strokeStyle = p.optionType === 'C' ? 'rgba(0,192,118,0.3)' : 'rgba(246,70,93,0.3)';
+          ctx.strokeStyle = p.optionType === 'C' ? 'rgba(0,192,135,0.3)' : 'rgba(255,77,77,0.3)';
           ctx.setLineDash([2, 3]);
           ctx.beginPath(); ctx.moveTo(sx, mt); ctx.lineTo(sx, mt + ch); ctx.stroke();
           ctx.setLineDash([]);
-          ctx.fillStyle = p.optionType === 'C' ? '#00C076' : '#F6465D';
+          ctx.fillStyle = p.optionType === 'C' ? '#00C087' : '#FF4D4D';
           ctx.font = '8px Inter, sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText(p.strike + ' ' + (p.optionType === 'C' ? 'C' : 'P'), sx, mt + 10);
@@ -1134,12 +1134,12 @@
       const maxPt = points.reduce((a, b) => b.pnl > a.pnl ? b : a);
       const minPt = points.reduce((a, b) => b.pnl < a.pnl ? b : a);
       if (maxPt.pnl > 0) {
-        ctx.fillStyle = '#00C076';
+        ctx.fillStyle = '#00C087';
         ctx.textAlign = 'left';
         ctx.fillText('Max +$' + maxPt.pnl.toFixed(1), xOf(maxPt.price) + 4, yOf(maxPt.pnl) - 6);
       }
       if (minPt.pnl < 0) {
-        ctx.fillStyle = '#F6465D';
+        ctx.fillStyle = '#FF4D4D';
         ctx.textAlign = 'left';
         ctx.fillText('Max -$' + Math.abs(minPt.pnl).toFixed(1), xOf(minPt.price) + 4, yOf(minPt.pnl) + 14);
       }
