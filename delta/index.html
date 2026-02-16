@@ -502,11 +502,8 @@
       flex: 1;
       padding: 8px;
       position: relative;
-    }
-    .payoff-wrap canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
+      overflow: hidden;
+      min-height: 0;
     }
 
     /* Buy/Sell hover popup — overlays on the hovered cell */
@@ -651,7 +648,7 @@
             <tbody id="pos-body"></tbody>
           </table>
         </div>
-        <div class="payoff-wrap" id="payoff-content" style="display:none">
+        <div class="payoff-wrap" id="payoff-content" style="display:none;flex:1">
           <canvas id="payoff-canvas"></canvas>
         </div>
       </div>
@@ -930,11 +927,11 @@
       payoffVisible = !payoffVisible;
       if (payoffVisible) {
         positionsContent.style.display = 'none';
-        payoffContent.style.display = '';
+        payoffContent.style.display = 'flex';
         payoffTab.classList.add('active');
-        // Remove active from Positions tab
         document.querySelector('.positions-tabs .pos-tab.active:not(#payoff-tab)')?.classList.remove('active');
-        drawPayoff();
+        // Wait for layout to settle before drawing
+        requestAnimationFrame(() => requestAnimationFrame(() => drawPayoff()));
       } else {
         payoffContent.style.display = 'none';
         positionsContent.style.display = '';
@@ -975,8 +972,10 @@
     function drawPayoff() {
       const wrap = payoffContent;
       const dpr = window.devicePixelRatio || 1;
-      const w = wrap.clientWidth;
-      const h = wrap.clientHeight;
+      const pad = 8; // account for padding
+      const w = wrap.clientWidth - pad * 2;
+      const h = wrap.clientHeight - pad * 2;
+      if (w <= 0 || h <= 0) return;
       payoffCanvas.width = w * dpr;
       payoffCanvas.height = h * dpr;
       payoffCanvas.style.width = w + 'px';
