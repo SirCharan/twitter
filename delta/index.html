@@ -576,7 +576,7 @@
       word-break: break-all;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px) and (orientation: portrait) {
       .mobile-gate { display: flex; }
       .top-nav, .date-bar, .main { display: none !important; }
     }
@@ -622,7 +622,7 @@
   <div class="mobile-gate">
     <div class="gate-icon">&#x1F4BB;</div>
     <div class="gate-title">Desktop Only</div>
-    <div class="gate-msg">This trading terminal is optimized for desktop. Please open this link on a laptop or desktop for the full experience.</div>
+    <div class="gate-msg">This trading terminal is optimized for desktop. Please open this link on a laptop or desktop for the full experience, or rotate your phone to landscape mode.</div>
     <div class="gate-url">delta-rouge-eta.vercel.app</div>
   </div>
 
