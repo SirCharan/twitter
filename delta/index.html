@@ -497,25 +497,23 @@
       font-size: 12px;
     }
 
-    /* Buy/Sell hover popup */
+    /* Buy/Sell hover popup — overlays on the hovered cell */
     .bs-popup {
       position: fixed;
       z-index: 100;
       display: flex;
       gap: 4px;
-      padding: 5px 6px;
-      background: var(--bg-elevated);
+      padding: 4px 5px;
+      background: rgba(20, 24, 31, 0.92);
+      backdrop-filter: blur(4px);
       border: 1px solid var(--border-strong);
-      border-radius: 4px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      border-radius: 3px;
       pointer-events: auto;
       opacity: 0;
-      transform: translateY(4px);
-      transition: opacity 0.12s ease, transform 0.12s ease;
+      transition: opacity 0.1s ease;
     }
     .bs-popup.visible {
       opacity: 1;
-      transform: translateY(0);
     }
     .bs-popup .bs-btn {
       font-family: var(--font);
@@ -856,9 +854,12 @@
       clearTimeout(popupHideTimer);
       popupTarget = td;
       const rect = td.getBoundingClientRect();
-      popup.style.left = (rect.left + rect.width / 2 - 60) + 'px';
-      popup.style.top = (rect.bottom + 4) + 'px';
+      // Center popup on top of the hovered cell
       popup.classList.add('visible');
+      const popW = popup.offsetWidth;
+      const popH = popup.offsetHeight;
+      popup.style.left = (rect.left + rect.width / 2 - popW / 2) + 'px';
+      popup.style.top = (rect.top + rect.height / 2 - popH / 2) + 'px';
     }
 
     function scheduleHide() {
