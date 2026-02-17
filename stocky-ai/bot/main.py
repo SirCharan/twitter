@@ -8,7 +8,7 @@ from bot.kite_auth import ensure_authenticated
 from bot.kite_client import KiteClient
 from bot.scheduler import setup_scheduler
 
-from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, news, nlp, portfolio, stoploss, trading, usage
+from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, news, nlp, overview, portfolio, stoploss, trading, usage
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -83,6 +83,7 @@ def main():
     app.add_handler(CommandHandler("analyse", analyse.analyse))
     app.add_handler(CommandHandler("analyze", analyse.analyse))
     app.add_handler(CommandHandler("news", news.news_command))
+    app.add_handler(CommandHandler("overview", overview.overview_command))
 
     # Alerts
     app.add_handler(CommandHandler("alert", alert.add_alert))

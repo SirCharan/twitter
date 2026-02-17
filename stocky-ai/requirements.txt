@@ -8,3 +8,4 @@ python-dotenv==1.2.1
 yfinance==1.1.0
 feedparser==6.0.12
 groq==0.25.0
+nsetools==2.0.1

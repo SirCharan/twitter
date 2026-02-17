@@ -32,6 +32,7 @@ INTENT_PROMPT = (
     "- portfolio, positions, holdings, orders, margins: args=[]\n"
     "- alert: args=[symbol, above|below, price]\n"
     "- news: args=[symbol?] (market news, optionally for a stock)\n"
+    "- overview: args=[] (market overview — indices, gainers, losers, breadth)\n"
     "- alerts, exitrules: args=[]\n"
     "- sl: args=[symbol, qty, trigger, limit?]\n"
     "- maxloss: args=[daily|overall|off, amount?]\n"

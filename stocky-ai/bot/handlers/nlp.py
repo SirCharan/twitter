@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 
 from bot.auth_check import authorized
 from bot import ai_client, database
-from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, news, portfolio, stoploss, trading, usage
+from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, news, overview, portfolio, stoploss, trading, usage
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +179,10 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if m:
         return "price", [m.group(1).strip().upper()]
 
+    # --- Overview ---
+    if re.match(r"^(overview|market overview|market summary|market status|how.?s the market|how is the market|market today|markets?\s*$)", lower):
+        return "overview", []
+
     # --- News ---
     if re.match(r"^(news|headlines|market news|latest news|morning digest)\s*$", lower):
         return "news", []
@@ -233,6 +237,7 @@ DISPATCH = {
     "price": market.price,
     "analyse": analyse.analyse,
     "news": news.news_command,
+    "overview": overview.overview_command,
     "usage": usage.usage_command,
 }
 
