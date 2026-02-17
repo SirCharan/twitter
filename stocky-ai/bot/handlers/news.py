@@ -72,12 +72,13 @@ def _filter_stock_news(articles: list[dict], search_terms: list[str]) -> list[di
 
 def _format_article(article: dict, include_link: bool = True) -> str:
     sent = article["sentiment"]
-    icon = "+" if sent > 0.1 else ("-" if sent < -0.1 else "~")
-    date = f" ({article['date']})" if article["date"] else ""
+    icon = "\u25B2" if sent > 0.1 else ("\u25BC" if sent < -0.1 else "\u25CF")  # ▲ ▼ ●
+    date = f"  {article['date']}" if article["date"] else ""
     title = article["title"]
+    source = article["source"]
     if include_link and article["link"]:
-        return f"[{icon}] <b>{article['source']}</b>{date}\n<a href=\"{article['link']}\">{title}</a>"
-    return f"[{icon}] <b>{article['source']}</b>{date}\n{title}"
+        return f"{icon} <a href=\"{article['link']}\">{title}</a>\n   <i>{source}</i>{date}"
+    return f"{icon} {title}\n   <i>{source}</i>{date}"
 
 
 @authorized
@@ -107,7 +108,7 @@ async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        header = f"<b>News: {stock_input.upper()}</b>\n{'=' * 25}\n\n"
+        header = f"<b>News: {stock_input.upper()}</b>\n\n"
         lines = [_format_article(a) for a in filtered[:10]]
         message = header + "\n\n".join(lines)
     else:
@@ -120,7 +121,7 @@ async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 seen.add(key)
                 unique.append(a)
 
-        header = f"<b>Market Headlines</b>\n{'=' * 25}\n\n"
+        header = "<b>Market Headlines</b>\n\n"
         lines = [_format_article(a) for a in unique[:12]]
         message = header + "\n\n".join(lines)
 
@@ -149,7 +150,7 @@ async def send_morning_digest(bot, chat_id: int):
                 unique.append(a)
 
         now = datetime.now().strftime("%d %b %Y")
-        header = f"<b>Morning Digest — {now}</b>\n{'=' * 25}\n\n"
+        header = f"<b>Morning Digest \u2014 {now}</b>\n\n"
         lines = [_format_article(a, include_link=True) for a in unique[:10]]
         message = header + "\n\n".join(lines)
         message += "\n\n<i>Good morning. Markets open soon.</i>"

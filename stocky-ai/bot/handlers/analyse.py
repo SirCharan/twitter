@@ -578,10 +578,11 @@ def _get_news_data(search_terms: list[str]) -> tuple[str, float]:
 # ---------------------------------------------------------------------------
 
 def _score_bar(score: float, max_score: int = 10) -> str:
-    """Score bar. max_score=10 for individual, 30 for overall."""
-    s = round(score * 10 / max_score)  # normalize to 0-10 for bar
+    """Score bar with Unicode blocks for better Telegram rendering."""
+    s = round(score * 10 / max_score)
     s = max(0, min(10, s))
-    bar = "=" * s + "-" * (10 - s)
+    filled = "\u2588" * s       # █
+    empty = "\u2591" * (10 - s)  # ░
     if max_score == 30:
         if score >= 21:
             label = "Bullish"
@@ -600,7 +601,7 @@ def _score_bar(score: float, max_score: int = 10) -> str:
             label = "Bearish"
         else:
             label = "Very Bearish"
-    return f"[{bar}] {score:.1f}/{max_score} ({label})"
+    return f"{filled}{empty} {score:.1f}/{max_score} {label}"
 
 
 # ---------------------------------------------------------------------------
@@ -693,17 +694,15 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = (
         f"<b>{name}</b>\n"
-        f"<b>Overall: {_score_bar(overall, 30)}</b>\n"
-        f"{'=' * 30}\n\n"
-        f"<b>FUNDAMENTAL</b> {_score_bar(fundamental_score)}\n"
+        f"<b>Overall:</b> {_score_bar(overall, 30)}\n"
+        f"\u2500" * 28 + "\n\n"
+        f"\u25B6 <b>Fundamental</b>  {_score_bar(fundamental_score)}\n"
         f"{full_fundamental}\n\n"
-        f"{'=' * 30}\n\n"
-        f"<b>TECHNICAL</b> {_score_bar(technical_score)}\n"
+        f"\u25B6 <b>Technical</b>  {_score_bar(technical_score)}\n"
         f"{technical_text}\n\n"
-        f"{'=' * 30}\n\n"
-        f"<b>NEWS</b> {_score_bar(news_score)}\n"
+        f"\u25B6 <b>News</b>  {_score_bar(news_score)}\n"
         f"{news_text}\n\n"
-        f"{'=' * 30}\n"
+        f"\u2500" * 28 + "\n"
         f"<b>Stocky's take:</b> {verdict}\n\n"
         f"<i>Not financial advice.</i>"
     )

@@ -52,8 +52,8 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
                   "start", "menu", "what do you do"):
         return "help", []
 
-    # --- Who are you ---
-    if re.match(r"^(who are you|what are you|what.?s your name|your name)", lower):
+    # --- Who are you / who built you ---
+    if re.match(r"^(who are you|what are you|what.?s your name|your name|who built you|who build you|who made you|who created you|who.?s your (creator|maker|builder|founder))", lower):
         return "whoami", []
 
     # --- Status ---
