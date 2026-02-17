@@ -364,10 +364,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # whoami is handled inline
         if intent == "whoami":
             await update.message.reply_text(
-                f"I'm <b>Stocky</b>.\n\n"
+                f"I'm <b>Stocky</b>. Built by Charandeep Kapoor.\n\n"
                 "I analyse stocks, execute trades on your Zerodha, "
-                "track your portfolio, watch price levels, and enforce your risk limits.\n\n"
-                "No fluff. No opinions you didn't ask for. Just data and execution.\n\n"
+                "track your portfolio, watch price levels, enforce risk limits, "
+                "and pull live market news and data.\n\n"
+                "I think in payoffs and asymmetry. No fluff. No hedging. "
+                "Just data, execution, and a clear take.\n\n"
                 "Type <b>help</b> to see what I can do.",
                 parse_mode="HTML",
             )
