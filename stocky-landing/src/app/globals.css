@@ -138,6 +138,21 @@ body {
 .stat-float-delay-2 { animation-delay: 1.3s; }
 .stat-float-delay-3 { animation-delay: 2.6s; }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 input::placeholder {
   color: var(--muted);
+}
+
+/* Mobile: reduce animation distance, disable float */
+@media (max-width: 767px) {
+  .reveal {
+    transform: translateY(16px);
+  }
+
+  .stat-float {
+    animation: none;
+  }
 }

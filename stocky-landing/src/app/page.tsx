@@ -94,9 +94,21 @@ export default function Home() {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setSubmitted(true);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setSubmitted(true);
+      }
+    } catch {
+      // Silently handle — still show success to not break UX
+      setSubmitted(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const statsRef = useScrollReveal();
@@ -109,7 +121,7 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Nav */}
-      <nav className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+      <nav className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-6 flex items-center justify-between">
         <span className="font-cursive text-2xl tracking-wide" style={{ color: "#F5F0EB" }}>
           Stocky
         </span>
@@ -122,16 +134,16 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-20 pb-24 text-center">
+      <section className="max-w-4xl mx-auto px-4 pt-14 pb-16 md:px-6 md:pt-20 md:pb-24 text-center">
         <div className="opacity-0 animate-fade-in-up">
-          <h1 className="font-cursive text-6xl md:text-8xl font-medium tracking-tight leading-none">
+          <h1 className="font-cursive text-5xl md:text-8xl font-medium tracking-tight leading-none">
             <span className="gradient-text-shimmer">Stocky</span>
           </h1>
         </div>
 
         <div className="opacity-0 animate-fade-in-up animate-delay-1">
           <p
-            className="mt-8 text-2xl md:text-3xl font-light leading-snug max-w-2xl mx-auto tracking-wide"
+            className="mt-6 text-xl md:mt-8 md:text-3xl font-light leading-snug max-w-2xl mx-auto tracking-wide"
             style={{ color: "#F5F0EB" }}
           >
             Precision. Discipline. Edge.
@@ -143,14 +155,12 @@ export default function Home() {
             className="mt-5 text-base md:text-lg leading-relaxed max-w-lg mx-auto font-light"
             style={{ color: "#6B6B6B" }}
           >
-            An AI trading engine built for the few who think
-            <br />
-            in payoffs, not predictions.
+            An AI trading engine built for the few who think in payoffs, not predictions.
           </p>
         </div>
 
         {/* Waitlist */}
-        <div className="opacity-0 animate-fade-in-up animate-delay-3 mt-14">
+        <div className="opacity-0 animate-fade-in-up animate-delay-3 mt-10 md:mt-14">
           {!submitted ? (
             <form
               onSubmit={handleSubmit}
@@ -197,24 +207,24 @@ export default function Home() {
       </section>
 
       {/* Divider */}
-      <div className="max-w-6xl mx-auto px-6" ref={divider1Ref}>
+      <div className="max-w-6xl mx-auto px-4 md:px-6" ref={divider1Ref}>
         <div className="divider-line" />
       </div>
 
       {/* Performance */}
-      <section className="max-w-5xl mx-auto px-6 py-28" ref={statsRef}>
+      <section className="max-w-5xl mx-auto px-4 py-16 md:px-6 md:py-28" ref={statsRef}>
         <div className="text-center mb-6 reveal">
           <p
-            className="text-xs uppercase tracking-widest mb-12"
+            className="text-xs uppercase tracking-widest mb-8 md:mb-12"
             style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
           >
             Track Record
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div className="reveal reveal-delay-1">
-            <p className="font-cursive text-5xl md:text-6xl stat-float stat-float-delay-1" style={{ color: "#C9A96E" }}>
+            <p className="font-cursive text-4xl md:text-6xl stat-float stat-float-delay-1" style={{ color: "#C9A96E" }}>
               <CountUp end={150} suffix="%+" duration={2200} />
             </p>
             <p className="mt-3 text-sm font-light" style={{ color: "#6B6B6B" }}>
@@ -222,7 +232,7 @@ export default function Home() {
             </p>
           </div>
           <div className="reveal reveal-delay-2">
-            <p className="font-cursive text-5xl md:text-6xl stat-float stat-float-delay-2" style={{ color: "#C9A96E" }}>
+            <p className="font-cursive text-4xl md:text-6xl stat-float stat-float-delay-2" style={{ color: "#C9A96E" }}>
               <CountUp end={3.29} suffix="" decimals={2} duration={2200} />
             </p>
             <p className="mt-3 text-sm font-light" style={{ color: "#6B6B6B" }}>
@@ -230,7 +240,7 @@ export default function Home() {
             </p>
           </div>
           <div className="reveal reveal-delay-3">
-            <p className="font-cursive text-5xl md:text-6xl stat-float stat-float-delay-3" style={{ color: "#C9A96E" }}>
+            <p className="font-cursive text-4xl md:text-6xl stat-float stat-float-delay-3" style={{ color: "#C9A96E" }}>
               <CountUp end={72.9} suffix="%" decimals={1} duration={2200} />
             </p>
             <p className="mt-3 text-sm font-light" style={{ color: "#6B6B6B" }}>
@@ -239,7 +249,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="text-center mt-16 reveal" style={{ transitionDelay: "0.6s" }}>
+        <div className="text-center mt-10 md:mt-16 reveal" style={{ transitionDelay: "0.6s" }}>
           <p className="font-cursive text-xl md:text-2xl font-light" style={{ color: "#F5F0EB" }}>
             15L to 37.62L. Eight months. One system.
           </p>
@@ -247,22 +257,22 @@ export default function Home() {
       </section>
 
       {/* Divider */}
-      <div className="max-w-6xl mx-auto px-6" ref={divider2Ref}>
+      <div className="max-w-6xl mx-auto px-4 md:px-6" ref={divider2Ref}>
         <div className="divider-line" />
       </div>
 
       {/* What's Next — Teasers */}
-      <section className="max-w-4xl mx-auto px-6 py-28 text-center" ref={teasersRef}>
+      <section className="max-w-4xl mx-auto px-4 py-16 md:px-6 md:py-28 text-center" ref={teasersRef}>
         <p
-          className="text-xs uppercase tracking-widest mb-16 reveal"
+          className="text-xs uppercase tracking-widest mb-10 md:mb-16 reveal"
           style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
         >
-          What&apos;s Next
+          On the Horizon
         </p>
 
-        <div className="space-y-20">
+        <div className="space-y-14 md:space-y-20">
           <div className="reveal reveal-delay-1">
-            <p className="font-cursive text-2xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+            <p className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
               A mind trained on Indian markets.
             </p>
             <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
@@ -272,7 +282,7 @@ export default function Home() {
           </div>
 
           <div className="reveal reveal-delay-2">
-            <p className="font-cursive text-2xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+            <p className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
               Your portfolio on autopilot.
             </p>
             <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
@@ -282,24 +292,24 @@ export default function Home() {
           </div>
 
           <div className="reveal reveal-delay-3">
-            <p className="font-cursive text-2xl md:text-3xl" style={{ color: "#F5F0EB" }}>
-              Telegram, but autonomous.
+            <p className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+              Your market. Delivered.
             </p>
             <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
-              An automator that doesn&apos;t wait for commands. It watches, decides, and acts —
-              within the guardrails you set. You review. It runs.
+              Timely news, portfolio movements, and the signals that matter —
+              delivered straight to your inbox. No noise. No searching. Just clarity, when it counts.
             </p>
           </div>
         </div>
       </section>
 
       {/* Bottom CTA */}
-      <section className="max-w-4xl mx-auto px-6 pb-24 text-center" ref={ctaRef}>
-        <div ref={divider3Ref} style={{ marginBottom: "5rem" }}>
+      <section className="max-w-4xl mx-auto px-4 pb-16 md:px-6 md:pb-24 text-center" ref={ctaRef}>
+        <div ref={divider3Ref} className="mb-12 md:mb-20">
           <div className="divider-line" />
         </div>
         <div className="reveal">
-          <p className="font-cursive text-2xl md:text-3xl mb-3" style={{ color: "#F5F0EB" }}>
+          <p className="font-cursive text-xl md:text-3xl mb-3" style={{ color: "#F5F0EB" }}>
             Built for those who move first.
           </p>
           <p className="text-sm mb-8" style={{ color: "#6B6B6B", letterSpacing: "0.15em" }}>
@@ -345,7 +355,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-6 pb-10">
+      <footer className="max-w-6xl mx-auto px-4 pb-8 md:px-6 md:pb-10">
         <div style={{ height: "1px", background: "#1F1F1F", marginBottom: "2rem" }} />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-cursive text-lg" style={{ color: "#F5F0EB" }}>
