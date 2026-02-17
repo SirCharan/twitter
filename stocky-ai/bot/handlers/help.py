@@ -27,6 +27,7 @@ Talk to me in plain English or use commands.
 <b>Market:</b>
   /price &lt;symbol&gt;
   /analyse &lt;symbol&gt;
+  /news [symbol] — market headlines (or stock-specific)
 
 <b>Alerts:</b>
   /alert &lt;symbol&gt; &lt;above|below&gt; &lt;price&gt;

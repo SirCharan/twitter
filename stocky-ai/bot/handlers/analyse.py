@@ -16,10 +16,11 @@ logger = logging.getLogger(__name__)
 
 # RSS feeds for Indian market news
 NEWS_FEEDS = [
-    ("MoneyControl", "https://www.moneycontrol.com/rss/MCtopnews.xml"),
-    ("MoneyControl Stocks", "https://www.moneycontrol.com/rss/marketreports.xml"),
-    ("LiveMint", "https://www.livemint.com/rss/markets"),
+    ("LiveMint Markets", "https://www.livemint.com/rss/markets"),
+    ("LiveMint Companies", "https://www.livemint.com/rss/companies"),
     ("ET Markets", "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms"),
+    ("ET Stocks", "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms"),
+    ("NDTV Profit", "https://feeds.feedburner.com/ndtvprofit-latest"),
 ]
 
 POSITIVE_KEYWORDS = [

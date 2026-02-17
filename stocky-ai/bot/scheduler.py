@@ -5,6 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.alerts import check_alerts
 from bot.config import ALERT_CHECK_INTERVAL_SECONDS, ALLOWED_USER_IDS
 from bot.exit_rules import check_exit_rules
+from bot.handlers.news import send_morning_digest
 from bot.kite_auth import auto_login
 from bot.max_loss import check_and_enforce_max_loss, reset_daily_max_loss
 
@@ -70,6 +71,18 @@ def setup_scheduler(app):
         args=[kite_client, bot, chat_id],
         id="max_loss_check",
         misfire_grace_time=30,
+    )
+
+    # Morning news digest at 8:30 AM IST daily
+    scheduler.add_job(
+        send_morning_digest,
+        "cron",
+        hour=8,
+        minute=30,
+        timezone="Asia/Kolkata",
+        args=[bot, chat_id],
+        id="morning_digest",
+        misfire_grace_time=300,
     )
 
     # Reset trades_blocked at 9:00 AM IST daily

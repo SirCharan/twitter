@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 
 from bot.auth_check import authorized
 from bot import ai_client, database
-from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, portfolio, stoploss, trading, usage
+from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, news, portfolio, stoploss, trading, usage
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +179,13 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if m:
         return "price", [m.group(1).strip().upper()]
 
+    # --- News ---
+    if re.match(r"^(news|headlines|market news|latest news|morning digest)\s*$", lower):
+        return "news", []
+    m = re.match(r"(?:news|headlines)\s+(?:on\s+|for\s+|about\s+)?(.+)\s*$", lower)
+    if m:
+        return "news", m.group(1).strip().upper().split()
+
     # --- Analyse ---
     m = re.match(r"(?:analy[sz]e|analysis(?:\s+of)?)\s+(.+)\s*$", lower)
     if m:
@@ -225,6 +232,7 @@ DISPATCH = {
     "maxloss": maxloss.maxloss_command,
     "price": market.price,
     "analyse": analyse.analyse,
+    "news": news.news_command,
     "usage": usage.usage_command,
 }
 
@@ -238,12 +246,12 @@ async def _ai_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE, text:
     try:
         parsed = await ai_client.interpret_intent(text, user_name=name)
     except Exception as e:
-        logger.error(f"Groq fallback failed: {e}")
+        logger.error(f"AI fallback failed: {e}")
         await _offer_fallback_choices(update, name)
         return
 
     if not parsed:
-        # Groq unavailable (no API key)
+        # AI unavailable (no API key)
         await update.message.reply_text(
             random.choice(CONFUSED_RESPONSES).format(name=name),
             parse_mode="HTML",
@@ -296,7 +304,7 @@ async def _ai_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE, text:
 
 
 async def _offer_fallback_choices(update: Update, name: str):
-    """When Groq errors out, ask user to pick a quick action."""
+    """When AI errors out, ask user to pick a quick action."""
     keyboard = [
         [
             InlineKeyboardButton("Portfolio", callback_data="fallback_portfolio"),

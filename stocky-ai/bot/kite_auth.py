@@ -52,8 +52,19 @@ def _auto_login_sync() -> str:
         "twofa_value": twofa_value,
     })
 
-    # Step 4: Follow redirect to extract request_token from URL
-    redirect_url = session.get(login_page_url + "&skip_session=true", allow_redirects=True).url
+    # Step 4: Get redirect URL without following to localhost (fails on servers)
+    resp = session.get(login_page_url + "&skip_session=true", allow_redirects=False)
+    # The redirect chain may go through multiple hops before hitting localhost
+    while resp.is_redirect:
+        next_url = resp.headers["Location"]
+        parsed = urlparse(next_url)
+        # Stop before following the redirect to localhost/127.0.0.1
+        if parsed.hostname in ("127.0.0.1", "localhost"):
+            redirect_url = next_url
+            break
+        resp = session.get(next_url, allow_redirects=False)
+    else:
+        redirect_url = resp.url
     request_token = parse_qs(urlparse(redirect_url).query)["request_token"][0]
 
     # Step 5: Exchange request_token for access_token
