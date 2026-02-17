@@ -428,6 +428,89 @@ def _get_fundamental_data(ticker: yf.Ticker) -> tuple[str, float]:
 
 
 # ---------------------------------------------------------------------------
+# QUARTERLY RESULTS — revenue, net income, EPS trend (yfinance)
+# ---------------------------------------------------------------------------
+
+def _get_quarterly_results(ticker: yf.Ticker) -> str:
+    """Last 4 quarters of revenue, net income, EPS from yfinance."""
+    try:
+        qis = ticker.quarterly_income_stmt
+        if qis is None or qis.empty:
+            return ""
+    except Exception:
+        return ""
+
+    # Columns are dates (most recent first), rows are line items
+    cols = list(qis.columns[:4])  # last 4 quarters
+    if not cols:
+        return ""
+
+    lines = ["Quarterly Results:"]
+    header_parts = ["         "]
+    for col in cols:
+        q_label = col.strftime("%b'%y")
+        header_parts.append(f"{q_label:>10}")
+    lines.append("".join(header_parts))
+
+    for label, row_names in [
+        ("Revenue", ["Total Revenue", "Operating Revenue"]),
+        ("Net Inc", ["Net Income", "Net Income Common Stockholders"]),
+        ("EPS", ["Basic EPS", "Diluted EPS"]),
+    ]:
+        row_data = None
+        for rn in row_names:
+            if rn in qis.index:
+                row_data = qis.loc[rn]
+                break
+        if row_data is None:
+            continue
+
+        parts = [f"{label:>9}"]
+        for col in cols:
+            val = row_data.get(col)
+            if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                val = float(val)
+                if label == "EPS":
+                    parts.append(f"{val:>10.2f}")
+                elif abs(val) >= 1e9:
+                    parts.append(f"{val/1e9:>9.1f}B")
+                elif abs(val) >= 1e7:
+                    parts.append(f"{val/1e7:>9.1f}Cr")
+                else:
+                    parts.append(f"{val:>10,.0f}")
+            else:
+                parts.append(f"{'—':>10}")
+        lines.append("".join(parts))
+
+    return "\n".join(lines) if len(lines) > 2 else ""
+
+
+# ---------------------------------------------------------------------------
+# SHAREHOLDING — promoter/institutional/public from yfinance
+# ---------------------------------------------------------------------------
+
+def _get_shareholding(ticker: yf.Ticker) -> str:
+    """Shareholding breakdown from yfinance major_holders."""
+    try:
+        mh = ticker.major_holders
+        if mh is None or mh.empty:
+            return ""
+    except Exception:
+        return ""
+
+    lines = ["Shareholding:"]
+    for _, row in mh.iterrows():
+        pct = row.iloc[0]
+        desc = row.iloc[1]
+        if isinstance(pct, (int, float)):
+            lines.append(f"  {desc}: {pct:.2f}%")
+        else:
+            lines.append(f"  {desc}: {pct}")
+
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+# ---------------------------------------------------------------------------
 # NEWS SCORE — RSS with per-article sentiment, better matching
 # ---------------------------------------------------------------------------
 
@@ -547,7 +630,7 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     ticker = yf.Ticker(yf_symbol)
 
-    # Run all three analyses
+    # Run all analyses
     await log_api_call("yfinance", "fundamental_data")
     fundamental_text, fundamental_score = await loop.run_in_executor(
         None, _get_fundamental_data, ticker
@@ -560,6 +643,9 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     news_text, news_score = await loop.run_in_executor(
         None, _get_news_data, news_terms
     )
+    await log_api_call("yfinance", "quarterly_results")
+    quarterly_text = await loop.run_in_executor(None, _get_quarterly_results, ticker)
+    shareholding_text = await loop.run_in_executor(None, _get_shareholding, ticker)
 
     # Overall: sum of all three (0-30)
     overall = round(fundamental_score + technical_score + news_score, 1)
@@ -571,8 +657,10 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = stock_input.upper()
 
     # Stocky's verdict — try AI first, fall back to hardcoded
+    qr_section = f"\n{quarterly_text}" if quarterly_text else ""
+    sh_section = f"\n{shareholding_text}" if shareholding_text else ""
     data_summary = (
-        f"Fundamental: {fundamental_score}/10\n{fundamental_text}\n\n"
+        f"Fundamental: {fundamental_score}/10\n{fundamental_text}{sh_section}{qr_section}\n\n"
         f"Technical: {technical_score}/10\n{technical_text}\n\n"
         f"News: {news_score}/10\n{news_text}\n\n"
         f"Overall: {overall}/30"
@@ -595,12 +683,20 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         verdict = "Everything is broken here. Trend, fundamentals, sentiment — all negative. Stay away."
 
+    # Build fundamental section with optional quarterly/shareholding
+    fund_parts = [fundamental_text]
+    if shareholding_text:
+        fund_parts.append(shareholding_text)
+    if quarterly_text:
+        fund_parts.append(quarterly_text)
+    full_fundamental = "\n\n".join(fund_parts)
+
     message = (
         f"<b>{name}</b>\n"
         f"<b>Overall: {_score_bar(overall, 30)}</b>\n"
         f"{'=' * 30}\n\n"
         f"<b>FUNDAMENTAL</b> {_score_bar(fundamental_score)}\n"
-        f"{fundamental_text}\n\n"
+        f"{full_fundamental}\n\n"
         f"{'=' * 30}\n\n"
         f"<b>TECHNICAL</b> {_score_bar(technical_score)}\n"
         f"{technical_text}\n\n"
