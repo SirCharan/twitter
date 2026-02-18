@@ -69,10 +69,13 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
       {/* AI-generated summary */}
       {(data.ai_summary as string) && (
         <div
-          className="mt-3 rounded-lg border px-3 py-2.5"
-          style={{ borderColor: "rgba(201,169,110,0.2)", background: "rgba(201,169,110,0.04)" }}
+          className="mt-3 rounded-lg border-l-2 px-3 py-2"
+          style={{ borderColor: "var(--accent)", background: "var(--surface)" }}
         >
-          <p className="text-[11px] italic leading-snug" style={{ color: "var(--accent)" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+            Stocky's Summary
+          </p>
+          <p className="mt-1 text-sm leading-snug" style={{ color: "var(--foreground)" }}>
             {data.ai_summary as string}
           </p>
         </div>

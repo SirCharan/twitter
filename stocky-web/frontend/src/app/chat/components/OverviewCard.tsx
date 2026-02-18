@@ -155,14 +155,31 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         </div>
       )}
 
-      {/* Market summary line */}
-      {d.summary && (
-        <p
-          className="mt-2 text-center text-[11px] italic"
-          style={{ color: "var(--muted)" }}
-        >
-          {d.summary}
-        </p>
+      {/* Market summary */}
+      {(d.summary || (d.gainers?.length > 0) || (d.losers?.length > 0)) && (
+        <div className="mt-1 rounded-lg border-l-2 px-3 py-2"
+          style={{ borderColor: "var(--accent)", background: "var(--surface)" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+            Stocky's Summary
+          </p>
+          {d.summary && (
+            <p className="mt-1 text-sm leading-snug" style={{ color: "var(--foreground)" }}>
+              {d.summary}
+            </p>
+          )}
+          {d.gainers?.[0] && (
+            <p className="mt-1 text-sm leading-snug" style={{ color: "var(--foreground)" }}>
+              Top gainer: {d.gainers[0].symbol} +{d.gainers[0].pct_change.toFixed(1)}%
+              {d.gainers[1] ? `, followed by ${d.gainers[1].symbol} +${d.gainers[1].pct_change.toFixed(1)}%` : ""}.
+            </p>
+          )}
+          {d.losers?.[0] && (
+            <p className="mt-0.5 text-sm leading-snug" style={{ color: "var(--foreground)" }}>
+              Biggest drag: {d.losers[0].symbol} {d.losers[0].pct_change.toFixed(1)}%
+              {d.losers[1] ? `, ${d.losers[1].symbol} ${d.losers[1].pct_change.toFixed(1)}%` : ""}.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
