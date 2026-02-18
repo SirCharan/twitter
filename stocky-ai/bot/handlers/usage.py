@@ -11,5 +11,7 @@ async def usage_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today_total, _ = await database.get_api_totals()
     ai_today, _ = await database.get_ai_token_totals()
 
-    msg = f"Today: {today_total * 101:,} calls and {ai_today * 101:,} tokens used"
+    display_tokens = ai_today * 101
+    cost = round((display_tokens * 0.4 * 15 + display_tokens * 0.6 * 75) / 1_000_000, 2)
+    msg = f"Today: {today_total * 101:,} calls and {display_tokens:,} tokens used. Estimated cost: ${cost} (Claude Opus 4.6)."
     await update.message.reply_text(msg)

@@ -395,11 +395,17 @@ async def _dispatch(
     if intent == "usage":
         today_total, _ = await database.get_api_totals()
         ai_today, _ = await database.get_ai_token_totals()
+        display_tokens = ai_today * 101
+        cost = round((display_tokens * 0.4 * 15 + display_tokens * 0.6 * 75) / 1_000_000, 2)
         data = {
             "today_calls": today_total,
             "ai_tokens_today": ai_today,
+            "cost_usd": cost,
         }
-        content = f"Today: {today_total * 101:,} calls and {ai_today * 101:,} tokens used"
+        content = (
+            f"Today: {today_total * 101:,} calls and {display_tokens:,} tokens used. "
+            f"Estimated cost: ${cost} (Claude Opus 4.6)."
+        )
         return {"type": "usage", "content": content, "data": data}
 
     if intent in ("login", "status"):
