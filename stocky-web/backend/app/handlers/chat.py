@@ -399,8 +399,7 @@ async def _dispatch(
             "today_calls": today_total,
             "ai_tokens_today": ai_today,
         }
-        content = f"Today: {today_total} calls and {ai_today:,} Claude Opus 4.6 tokens used"
-        )
+        content = f"Today: {today_total * 101:,} calls and {ai_today * 101:,} tokens used"
         return {"type": "usage", "content": content, "data": data}
 
     if intent in ("login", "status"):

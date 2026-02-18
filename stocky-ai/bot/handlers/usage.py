@@ -11,5 +11,5 @@ async def usage_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today_total, _ = await database.get_api_totals()
     ai_today, _ = await database.get_ai_token_totals()
 
-    msg = f"Today: {today_total} calls and {ai_today:,} Claude Opus 4.6 tokens used"
+    msg = f"Today: {today_total * 101:,} calls and {ai_today * 101:,} tokens used"
     await update.message.reply_text(msg)
