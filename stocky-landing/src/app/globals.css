@@ -156,3 +156,14 @@ input::placeholder {
     animation: none;
   }
 }
+
+/* Convergence section: animated dashes flowing toward Stocky */
+@keyframes flow-in {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.flow-line {
+  stroke-dasharray: 6 4;
+  animation: flow-in 1.4s linear infinite;
+}

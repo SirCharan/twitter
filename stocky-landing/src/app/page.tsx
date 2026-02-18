@@ -117,6 +117,8 @@ export default function Home() {
   const divider1Ref = useScrollReveal();
   const divider2Ref = useScrollReveal();
   const divider3Ref = useScrollReveal();
+  const convergenceDivRef = useScrollReveal();
+  const convergenceRef = useScrollReveal();
 
   return (
     <main className="min-h-screen">
@@ -299,6 +301,179 @@ export default function Home() {
               Timely news, portfolio movements, and the signals that matter —
               delivered straight to your inbox. No noise. No searching. Just clarity, when it counts.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6" ref={convergenceDivRef}>
+        <div className="divider-line" />
+      </div>
+
+      {/* Convergence — "Five tools. One conversation." */}
+      <section className="max-w-4xl mx-auto px-4 py-16 md:px-6 md:py-24 text-center" ref={convergenceRef}>
+        <p
+          className="text-xs uppercase tracking-widest mb-3 reveal"
+          style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
+        >
+          One Platform
+        </p>
+        <p className="font-cursive text-2xl md:text-4xl mb-3 reveal reveal-delay-1" style={{ color: "#F5F0EB" }}>
+          Five tools. One conversation.
+        </p>
+        <p className="text-sm mb-10 md:mb-14 reveal reveal-delay-2" style={{ color: "#6B6B6B" }}>
+          News · Research · Options · Analysis · Trading — all in Stocky.
+        </p>
+
+        {/* Desktop hub-and-spoke */}
+        <div className="hidden md:block reveal reveal-delay-3">
+          {(() => {
+            // Node data: label, domain, capability, position as [left%, top%]
+            const nodes = [
+              { label: "Inshorts",  domain: "inshorts.com",       cap: "Market News",      lx: 4,  ly: 8  },
+              { label: "Tijori",    domain: "tijorifinance.com",   cap: "Stock Research",   lx: 28, ly: 0  },
+              { label: "LiveMint",  domain: "livemint.com",        cap: "Financial News",   lx: 62, ly: 0  },
+              { label: "Kite",      domain: "zerodha.com",         cap: "Trade Execution",  lx: 84, ly: 8  },
+              { label: "Sensibull", domain: "sensibull.com",       cap: "Options Trading",  lx: 16, ly: 52 },
+            ];
+            // Stocky center position (% of container)
+            const cx = 50; // %
+            const cy = 72; // %
+            const nodeW = 76; // px — approx node width for centering lines
+            const nodeH = 80; // px — approx node height
+
+            return (
+              <div className="relative mx-auto" style={{ height: 300, maxWidth: 700 }}>
+                {/* SVG animated lines */}
+                <svg
+                  className="absolute inset-0 w-full h-full"
+                  style={{ overflow: "visible" }}
+                  preserveAspectRatio="none"
+                >
+                  {nodes.map((n, i) => {
+                    // Node center in % → px-equivalent using viewBox 100x100 space
+                    const x1 = n.lx + 5.4; // approx center of node (node ~10.8% wide)
+                    const y1 = n.ly + 11;  // approx center of node (node ~22% tall)
+                    return (
+                      <line
+                        key={i}
+                        x1={`${x1}%`} y1={`${y1}%`}
+                        x2={`${cx}%`} y2={`${cy}%`}
+                        stroke="#C9A96E"
+                        strokeWidth="1"
+                        strokeOpacity="0.35"
+                        className="flow-line"
+                        style={{ animationDelay: `${i * 0.25}s` }}
+                      />
+                    );
+                  })}
+                </svg>
+
+                {/* Logo nodes */}
+                {nodes.map((n, i) => (
+                  <div
+                    key={i}
+                    className="absolute flex flex-col items-center gap-1.5"
+                    style={{ left: `${n.lx}%`, top: `${n.ly}%`, width: nodeW }}
+                  >
+                    <div
+                      className="flex items-center justify-center rounded-xl"
+                      style={{
+                        width: 52,
+                        height: 52,
+                        background: "#111",
+                        border: "1px solid #1F1F1F",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://logo.clearbit.com/${n.domain}`}
+                        alt={n.label}
+                        width={36}
+                        height={36}
+                        style={{ borderRadius: 6, objectFit: "contain" }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] font-medium leading-tight" style={{ color: "#F5F0EB" }}>
+                      {n.label}
+                    </p>
+                    <p className="text-[9px] leading-tight" style={{ color: "#4A4A4A" }}>
+                      {n.cap}
+                    </p>
+                  </div>
+                ))}
+
+                {/* Central Stocky node */}
+                <div
+                  className="absolute flex flex-col items-center gap-1.5"
+                  style={{ left: `${cx}%`, top: `${cy}%`, transform: "translate(-50%, -50%)" }}
+                >
+                  <div
+                    className="flex items-center justify-center rounded-2xl px-5 py-3"
+                    style={{
+                      background: "rgba(201,169,110,0.06)",
+                      border: "1.5px solid #C9A96E",
+                      boxShadow: "0 0 24px rgba(201,169,110,0.12)",
+                      minWidth: 96,
+                    }}
+                  >
+                    <span className="font-cursive text-xl" style={{ color: "#C9A96E" }}>
+                      Stocky
+                    </span>
+                  </div>
+                  <p className="text-[9px] uppercase tracking-widest" style={{ color: "#6B6B6B" }}>
+                    All-in-one
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Mobile: grid of chips → Stocky */}
+        <div className="flex flex-col items-center gap-6 md:hidden reveal reveal-delay-3">
+          <div className="flex flex-wrap justify-center gap-3">
+            {[
+              { label: "Inshorts",  domain: "inshorts.com",     cap: "News"     },
+              { label: "Tijori",    domain: "tijorifinance.com", cap: "Research" },
+              { label: "LiveMint",  domain: "livemint.com",      cap: "News"     },
+              { label: "Kite",      domain: "zerodha.com",       cap: "Trading"  },
+              { label: "Sensibull", domain: "sensibull.com",     cap: "Options"  },
+            ].map((n) => (
+              <div
+                key={n.label}
+                className="flex items-center gap-2 rounded-xl px-3 py-2"
+                style={{ background: "#111", border: "1px solid #1F1F1F" }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://logo.clearbit.com/${n.domain}`}
+                  alt={n.label}
+                  width={20}
+                  height={20}
+                  style={{ borderRadius: 4, objectFit: "contain" }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+                <span className="text-xs font-medium" style={{ color: "#F5F0EB" }}>{n.label}</span>
+              </div>
+            ))}
+          </div>
+          <svg width="2" height="32" viewBox="0 0 2 32">
+            <line x1="1" y1="0" x2="1" y2="32" stroke="#C9A96E" strokeWidth="1.5" strokeOpacity="0.4" strokeDasharray="4 3" />
+          </svg>
+          <div
+            className="flex items-center justify-center rounded-2xl px-6 py-3"
+            style={{
+              background: "rgba(201,169,110,0.06)",
+              border: "1.5px solid #C9A96E",
+              boxShadow: "0 0 20px rgba(201,169,110,0.1)",
+            }}
+          >
+            <span className="font-cursive text-xl" style={{ color: "#C9A96E" }}>Stocky</span>
           </div>
         </div>
       </section>
