@@ -310,7 +310,7 @@ export default function Home() {
         <div className="divider-line" />
       </div>
 
-      {/* Convergence — "Five tools. One conversation." */}
+      {/* Convergence — "Six tools. One conversation." */}
       <section className="max-w-4xl mx-auto px-4 py-16 md:px-6 md:py-24 text-center" ref={convergenceRef}>
         <p
           className="text-xs uppercase tracking-widest mb-3 reveal"
@@ -319,31 +319,28 @@ export default function Home() {
           One Platform
         </p>
         <p className="font-cursive text-2xl md:text-4xl mb-3 reveal reveal-delay-1" style={{ color: "#F5F0EB" }}>
-          Five tools. One conversation.
+          Six tools. One conversation.
         </p>
         <p className="text-sm mb-10 md:mb-14 reveal reveal-delay-2" style={{ color: "#6B6B6B" }}>
-          News · Research · Options · Analysis · Trading — all in Stocky.
+          News · Research · Options · Analysis · Data · Trading — all in Stocky.
         </p>
 
         {/* Desktop hub-and-spoke */}
         <div className="hidden md:block reveal reveal-delay-3">
           {(() => {
-            // Node data: label, domain, capability, position as [left%, top%]
             const nodes = [
-              { label: "Inshorts",  domain: "inshorts.com",       cap: "Market News",      lx: 4,  ly: 8  },
-              { label: "Tijori",    domain: "tijorifinance.com",   cap: "Stock Research",   lx: 28, ly: 0  },
-              { label: "LiveMint",  domain: "livemint.com",        cap: "Financial News",   lx: 62, ly: 0  },
-              { label: "Kite",      domain: "zerodha.com",         cap: "Trade Execution",  lx: 84, ly: 8  },
-              { label: "Sensibull", domain: "sensibull.com",       cap: "Options Trading",  lx: 16, ly: 52 },
+              { label: "Inshorts",      domain: "inshorts.com",        cap: "Market News",      lx: 2,  ly: 5  },
+              { label: "Tijori",        domain: "tijorifinance.com",   cap: "Stock Research",   lx: 24, ly: 0  },
+              { label: "LiveMint",      domain: "livemint.com",        cap: "Financial News",   lx: 60, ly: 0  },
+              { label: "Kite",          domain: "zerodha.com",         cap: "Trade Execution",  lx: 84, ly: 5  },
+              { label: "Sensibull",     domain: "sensibull.com",       cap: "Options Trading",  lx: 14, ly: 50 },
+              { label: "Moneycontrol",  domain: "moneycontrol.com",    cap: "Market Data",      lx: 68, ly: 50 },
             ];
-            // Stocky center position (% of container)
-            const cx = 50; // %
-            const cy = 72; // %
-            const nodeW = 76; // px — approx node width for centering lines
-            const nodeH = 80; // px — approx node height
+            const cx = 50;
+            const cy = 74;
 
             return (
-              <div className="relative mx-auto" style={{ height: 300, maxWidth: 700 }}>
+              <div className="relative mx-auto" style={{ height: 320, maxWidth: 700 }}>
                 {/* SVG animated lines */}
                 <svg
                   className="absolute inset-0 w-full h-full"
@@ -351,19 +348,18 @@ export default function Home() {
                   preserveAspectRatio="none"
                 >
                   {nodes.map((n, i) => {
-                    // Node center in % → px-equivalent using viewBox 100x100 space
-                    const x1 = n.lx + 5.4; // approx center of node (node ~10.8% wide)
-                    const y1 = n.ly + 11;  // approx center of node (node ~22% tall)
+                    const x1 = n.lx + 5;
+                    const y1 = n.ly + 10;
                     return (
                       <line
                         key={i}
                         x1={`${x1}%`} y1={`${y1}%`}
                         x2={`${cx}%`} y2={`${cy}%`}
                         stroke="#C9A96E"
-                        strokeWidth="1"
-                        strokeOpacity="0.35"
+                        strokeWidth="1.2"
+                        strokeOpacity="0.45"
                         className="flow-line"
-                        style={{ animationDelay: `${i * 0.25}s` }}
+                        style={{ animationDelay: `${i * 0.2}s` }}
                       />
                     );
                   })}
@@ -374,34 +370,43 @@ export default function Home() {
                   <div
                     key={i}
                     className="absolute flex flex-col items-center gap-1.5"
-                    style={{ left: `${n.lx}%`, top: `${n.ly}%`, width: nodeW }}
+                    style={{ left: `${n.lx}%`, top: `${n.ly}%`, width: 80 }}
                   >
                     <div
-                      className="flex items-center justify-center rounded-xl"
+                      className="flex items-center justify-center transition-shadow hover:shadow-[0_0_12px_rgba(201,169,110,0.15)]"
                       style={{
-                        width: 52,
-                        height: 52,
+                        width: 60,
+                        height: 60,
+                        borderRadius: 14,
                         background: "#111",
-                        border: "1px solid #1F1F1F",
+                        border: "1px solid rgba(255,255,255,0.07)",
                         overflow: "hidden",
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`https://logo.clearbit.com/${n.domain}`}
+                        src={`https://www.google.com/s2/favicons?domain=${n.domain}&sz=64`}
                         alt={n.label}
-                        width={36}
-                        height={36}
+                        width={44}
+                        height={44}
                         style={{ borderRadius: 6, objectFit: "contain" }}
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                          const el = e.currentTarget as HTMLImageElement;
+                          el.style.display = "none";
+                          const parent = el.parentElement;
+                          if (parent) {
+                            const span = document.createElement("span");
+                            span.textContent = n.label[0];
+                            span.style.cssText = "font-size:18px;font-weight:600;color:#C9A96E;";
+                            parent.appendChild(span);
+                          }
                         }}
                       />
                     </div>
-                    <p className="text-[10px] font-medium leading-tight" style={{ color: "#F5F0EB" }}>
+                    <p className="text-[11px] font-medium leading-tight" style={{ color: "#D4CAB8" }}>
                       {n.label}
                     </p>
-                    <p className="text-[9px] leading-tight" style={{ color: "#4A4A4A" }}>
+                    <p className="text-[9px] leading-tight" style={{ color: "#5A5A5A" }}>
                       {n.cap}
                     </p>
                   </div>
@@ -413,12 +418,12 @@ export default function Home() {
                   style={{ left: `${cx}%`, top: `${cy}%`, transform: "translate(-50%, -50%)" }}
                 >
                   <div
-                    className="flex items-center justify-center rounded-2xl px-5 py-3"
+                    className="flex items-center justify-center rounded-2xl px-6 py-3.5"
                     style={{
                       background: "rgba(201,169,110,0.06)",
                       border: "1.5px solid #C9A96E",
                       boxShadow: "0 0 24px rgba(201,169,110,0.12)",
-                      minWidth: 96,
+                      minWidth: 110,
                     }}
                   >
                     <span className="font-cursive text-xl" style={{ color: "#C9A96E" }}>
@@ -438,25 +443,36 @@ export default function Home() {
         <div className="flex flex-col items-center gap-6 md:hidden reveal reveal-delay-3">
           <div className="flex flex-wrap justify-center gap-3">
             {[
-              { label: "Inshorts",  domain: "inshorts.com",     cap: "News"     },
-              { label: "Tijori",    domain: "tijorifinance.com", cap: "Research" },
-              { label: "LiveMint",  domain: "livemint.com",      cap: "News"     },
-              { label: "Kite",      domain: "zerodha.com",       cap: "Trading"  },
-              { label: "Sensibull", domain: "sensibull.com",     cap: "Options"  },
+              { label: "Inshorts",      domain: "inshorts.com",      cap: "News"     },
+              { label: "Tijori",        domain: "tijorifinance.com", cap: "Research" },
+              { label: "LiveMint",      domain: "livemint.com",      cap: "News"     },
+              { label: "Kite",          domain: "zerodha.com",       cap: "Trading"  },
+              { label: "Sensibull",     domain: "sensibull.com",     cap: "Options"  },
+              { label: "Moneycontrol",  domain: "moneycontrol.com",  cap: "Data"     },
             ].map((n) => (
               <div
                 key={n.label}
                 className="flex items-center gap-2 rounded-xl px-3 py-2"
-                style={{ background: "#111", border: "1px solid #1F1F1F" }}
+                style={{ background: "#111", border: "1px solid rgba(255,255,255,0.07)" }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`https://logo.clearbit.com/${n.domain}`}
+                  src={`https://www.google.com/s2/favicons?domain=${n.domain}&sz=64`}
                   alt={n.label}
                   width={20}
                   height={20}
                   style={{ borderRadius: 4, objectFit: "contain" }}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  onError={(e) => {
+                    const el = e.currentTarget as HTMLImageElement;
+                    el.style.display = "none";
+                    const parent = el.parentElement;
+                    if (parent) {
+                      const span = document.createElement("span");
+                      span.textContent = n.label[0];
+                      span.style.cssText = "font-size:12px;font-weight:600;color:#C9A96E;";
+                      parent.appendChild(span);
+                    }
+                  }}
                 />
                 <span className="text-xs font-medium" style={{ color: "#F5F0EB" }}>{n.label}</span>
               </div>
@@ -488,7 +504,6 @@ export default function Home() {
             Built for those who move first.
           </p>
           <p className="text-sm mb-8" style={{ color: "#6B6B6B", letterSpacing: "0.15em" }}>
-            By invitation only.
           </p>
           {!submitted ? (
             <form
@@ -536,9 +551,6 @@ export default function Home() {
           <span className="font-cursive text-lg" style={{ color: "#F5F0EB" }}>
             Stocky
           </span>
-          <p className="text-xs" style={{ color: "#4A4A4A", letterSpacing: "0.15em" }}>
-            Performance is the only credential.
-          </p>
         </div>
       </footer>
     </main>
