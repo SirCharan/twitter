@@ -393,30 +393,13 @@ async def _dispatch(
         return {"type": "alerts", "content": content, "data": {"alerts": data}}
 
     if intent == "usage":
-        today_total, alltime_total = await database.get_api_totals()
-        ai_today, ai_alltime = await database.get_ai_token_totals()
-        # Claude Opus 4.6 pricing: $15/M input tokens, $75/M output tokens
-        # Show range since input/output split is not tracked separately
-        cost_today_min = round(ai_today * 15 / 1_000_000, 4)
-        cost_today_max = round(ai_today * 75 / 1_000_000, 4)
-        cost_alltime_min = round(ai_alltime * 15 / 1_000_000, 4)
-        cost_alltime_max = round(ai_alltime * 75 / 1_000_000, 4)
+        today_total, _ = await database.get_api_totals()
+        ai_today, _ = await database.get_ai_token_totals()
         data = {
             "today_calls": today_total,
-            "alltime_calls": alltime_total,
             "ai_tokens_today": ai_today,
-            "ai_tokens_alltime": ai_alltime,
-            "cost_today_min": cost_today_min,
-            "cost_today_max": cost_today_max,
-            "cost_alltime_min": cost_alltime_min,
-            "cost_alltime_max": cost_alltime_max,
         }
-        content = (
-            f"Today: {today_total} calls, {ai_today:,} Claude Opus 4.6 tokens "
-            f"(est. ${cost_today_min}–${cost_today_max})\n"
-            f"All time: {alltime_total} calls, {ai_alltime:,} tokens "
-            f"(est. ${cost_alltime_min}–${cost_alltime_max})\n"
-            f"Pricing: $15/M input · $75/M output (Claude Opus 4.6)"
+        content = f"Today: {today_total} calls and {ai_today:,} Claude Opus 4.6 tokens used"
         )
         return {"type": "usage", "content": content, "data": data}
 
