@@ -1,4 +1,5 @@
 import asyncio
+import html as html_mod
 import logging
 import re
 
@@ -18,20 +19,28 @@ logger = logging.getLogger(__name__)
 NEWS_FEEDS = [
     ("LiveMint Markets", "https://www.livemint.com/rss/markets"),
     ("LiveMint Companies", "https://www.livemint.com/rss/companies"),
+    ("Mint Money", "https://www.livemint.com/rss/money"),
     ("ET Markets", "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms"),
     ("ET Stocks", "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms"),
+    ("Moneycontrol", "https://www.moneycontrol.com/rss/latestnews.xml"),
+    ("CNBC-TV18", "https://www.cnbctv18.com/commonfeeds/v1/cne/rss/market.xml"),
+    ("Business Standard", "https://www.business-standard.com/rss/markets-106.rss"),
     ("NDTV Profit", "https://feeds.feedburner.com/ndtvprofit-latest"),
+    ("Hindu BusinessLine", "https://www.thehindubusinessline.com/markets/feeder/default.rss"),
 ]
+FEED_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; StockyAI/1.0)"}
 
 POSITIVE_KEYWORDS = [
     "growth", "beat", "surge", "positive", "upgrade", "rally", "gain",
     "rise", "jump", "profit", "bullish", "buy", "outperform", "record",
-    "strong", "boom", "recovery", "expand",
+    "strong", "boom", "recovery", "expand", "accumulate", "overweight",
+    "target raised", "price target hiked", "rerating",
 ]
 NEGATIVE_KEYWORDS = [
     "decline", "miss", "downgrade", "loss", "negative", "fall", "drop",
     "crash", "bearish", "sell", "underperform", "cut", "weak", "slump",
-    "debt", "risk", "warning",
+    "debt", "risk", "warning", "reduce", "avoid", "exit", "underweight",
+    "target cut", "downside", "sell rating",
 ]
 
 # Index aliases
@@ -437,52 +446,54 @@ def _get_quarterly_results(ticker: yf.Ticker) -> str:
         qis = ticker.quarterly_income_stmt
         if qis is None or qis.empty:
             return ""
+
+        cols = list(qis.columns[:4])
+        if not cols:
+            return ""
+
+        lines = ["Quarterly Results:"]
+        header_parts = ["         "]
+        for col in cols:
+            q_label = col.strftime("%b'%y")
+            header_parts.append(f"{q_label:>10}")
+        lines.append("".join(header_parts))
+
+        for label, row_names in [
+            ("Revenue", ["Total Revenue", "Operating Revenue"]),
+            ("Net Inc", ["Net Income", "Net Income Common Stockholders"]),
+            ("EPS", ["Basic EPS", "Diluted EPS"]),
+        ]:
+            row_data = None
+            for rn in row_names:
+                if rn in qis.index:
+                    row_data = qis.loc[rn]
+                    break
+            if row_data is None:
+                continue
+
+            parts = [f"{label:>9}"]
+            for col in cols:
+                try:
+                    val = row_data.get(col)
+                    if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                        val = float(val)
+                        if label == "EPS":
+                            parts.append(f"{val:>10.2f}")
+                        elif abs(val) >= 1e9:
+                            parts.append(f"{val/1e9:>9.1f}B")
+                        elif abs(val) >= 1e7:
+                            parts.append(f"{val/1e7:>9.1f}Cr")
+                        else:
+                            parts.append(f"{val:>10,.0f}")
+                    else:
+                        parts.append(f"{'—':>10}")
+                except (IndexError, KeyError, TypeError):
+                    parts.append(f"{'—':>10}")
+            lines.append("".join(parts))
+
+        return "\n".join(lines) if len(lines) > 2 else ""
     except Exception:
         return ""
-
-    # Columns are dates (most recent first), rows are line items
-    cols = list(qis.columns[:4])  # last 4 quarters
-    if not cols:
-        return ""
-
-    lines = ["Quarterly Results:"]
-    header_parts = ["         "]
-    for col in cols:
-        q_label = col.strftime("%b'%y")
-        header_parts.append(f"{q_label:>10}")
-    lines.append("".join(header_parts))
-
-    for label, row_names in [
-        ("Revenue", ["Total Revenue", "Operating Revenue"]),
-        ("Net Inc", ["Net Income", "Net Income Common Stockholders"]),
-        ("EPS", ["Basic EPS", "Diluted EPS"]),
-    ]:
-        row_data = None
-        for rn in row_names:
-            if rn in qis.index:
-                row_data = qis.loc[rn]
-                break
-        if row_data is None:
-            continue
-
-        parts = [f"{label:>9}"]
-        for col in cols:
-            val = row_data.get(col)
-            if val is not None and not (isinstance(val, float) and np.isnan(val)):
-                val = float(val)
-                if label == "EPS":
-                    parts.append(f"{val:>10.2f}")
-                elif abs(val) >= 1e9:
-                    parts.append(f"{val/1e9:>9.1f}B")
-                elif abs(val) >= 1e7:
-                    parts.append(f"{val/1e7:>9.1f}Cr")
-                else:
-                    parts.append(f"{val:>10,.0f}")
-            else:
-                parts.append(f"{'—':>10}")
-        lines.append("".join(parts))
-
-    return "\n".join(lines) if len(lines) > 2 else ""
 
 
 # ---------------------------------------------------------------------------
@@ -495,19 +506,24 @@ def _get_shareholding(ticker: yf.Ticker) -> str:
         mh = ticker.major_holders
         if mh is None or mh.empty:
             return ""
+        if len(mh.columns) < 2:
+            return ""
+
+        lines = ["Shareholding:"]
+        for _, row in mh.iterrows():
+            try:
+                pct = row.iloc[0]
+                desc = row.iloc[1]
+                if isinstance(pct, (int, float)):
+                    lines.append(f"  {desc}: {pct:.2f}%")
+                else:
+                    lines.append(f"  {desc}: {pct}")
+            except (IndexError, KeyError):
+                continue
+
+        return "\n".join(lines) if len(lines) > 1 else ""
     except Exception:
         return ""
-
-    lines = ["Shareholding:"]
-    for _, row in mh.iterrows():
-        pct = row.iloc[0]
-        desc = row.iloc[1]
-        if isinstance(pct, (int, float)):
-            lines.append(f"  {desc}: {pct:.2f}%")
-        else:
-            lines.append(f"  {desc}: {pct}")
-
-    return "\n".join(lines) if len(lines) > 1 else ""
 
 
 # ---------------------------------------------------------------------------
@@ -530,16 +546,20 @@ def _get_news_data(search_terms: list[str]) -> tuple[str, float]:
 
     for feed_name, feed_url in NEWS_FEEDS:
         try:
-            feed = feedparser.parse(feed_url)
+            feed = feedparser.parse(feed_url, request_headers=FEED_HEADERS)
             for entry in feed.entries[:30]:
                 title = entry.get("title", "")
                 summary = entry.get("summary", "") or entry.get("description", "") or ""
                 text = title + " " + summary
 
                 if any(p.search(text) for p in patterns):
-                    text_lower = text.lower()
-                    pos_count = sum(1 for kw in POSITIVE_KEYWORDS if kw in text_lower)
-                    neg_count = sum(1 for kw in NEGATIVE_KEYWORDS if kw in text_lower)
+                    title_lower = title.lower()
+                    body_lower = summary.lower()
+                    # Title keywords carry 3× weight — catches broker calls like "Reduce Wipro"
+                    pos_count = sum(3 for kw in POSITIVE_KEYWORDS if kw in title_lower) + \
+                                sum(1 for kw in POSITIVE_KEYWORDS if kw in body_lower)
+                    neg_count = sum(3 for kw in NEGATIVE_KEYWORDS if kw in title_lower) + \
+                                sum(1 for kw in NEGATIVE_KEYWORDS if kw in body_lower)
                     total = pos_count + neg_count + 1
                     sentiment = (pos_count - neg_count) / total
 
@@ -692,17 +712,27 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
         fund_parts.append(quarterly_text)
     full_fundamental = "\n\n".join(fund_parts)
 
+    # Escape HTML-special chars in dynamic content (< > & in SMA, news, etc.)
+    esc = html_mod.escape
+    full_fundamental = esc(full_fundamental)
+    technical_text = esc(technical_text)
+    news_text = esc(news_text)
+    verdict = esc(verdict)
+    name = esc(name)
+
+    sep = "\u2500" * 28
+
     message = (
         f"<b>{name}</b>\n"
         f"<b>Overall:</b> {_score_bar(overall, 30)}\n"
-        f"\u2500" * 28 + "\n\n"
+        f"{sep}\n\n"
         f"\u25B6 <b>Fundamental</b>  {_score_bar(fundamental_score)}\n"
         f"{full_fundamental}\n\n"
         f"\u25B6 <b>Technical</b>  {_score_bar(technical_score)}\n"
         f"{technical_text}\n\n"
         f"\u25B6 <b>News</b>  {_score_bar(news_score)}\n"
         f"{news_text}\n\n"
-        f"\u2500" * 28 + "\n"
+        f"{sep}\n"
         f"<b>Stocky's take:</b> {verdict}\n\n"
         f"<i>Not financial advice.</i>"
     )

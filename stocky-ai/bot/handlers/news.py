@@ -11,6 +11,7 @@ from bot.auth_check import authorized
 from bot.database import log_api_call
 from bot.handlers.analyse import (
     NEWS_FEEDS,
+    FEED_HEADERS,
     POSITIVE_KEYWORDS,
     NEGATIVE_KEYWORDS,
     STOCK_FULL_NAMES,
@@ -25,7 +26,7 @@ def _fetch_all_headlines(max_per_feed: int = 15) -> list[dict]:
     articles = []
     for feed_name, feed_url in NEWS_FEEDS:
         try:
-            feed = feedparser.parse(feed_url)
+            feed = feedparser.parse(feed_url, request_headers=FEED_HEADERS)
             for entry in feed.entries[:max_per_feed]:
                 title = entry.get("title", "").strip()
                 if not title:
@@ -38,10 +39,13 @@ def _fetch_all_headlines(max_per_feed: int = 15) -> list[dict]:
                     pub_date = entry.updated[:16]
 
                 summary = entry.get("summary", "") or entry.get("description", "") or ""
-                text = title + " " + summary
-                text_lower = text.lower()
-                pos = sum(1 for kw in POSITIVE_KEYWORDS if kw in text_lower)
-                neg = sum(1 for kw in NEGATIVE_KEYWORDS if kw in text_lower)
+                title_lower = title.lower()
+                body_lower = summary.lower()
+                # Title keywords carry 3× weight — catches broker calls like "Reduce Wipro"
+                pos = sum(3 for kw in POSITIVE_KEYWORDS if kw in title_lower) + \
+                      sum(1 for kw in POSITIVE_KEYWORDS if kw in body_lower)
+                neg = sum(3 for kw in NEGATIVE_KEYWORDS if kw in title_lower) + \
+                      sum(1 for kw in NEGATIVE_KEYWORDS if kw in body_lower)
                 total = pos + neg + 1
                 sentiment = (pos - neg) / total
 
@@ -51,6 +55,7 @@ def _fetch_all_headlines(max_per_feed: int = 15) -> list[dict]:
                     "link": link,
                     "date": pub_date,
                     "sentiment": sentiment,
+                    "_text": title + " " + summary,
                 })
         except Exception as e:
             logger.debug(f"Failed to parse {feed_name}: {e}")
@@ -67,7 +72,7 @@ def _filter_stock_news(articles: list[dict], search_terms: list[str]) -> list[di
         else:
             patterns.append(re.compile(re.escape(term), re.IGNORECASE))
 
-    return [a for a in articles if any(p.search(a["title"]) for p in patterns)]
+    return [a for a in articles if any(p.search(a.get("_text", a["title"])) for p in patterns)]
 
 
 def _format_article(article: dict, include_link: bool = True) -> str:
@@ -88,15 +93,16 @@ async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loop = asyncio.get_event_loop()
 
     await log_api_call("rss", "news_command")
-    articles = await loop.run_in_executor(None, _fetch_all_headlines)
-
-    if not articles:
-        await update.message.reply_text("No news available right now. RSS feeds might be down.")
-        return
 
     if args:
-        # Stock-specific news
+        # Stock-specific news — fetch more articles for better coverage
         stock_input = " ".join(args)
+        articles = await loop.run_in_executor(
+            None, lambda: _fetch_all_headlines(max_per_feed=40)
+        )
+        if not articles:
+            await update.message.reply_text("No news available right now. RSS feeds might be down.")
+            return
         _, nse_symbol, news_terms = _resolve_symbol(stock_input)
         filtered = _filter_stock_news(articles, news_terms)
 
@@ -112,17 +118,33 @@ async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lines = [_format_article(a) for a in filtered[:10]]
         message = header + "\n\n".join(lines)
     else:
-        # General market news — deduplicate by title, show top 12
+        articles = await loop.run_in_executor(None, _fetch_all_headlines)
+        if not articles:
+            await update.message.reply_text("No news available right now. RSS feeds might be down.")
+            return
+        # General market news — interleave sources, deduplicate
+        by_source: dict[str, list[dict]] = {}
+        for a in articles:
+            by_source.setdefault(a["source"], []).append(a)
+
+        interleaved = []
+        max_len = max((len(v) for v in by_source.values()), default=0)
+        sources_list = list(by_source.values())
+        for i in range(max_len):
+            for group in sources_list:
+                if i < len(group):
+                    interleaved.append(group[i])
+
         seen = set()
         unique = []
-        for a in articles:
+        for a in interleaved:
             key = a["title"].lower().strip()
             if key not in seen:
                 seen.add(key)
                 unique.append(a)
 
         header = "<b>Market Headlines</b>\n\n"
-        lines = [_format_article(a) for a in unique[:12]]
+        lines = [_format_article(a) for a in unique[:15]]
         message = header + "\n\n".join(lines)
 
     if len(message) > 4090:
