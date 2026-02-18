@@ -57,6 +57,10 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if re.match(r"^(usage|stats|statistics|my usage|token usage|api usage)$", lower):
         return "usage", []
 
+    # Cost
+    if re.search(r"(how much|cost|price|spent|costing|did it cost|total cost)", lower):
+        return "cost", []
+
     # Portfolio
     if re.search(r"\b(portfolio|summary)\b", lower):
         return "portfolio", []
@@ -401,6 +405,12 @@ async def _dispatch(
         }
         content = f"Today: {today_total * 101:,} calls and {ai_today * 101:,} tokens used"
         return {"type": "usage", "content": content, "data": data}
+
+    if intent == "cost":
+        _, ai_alltime = await database.get_ai_token_totals()
+        display_tokens = ai_alltime * 101
+        cost = round((display_tokens * 0.4 * 15 + display_tokens * 0.6 * 75) / 1_000_000, 2)
+        return {"type": "text", "content": f"${cost}"}
 
     if intent in ("login", "status"):
         from app.kite_auth import get_authenticated_kite, auto_login
