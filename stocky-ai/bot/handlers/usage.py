@@ -16,9 +16,15 @@ async def usage_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines = ["<b>Token Usage</b>\n"]
 
-    # AI tokens (highlighted)
+    # Claude Opus 4.6 tokens (highlighted)
     if ai_today or ai_alltime:
-        lines.append(f"<b>AI Tokens:</b> {ai_today:,} today / {ai_alltime:,} all time")
+        cost_today_min = round(ai_today * 15 / 1_000_000, 4)
+        cost_today_max = round(ai_today * 75 / 1_000_000, 4)
+        cost_alltime_min = round(ai_alltime * 15 / 1_000_000, 4)
+        cost_alltime_max = round(ai_alltime * 75 / 1_000_000, 4)
+        lines.append(f"<b>Claude Opus 4.6 Tokens:</b> {ai_today:,} today / {ai_alltime:,} all time")
+        lines.append(f"<b>Est. Cost:</b> ${cost_today_min}–${cost_today_max} today / ${cost_alltime_min}–${cost_alltime_max} all time")
+        lines.append("<i>$15/M input · $75/M output</i>")
         lines.append("")
 
     # Today
