@@ -26,10 +26,6 @@ async function apiFetch<T>(
   });
 
   if (res.status === 401) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("stocky_token");
-      window.location.href = "/login";
-    }
     throw new Error("Unauthorized");
   }
 
