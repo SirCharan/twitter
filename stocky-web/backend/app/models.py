@@ -1,0 +1,40 @@
+from pydantic import BaseModel
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class ChatRequest(BaseModel):
+    message: str
+    conversation_id: str | None = None
+
+
+class ChatResponse(BaseModel):
+    type: str
+    content: str
+    data: dict | None = None
+    action_id: str | None = None
+    conversation_id: str
+
+
+class TradeActionRequest(BaseModel):
+    action_id: str
+    action: str  # "confirm" or "cancel"
+
+
+class AlertRequest(BaseModel):
+    symbol: str
+    direction: str  # "above" or "below"
+    target_price: float

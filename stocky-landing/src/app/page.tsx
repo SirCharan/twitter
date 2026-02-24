@@ -319,22 +319,23 @@ export default function Home() {
           One Platform
         </p>
         <p className="font-cursive text-2xl md:text-4xl mb-3 reveal reveal-delay-1" style={{ color: "#F5F0EB" }}>
-          Six tools. One conversation.
+          Seven tools. One conversation.
         </p>
         <p className="text-sm mb-10 md:mb-14 reveal reveal-delay-2" style={{ color: "#6B6B6B" }}>
-          News · Research · Options · Analysis · Data · Trading — all in Stocky.
+          News · Research · Options · Analysis · Data · Charts · Trading — all in Stocky.
         </p>
 
         {/* Desktop hub-and-spoke */}
         <div className="hidden md:block reveal reveal-delay-3">
           {(() => {
             const nodes = [
-              { label: "Inshorts",      domain: "inshorts.com",        cap: "Market News",      lx: 2,  ly: 5  },
+              { label: "Inshorts",      domain: "inshorts.com",        cap: "Market News",      lx: 2,  ly: 4  },
               { label: "Tijori",        domain: "tijorifinance.com",   cap: "Stock Research",   lx: 24, ly: 0  },
               { label: "LiveMint",      domain: "livemint.com",        cap: "Financial News",   lx: 60, ly: 0  },
-              { label: "Kite",          domain: "zerodha.com",         cap: "Trade Execution",  lx: 84, ly: 5  },
-              { label: "Sensibull",     domain: "sensibull.com",       cap: "Options Trading",  lx: 14, ly: 50 },
-              { label: "Moneycontrol",  domain: "moneycontrol.com",    cap: "Market Data",      lx: 68, ly: 50 },
+              { label: "Kite",          domain: "zerodha.com",         cap: "Trade Execution",  lx: 84, ly: 4  },
+              { label: "Sensibull",     domain: "sensibull.com",       cap: "Options Trading",  lx: 6,  ly: 52 },
+              { label: "TradingView",   domain: "tradingview.com",     cap: "Charts & Analysis", lx: 40, ly: 52 },
+              { label: "Moneycontrol",  domain: "moneycontrol.com",    cap: "Market Data",      lx: 74, ly: 52 },
             ];
             const cx = 50;
             const cy = 74;
@@ -414,19 +415,27 @@ export default function Home() {
 
                 {/* Central Stocky node */}
                 <div
-                  className="absolute flex flex-col items-center gap-1.5"
+                  className="absolute flex flex-col items-center gap-2"
                   style={{ left: `${cx}%`, top: `${cy}%`, transform: "translate(-50%, -50%)" }}
                 >
                   <div
-                    className="flex items-center justify-center rounded-2xl px-6 py-3.5"
+                    className="flex items-center gap-3 rounded-2xl px-7 py-4"
                     style={{
-                      background: "rgba(201,169,110,0.06)",
+                      background: "#0D0D0D",
                       border: "1.5px solid #C9A96E",
-                      boxShadow: "0 0 24px rgba(201,169,110,0.12)",
-                      minWidth: 110,
+                      boxShadow: "0 0 32px rgba(201,169,110,0.15), 0 0 60px rgba(201,169,110,0.06)",
+                      minWidth: 140,
                     }}
                   >
-                    <span className="font-cursive text-xl" style={{ color: "#C9A96E" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/logo-mark.png"
+                      alt="Stocky"
+                      width={32}
+                      height={32}
+                      style={{ objectFit: "contain" }}
+                    />
+                    <span className="font-cursive text-2xl" style={{ color: "#C9A96E" }}>
                       Stocky
                     </span>
                   </div>
@@ -448,6 +457,7 @@ export default function Home() {
               { label: "LiveMint",      domain: "livemint.com",      cap: "News"     },
               { label: "Kite",          domain: "zerodha.com",       cap: "Trading"  },
               { label: "Sensibull",     domain: "sensibull.com",     cap: "Options"  },
+              { label: "TradingView",   domain: "tradingview.com",   cap: "Charts"   },
               { label: "Moneycontrol",  domain: "moneycontrol.com",  cap: "Data"     },
             ].map((n) => (
               <div
@@ -484,7 +494,7 @@ export default function Home() {
           <div
             className="flex items-center justify-center rounded-2xl px-6 py-3"
             style={{
-              background: "rgba(201,169,110,0.06)",
+              background: "#0D0D0D",
               border: "1.5px solid #C9A96E",
               boxShadow: "0 0 20px rgba(201,169,110,0.1)",
             }}

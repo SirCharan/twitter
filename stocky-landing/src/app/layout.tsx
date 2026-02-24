@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
 import "./globals.css";
@@ -61,6 +62,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-2NNX6VPP2E"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-2NNX6VPP2E');
+          `}
+        </Script>
+      </head>
       <body
         className={`${geistSans.variable} ${playfair.variable} antialiased`}
       >
