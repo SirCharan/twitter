@@ -77,6 +77,7 @@ export interface AnalysisData {
   };
   news: {
     score: number;
+    analysis?: string;
     articles: {
       source: string;
       title: string;
@@ -90,6 +91,12 @@ export interface AnalysisData {
     revenue?: number;
     net_income?: number;
     eps?: number;
+    revenue_qoq?: number;
+    revenue_yoy?: number;
+    net_income_qoq?: number;
+    net_income_yoy?: number;
+    eps_qoq?: number;
+    eps_yoy?: number;
   }[];
   shareholding?: { description: string; percentage: number | string }[];
   verdict: string;

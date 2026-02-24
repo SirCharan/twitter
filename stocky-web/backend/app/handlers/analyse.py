@@ -291,7 +291,7 @@ def _get_quarterly_results(ticker: yf.Ticker) -> list[dict]:
         if qis is None or qis.empty:
             return []
 
-        cols = list(qis.columns[:4])
+        cols = list(qis.columns[:8])
         if not cols:
             return []
 
@@ -313,7 +313,19 @@ def _get_quarterly_results(ticker: yf.Ticker) -> list[dict]:
                             pass
                         break
             quarters.append(q)
-        return quarters
+
+        # Compute QoQ and YoY deltas for the first 4 quarters using the older quarters as reference
+        for i in range(min(4, len(quarters))):
+            q = quarters[i]
+            for metric in ["revenue", "net_income", "eps"]:
+                if metric in q and q[metric]:
+                    if i + 1 < len(quarters) and metric in quarters[i + 1] and quarters[i + 1][metric]:
+                        prev = quarters[i + 1][metric]
+                        q[f"{metric}_qoq"] = round((q[metric] - prev) / abs(prev) * 100, 1)
+                    if i + 4 < len(quarters) and metric in quarters[i + 4] and quarters[i + 4][metric]:
+                        prev_yr = quarters[i + 4][metric]
+                        q[f"{metric}_yoy"] = round((q[metric] - prev_yr) / abs(prev_yr) * 100, 1)
+        return quarters[:4]
     except Exception:
         return []
 
@@ -392,6 +404,22 @@ def _get_news_data(search_terms: list[str]) -> tuple[list[dict], float]:
     return relevant[:10], news_score
 
 
+async def _generate_news_analysis(articles: list[dict], symbol_name: str) -> str | None:
+    """AI-generated 1-2 sentence summary of news sentiment and key theme."""
+    if not articles:
+        return None
+    titles = [a["title"] for a in articles[:6]]
+    prompt = (
+        f"Recent headlines about {symbol_name}:\n"
+        + "\n".join(f"- {t}" for t in titles)
+        + "\n\nSummarise the overall sentiment and key theme driving the news in 1-2 sentences. Direct, no fluff."
+    )
+    try:
+        return await ai_client.chat(prompt)
+    except Exception:
+        return None
+
+
 async def get_analysis(symbol: str) -> dict:
     """Full stock analysis — returns structured data for the frontend."""
     yf_symbol, nse_symbol, news_terms = _resolve_symbol(symbol)
@@ -424,6 +452,8 @@ async def get_analysis(symbol: str) -> dict:
     except Exception:
         name = symbol.upper()
 
+    news_analysis = await _generate_news_analysis(news_articles, name)
+
     # Build summary for AI verdict
     data_summary = (
         f"Fundamental: {fundamental_score}/10\n"
@@ -455,7 +485,7 @@ async def get_analysis(symbol: str) -> dict:
         "overall_score": overall,
         "fundamental": {"score": fundamental_score, **fundamental},
         "technical": {"score": technical_score, **technical},
-        "news": {"score": news_score, "articles": news_articles},
+        "news": {"score": news_score, "articles": news_articles, "analysis": news_analysis},
         "quarterly": quarterly,
         "shareholding": shareholding,
         "verdict": verdict,
