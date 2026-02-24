@@ -1,0 +1,151 @@
+# Stocky AI — Agent Navigation Guide
+
+This file helps AI coding agents (Claude Code, Cursor, etc.) navigate the monorepo quickly.
+
+---
+
+## Directory Map
+
+```
+stocky-ai/              Python Telegram bot. Entry: bot/main.py
+stocky-web/backend/     FastAPI REST API.    Entry: app/main.py
+stocky-web/frontend/    Next.js 15 chat UI.  Entry: src/app/chat/page.tsx
+stocky-landing/         Marketing site.      Entry: src/app/page.tsx
+                        !! SEPARATE REPO: SirCharan/stocky-landing !!
+```
+
+---
+
+## Key Files by Purpose
+
+| File | Purpose |
+|------|---------|
+| `stocky-ai/bot/handlers/nlp.py` | NLP dispatch: regex → chat_basic (8B) → intent (70B) |
+| `stocky-ai/bot/ai_client.py` | Groq client: chat(), chat_basic(), interpret_intent(), analyse_verdict() |
+| `stocky-ai/bot/handlers/analyse.py` | TG bot stock analysis (technical + fundamental + news) |
+| `stocky-ai/bot/kite_auth.py` | Zerodha TOTP auto-login (shared logic with web backend) |
+| `stocky-ai/bot/scheduler.py` | APScheduler: alert checks (15s), auto-login (7:40 AM IST) |
+| `stocky-web/backend/app/handlers/chat.py` | Web chat dispatch: regex → interpret_intent() → handler |
+| `stocky-web/backend/app/handlers/analyse.py` | Web stock analysis (same logic, async, returns structured JSON) |
+| `stocky-web/backend/app/ai_client.py` | Web Groq client: chat(msg, history=), interpret_intent(), analyse_verdict() |
+| `stocky-web/backend/app/auth.py` | JWT create/verify, bcrypt password hashing |
+| `stocky-web/backend/app/database.py` | All SQLite async CRUD — 8 tables |
+| `stocky-web/frontend/src/lib/types.ts` | All TypeScript interfaces (AnalysisData, PortfolioData, etc.) |
+| `stocky-web/frontend/src/lib/api.ts` | Typed fetch wrappers: sendMessage(), confirmTrade(), etc. |
+| `stocky-web/frontend/src/app/chat/components/AnalysisCard.tsx` | Main analysis UI with expand/collapse news + quarterly |
+| `stocky-web/frontend/src/app/chat/hooks/useChat.ts` | Chat state: messages, isLoading, sendMessage, confirmTrade |
+
+---
+
+## Databases
+
+Two separate SQLite databases. Same schema pattern, different paths.
+
+| DB | Used by | Path env var |
+|----|---------|-------------|
+| `stocky.db` | TG bot | `DB_PATH` (default: stocky.db) |
+| `stocky_web.db` | Web backend | `DB_PATH` (default: stocky_web.db) |
+
+### Tables (both DBs have similar structure)
+
+| Table | Key columns | Purpose |
+|-------|------------|---------|
+| `kite_session` | access_token, login_time | Cache Kite auth token (single row, id=1) |
+| `web_users` | username, password_hash | Web app login (web DB only) |
+| `conversations` | session_id, role, content, message_type, structured_data | Chat history |
+| `pending_actions` | action_id, action_type, action_data, status | Trade confirmation queue |
+| `alerts` | symbol, target_price, direction, triggered | Price alerts |
+| `trade_history` | order_id, symbol, txn_type, qty, price, status | Order log |
+| `command_log` | command, args, source, ts | Usage tracking |
+| `api_call_log` | service, endpoint, tokens, ts | Groq token/cost tracking |
+
+---
+
+## AI Model Routing
+
+### Telegram Bot (stocky-ai/bot/handlers/nlp.py)
+
+```
+User message
+    │
+    ▼
+_parse_natural()          ← regex NLP, zero AI cost
+    │ match → dispatch to handler
+    │ no match ↓
+    ▼
+_CHAT_RE match            ← greetings, "what is X", "explain Y"
+AND no _TRADING_TERMS     ← NOT buy/sell/nifty/price/portfolio etc.
+    │ yes → chat_basic()  ← llama-3.1-8b-instant (~0.5-1s)
+    │ no  ↓
+    ▼
+_ai_fallback()
+    → interpret_intent()  ← llama-3.3-70b-versatile (~1-3s)
+    → dispatch to handler
+```
+
+### Web Backend (stocky-web/backend/app/handlers/chat.py)
+
+```
+POST /api/chat
+    │
+    ▼
+_parse_natural()          ← same regex NLP
+    │ match → dispatch
+    │ no match ↓
+    ▼
+interpret_intent(text, history=last_10_msgs)
+    → llama-3.3-70b-versatile
+    → {intent, args, reply}
+    → dispatch to handler
+```
+
+---
+
+## Broker: Zerodha Kite Connect v5
+
+- Auto-login runs at startup via TOTP (`pyotp`)
+- Scheduler re-runs auto-login at 7:40 AM IST (before market open)
+- **One active session per API key** — whichever app called auto_login last holds the token
+- Token cached in `kite_session` table (row id=1, overwritten each login)
+- Both TG bot and web backend share the same Kite credentials
+
+---
+
+## News Sources (RSS)
+
+10 feeds polled in parallel:
+1. LiveMint Markets
+2. LiveMint Companies
+3. Mint Money
+4. ET Markets
+5. ET Stocks
+6. Moneycontrol
+7. CNBC-TV18
+8. Business Standard
+9. NDTV Profit
+10. Hindu BusinessLine
+
+Sentiment scoring: title keywords × 3 weight, body keywords × 1 weight.
+Positive/negative keyword lists in `handlers/analyse.py` and `handlers/news.py`.
+
+---
+
+## Critical Rules for AI Agents
+
+1. **Landing page changes**: ALWAYS push to `SirCharan/stocky-landing` separately. See `CLAUDE.md`.
+2. **Kite session**: Don't add a second login call — it will break the other app's session.
+3. **Two databases**: TG bot and web backend have separate DBs. Don't cross-reference them.
+4. **Token display multiplier**: `/usage` shows actual tokens × 101. This is intentional branding.
+5. **Cost formula**: `(tokens × 0.4 × $15 + tokens × 0.6 × $75) / 1M` — Claude Opus 4.6 pricing for display purposes, even though underlying model is Groq Llama.
+6. **`profit_margin`** in `_get_fundamental_data` is already stored as a percentage (multiplied by 100) in the result dict — don't multiply again in frontend.
+
+---
+
+## Common Patterns
+
+- TG bot handlers are decorated with `@authorized` (from `bot/auth_check.py`)
+- Web handlers use `get_current_user()` FastAPI dependency (JWT)
+- Both use identical Kite auth logic — compare `kite_auth.py` in both dirs if you see auth issues
+- `context.args` in TG bot holds command arguments as a list of strings
+- Web backend `interpret_intent()` passes last 4 messages as context (not full 10 — keeps intent parsing fast)
+- `analyse_verdict()` uses max_tokens=128 intentionally — verdict must be short
