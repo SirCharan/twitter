@@ -135,6 +135,30 @@ async def interpret_intent(text: str, user_name: str = "boss") -> dict | None:
         raise
 
 
+async def chat_basic(user_text: str) -> str:
+    """Answer greetings and general/educational questions using a fast 8B model."""
+    client = _get_client()
+    if not client:
+        return "Something went wrong."
+
+    try:
+        response = await client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_text},
+            ],
+            temperature=0.7,
+            max_tokens=200,
+        )
+        tokens = response.usage.total_tokens if response.usage else 0
+        await log_api_call("groq", "chat_basic", tokens)
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"Groq chat_basic error: {e}")
+        raise
+
+
 async def analyse_verdict(stock_name: str, data_summary: str) -> str | None:
     """AI-generated analysis verdict. Returns None if Groq unavailable."""
     client = _get_client()

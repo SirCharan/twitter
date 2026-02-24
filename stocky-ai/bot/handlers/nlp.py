@@ -11,6 +11,21 @@ from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, 
 
 logger = logging.getLogger(__name__)
 
+# Matches greetings and general/educational questions
+_CHAT_RE = re.compile(
+    r"^(hi|hello|hey|yo|sup|howdy|namaste|hiya|what'?s up|good\s+(morning|evening|afternoon|night))\b"
+    r"|^(who are you|what are you|who (made|built|created) you|tell me about yourself)"
+    r"|^(what is|what are|explain|how does|how do|tell me about|define|meaning of)\s+\w",
+    re.IGNORECASE,
+)
+
+# If any of these trading terms appear, skip basic chat and let the AI handle it
+_TRADING_TERMS = re.compile(
+    r"\b(buy|sell|price|ltp|portfolio|nifty|banknifty|sensex|order|position|holding"
+    r"|alert|stop.?loss|margin|trade|p&l|analyse|analysis|quote|overview)\b",
+    re.IGNORECASE,
+)
+
 
 # ---------------------------------------------------------------------------
 # Stocky's personality — direct, no-fluff, game-theoretic, confident
@@ -385,6 +400,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         fn = handler.__wrapped__ if hasattr(handler, "__wrapped__") else handler
         await fn(update, context)
+        return
+
+    # --- Conversational / educational question — use fast 8B model ---
+    if _CHAT_RE.search(text) and not _TRADING_TERMS.search(text):
+        try:
+            reply = await ai_client.chat_basic(text)
+            await update.message.reply_text(reply)
+        except Exception:
+            await _ai_fallback(update, context, text, name)
         return
 
     # --- Regex didn't match — ask Groq AI ---
