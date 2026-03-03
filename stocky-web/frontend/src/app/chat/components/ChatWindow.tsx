@@ -4,6 +4,8 @@ import type { ChatMessage } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
+import FeatureBar, { type FeatureId } from "./FeatureBar";
+import FeaturePanel from "./FeaturePanel";
 
 interface Props {
   messages: ChatMessage[];
@@ -16,17 +18,44 @@ interface Props {
 const QUICK_ACTIONS = [
   { label: "Market overview", text: "how's the market" },
   { label: "Check portfolio", text: "my portfolio" },
-  { label: "Latest news", text: "market news" },
+  { label: "Latest news",     text: "market news" },
 ];
 
 const ANALYSE_MODES = [
-  { id: "full",        label: "Full Analysis", msg: (s: string) => `how is ${s} doing` },
-  { id: "news",        label: "News",          msg: (s: string) => `${s} latest news` },
-  { id: "financials",  label: "Financials",    msg: (s: string) => `${s} quarterly results and financials` },
-  { id: "technical",   label: "Technical",     msg: (s: string) => `${s} technical analysis` },
+  { id: "full",       label: "Full Analysis", msg: (s: string) => `how is ${s} doing` },
+  { id: "news",       label: "News",          msg: (s: string) => `${s} latest news` },
+  { id: "financials", label: "Financials",    msg: (s: string) => `${s} quarterly results and financials` },
+  { id: "technical",  label: "Technical",     msg: (s: string) => `${s} technical analysis` },
 ] as const;
-
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
+
+/** Compose the chat message for each feature */
+function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
+  switch (feature) {
+    case "deep_research": {
+      const mode = params.mode ?? "full";
+      const modeLabel: Record<string, string> = {
+        full: "full deep research report",
+        news: "deep research focusing on news and sentiment",
+        broker: "deep research focusing on broker recommendations",
+        technical: "deep research focusing on technical analysis",
+      };
+      return `deep research on ${params.stock} — ${modeLabel[mode] ?? "full report"}`;
+    }
+    case "scan":
+      return `market scan — ${params.scan?.replace(/_/g, " ") ?? "volume pump"}`;
+    case "chart":
+      return `${params.type === "analysis" ? "analysis chart" : "chart"} for ${params.stock}`;
+    case "compare":
+      return `compare stocks: ${params.stocks}`;
+    case "ipo":
+      return "ipo tracker";
+    case "macro":
+      return "macro dashboard";
+    case "summarise":
+      return `summarise this:\n\n${params.text}`;
+  }
+}
 
 export default function ChatWindow({
   messages,
@@ -38,20 +67,21 @@ export default function ChatWindow({
   const bottomRef = useRef<HTMLDivElement>(null);
   const stockInputRef = useRef<HTMLInputElement>(null);
 
+  // Analyse a stock (empty state picker)
   const [analyseOpen, setAnalyseOpen] = useState(false);
   const [stockQuery, setStockQuery] = useState("");
   const [analyseMode, setAnalyseMode] = useState<AnalyseMode>("full");
   const [analyseNote, setAnalyseNote] = useState("");
 
+  // Feature bar
+  const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Focus input when picker opens
   useEffect(() => {
-    if (analyseOpen) {
-      setTimeout(() => stockInputRef.current?.focus(), 50);
-    }
+    if (analyseOpen) setTimeout(() => stockInputRef.current?.focus(), 50);
   }, [analyseOpen]);
 
   const showEmpty = messages.length === 0 && !isLoading;
@@ -63,11 +93,20 @@ export default function ChatWindow({
     let msg = mode.msg(stock);
     if (analyseNote.trim()) msg += ` — ${analyseNote.trim()}`;
     onSend(msg);
-    // Reset picker state
     setAnalyseOpen(false);
     setStockQuery("");
     setAnalyseMode("full");
     setAnalyseNote("");
+  }
+
+  function handleFeatureSend(feature: FeatureId, params: Record<string, string>) {
+    onSend(composeFeatureMessage(feature, params));
+    setActiveFeature(null);
+  }
+
+  function handleSend(text: string) {
+    setActiveFeature(null);
+    onSend(text);
   }
 
   return (
@@ -99,39 +138,31 @@ export default function ChatWindow({
             <div
               className="pointer-events-none absolute"
               style={{
-                width: 500,
-                height: 500,
+                width: 500, height: 500,
                 background: "radial-gradient(circle, rgba(201,169,110,0.03) 0%, transparent 70%)",
               }}
             />
             <div className="relative w-full max-w-sm text-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-mark.png"
-                alt="Stocky"
-                width={56}
-                height={56}
-                className="mx-auto mb-4"
-                style={{ objectFit: "contain", opacity: 0.85 }}
+                src="/logo-mark.png" alt="Stocky" width={56} height={56}
+                className="mx-auto mb-4" style={{ objectFit: "contain", opacity: 0.85 }}
               />
-              <p className="gradient-text-shimmer text-3xl font-light tracking-widest">
-                Stocky
-              </p>
+              <p className="gradient-text-shimmer text-3xl font-light tracking-widest">Stocky</p>
               <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>
                 Your AI trading assistant. Ask me anything.
               </p>
 
               {analyseOpen ? (
-                /* ── Grok-style stock picker ── */
+                /* Grok-style stock picker */
                 <div
                   className="mt-8 rounded-2xl border p-5 text-left"
                   style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
                 >
-                  {/* Header row */}
                   <div className="mb-4 flex items-center gap-3">
                     <button
                       onClick={() => setAnalyseOpen(false)}
-                      className="flex items-center gap-1 text-xs transition-opacity hover:opacity-70"
+                      className="flex items-center gap-1 text-xs hover:opacity-70"
                       style={{ color: "var(--muted)" }}
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -144,7 +175,6 @@ export default function ChatWindow({
                     </span>
                   </div>
 
-                  {/* Stock name input */}
                   <input
                     ref={stockInputRef}
                     type="text"
@@ -152,26 +182,22 @@ export default function ChatWindow({
                     onChange={(e) => setStockQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
                     placeholder="e.g. Reliance, TCS, HDFC Bank..."
-                    className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-colors"
-                    style={{
-                      borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
-                      color: "var(--foreground)",
-                    }}
+                    className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none"
+                    style={{ borderColor: stockQuery ? "var(--accent)" : "var(--card-border)", color: "var(--foreground)" }}
                   />
 
-                  {/* Mode chips */}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {ANALYSE_MODES.map((m) => {
-                      const selected = analyseMode === m.id;
+                      const sel = analyseMode === m.id;
                       return (
                         <button
                           key={m.id}
                           onClick={() => setAnalyseMode(m.id)}
                           className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
                           style={{
-                            borderColor: selected ? "var(--accent)" : "var(--card-border)",
-                            background: selected ? "rgba(201,169,110,0.08)" : "transparent",
-                            color: selected ? "var(--accent)" : "var(--muted)",
+                            borderColor: sel ? "var(--accent)" : "var(--card-border)",
+                            background: sel ? "rgba(201,169,110,0.08)" : "transparent",
+                            color: sel ? "var(--accent)" : "var(--muted)",
                           }}
                         >
                           {m.label}
@@ -180,20 +206,15 @@ export default function ChatWindow({
                     })}
                   </div>
 
-                  {/* Optional note */}
                   <textarea
                     value={analyseNote}
                     onChange={(e) => setAnalyseNote(e.target.value)}
                     placeholder="Add a custom note… (optional)"
                     rows={2}
-                    className="mt-4 w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-xs outline-none transition-colors"
-                    style={{
-                      borderColor: "var(--card-border)",
-                      color: "var(--foreground)",
-                    }}
+                    className="mt-4 w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-xs outline-none"
+                    style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}
                   />
 
-                  {/* Submit button */}
                   <button
                     onClick={handleAnalyseSubmit}
                     disabled={!stockQuery.trim()}
@@ -208,32 +229,21 @@ export default function ChatWindow({
                   </button>
                 </div>
               ) : (
-                /* ── Quick action chips ── */
+                /* Quick action chips */
                 <div className="mt-8 flex flex-wrap justify-center gap-2">
-                  {/* Analyse a stock — opens picker */}
                   <button
                     onClick={() => setAnalyseOpen(true)}
                     className="suggestion-chip rounded-full border px-4 py-2 text-xs"
-                    style={{
-                      borderColor: "var(--accent)",
-                      color: "var(--accent)",
-                      background: "rgba(201,169,110,0.06)",
-                    }}
+                    style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "rgba(201,169,110,0.06)" }}
                   >
                     Analyse a stock
                   </button>
-
-                  {/* Other chips — send immediately */}
                   {QUICK_ACTIONS.map((s) => (
                     <button
                       key={s.text}
-                      onClick={() => onSend(s.text)}
+                      onClick={() => handleSend(s.text)}
                       className="suggestion-chip rounded-full border px-4 py-2 text-xs"
-                      style={{
-                        borderColor: "var(--card-border)",
-                        color: "var(--foreground)",
-                        background: "transparent",
-                      }}
+                      style={{ borderColor: "var(--card-border)", color: "var(--foreground)", background: "transparent" }}
                     >
                       {s.label}
                     </button>
@@ -253,10 +263,26 @@ export default function ChatWindow({
         </div>
       </div>
 
-      {/* Input */}
+      {/* Input + Feature bar */}
       <div className="px-4 pb-4 pt-2">
         <div className="mx-auto max-w-3xl">
-          <ChatInput onSend={onSend} disabled={isLoading} />
+          {/* Feature panel (slide up above input) */}
+          {activeFeature && (
+            <FeaturePanel
+              feature={activeFeature}
+              onClose={() => setActiveFeature(null)}
+              onSend={handleSend}
+              onFeatureSend={handleFeatureSend}
+            />
+          )}
+
+          <ChatInput onSend={handleSend} disabled={isLoading} />
+
+          <FeatureBar
+            active={activeFeature}
+            onSelect={setActiveFeature}
+            disabled={isLoading}
+          />
         </div>
       </div>
     </div>
