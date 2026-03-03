@@ -13,3 +13,5 @@ yfinance==1.1.0
 feedparser==6.0.12
 nsetools==2.0.1
 numpy==2.2.0
+matplotlib==3.10.0
+httpx==0.28.1

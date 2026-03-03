@@ -130,3 +130,53 @@ export async function getKiteStatus(): Promise<{ connected: boolean }> {
 export async function triggerKiteLogin() {
   return apiFetch("/api/kite/login", { method: "POST" });
 }
+
+// --- Feature APIs ---
+
+export async function runScan(scanType: string) {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/scan", {
+    method: "POST",
+    body: JSON.stringify({ scan_type: scanType }),
+  });
+}
+
+export async function generateChart(stock: string, chartType: string) {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/chart", {
+    method: "POST",
+    body: JSON.stringify({ stock, chart_type: chartType }),
+  });
+}
+
+export async function compareStocks(stocks: string) {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/compare", {
+    method: "POST",
+    body: JSON.stringify({ stocks }),
+  });
+}
+
+export async function getIpo() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/ipo");
+}
+
+export async function getMacro() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/macro");
+}
+
+export async function summarise(text: string) {
+  return apiFetch<{ type: string; content: string }>("/api/summarise", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+}
+
+/** Stream deep research via SSE. Returns a ReadableStream. */
+export function streamResearch(stock: string, mode: string): Promise<Response> {
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return fetch(`${API_URL}/api/research`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ stock, mode }),
+  });
+}

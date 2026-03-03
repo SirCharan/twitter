@@ -188,6 +188,35 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if lower in ("status", "login status", "am i logged in", "am i logged in?"):
         return "status", []
 
+    # Feature chip messages (from FeaturePanel)
+    m = re.match(r"market scan\s*[—\-]\s*(.+)\s*$", lower)
+    if m:
+        return "scan", [m.group(1).strip().replace(" ", "_")]
+
+    m = re.match(r"(?:analysis )?chart for (.+)\s*$", lower)
+    if m:
+        chart_type = "analysis" if lower.startswith("analysis") else "tradingview"
+        return "chart", [m.group(1).strip().upper(), chart_type]
+
+    m = re.match(r"compare stocks?:\s*(.+)\s*$", lower)
+    if m:
+        return "compare", [m.group(1).strip()]
+
+    if re.match(r"^ipo tracker\s*$", lower):
+        return "ipo", []
+
+    if re.match(r"^macro dashboard\s*$", lower):
+        return "macro", []
+
+    m = re.match(r"summarise this:\s*\n\n(.+)\s*$", lower, re.DOTALL)
+    if m:
+        return "summarise", [m.group(1).strip()]
+
+    m = re.match(r"deep research on (.+?)\s*[—\-]\s*.+\s*$", lower)
+    if m:
+        # Deep research goes through SSE, but provide a fallback chat response
+        return "analyse", [m.group(1).strip().upper()]
+
     return None
 
 
@@ -425,5 +454,49 @@ async def _dispatch(
             if kite_obj:
                 return {"type": "text", "content": "Kite: Connected."}
             return {"type": "text", "content": "Kite: Not connected. Say 'login' to authenticate."}
+
+    if intent == "scan":
+        from app.handlers.scan import run_scan
+        scan_type = args[0] if args else "volume_pump"
+        data = await run_scan(scan_type)
+        return {"type": "scan", "content": f"Market scan — {scan_type.replace('_', ' ')}", "data": data}
+
+    if intent == "chart":
+        from app.handlers.chart import generate_chart
+        stock = args[0] if args else ""
+        chart_type = args[1] if len(args) > 1 else "tradingview"
+        if not stock:
+            return {"type": "text", "content": "Which stock?"}
+        data = await generate_chart(stock, chart_type)
+        return {"type": "chart", "content": f"Chart — {stock}", "data": data}
+
+    if intent == "compare":
+        from app.handlers.compare import compare_stocks
+        stocks_str = args[0] if args else ""
+        if not stocks_str:
+            return {"type": "text", "content": "Which stocks should I compare?"}
+        data = await compare_stocks(stocks_str)
+        return {"type": "compare", "content": f"Comparing: {stocks_str}", "data": data}
+
+    if intent == "ipo":
+        from app.handlers.ipo import get_ipo_data
+        data = await get_ipo_data()
+        return {"type": "ipo", "content": "IPO Tracker", "data": data}
+
+    if intent == "macro":
+        from app.handlers.macro import get_macro_data
+        data = await get_macro_data()
+        return {"type": "macro", "content": "Macro Dashboard", "data": data}
+
+    if intent == "summarise":
+        text = args[0] if args else ""
+        if not text:
+            return {"type": "text", "content": "Paste the text you want summarised."}
+        prompt = (
+            f"Summarise the following in 3 bullet points + 1-line TL;DR. "
+            f"Be concise and specific:\n\n{text[:3000]}"
+        )
+        summary = await ai_client.chat(prompt)
+        return {"type": "text", "content": summary or "Could not summarise."}
 
     return {"type": "text", "content": f"Unknown command: {intent}"}

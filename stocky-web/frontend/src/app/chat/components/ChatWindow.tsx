@@ -13,6 +13,7 @@ interface Props {
   onSend: (text: string) => void;
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
   onMenuClick: () => void;
+  onDeepResearch?: (stock: string, mode: string) => void;
 }
 
 const QUICK_ACTIONS = [
@@ -63,6 +64,7 @@ export default function ChatWindow({
   onSend,
   onTradeAction,
   onMenuClick,
+  onDeepResearch,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const stockInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +102,11 @@ export default function ChatWindow({
   }
 
   function handleFeatureSend(feature: FeatureId, params: Record<string, string>) {
-    onSend(composeFeatureMessage(feature, params));
+    if (feature === "deep_research" && onDeepResearch) {
+      onDeepResearch(params.stock || "", params.mode || "full");
+    } else {
+      onSend(composeFeatureMessage(feature, params));
+    }
     setActiveFeature(null);
   }
 

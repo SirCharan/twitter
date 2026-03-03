@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from app.auth import (
     create_access_token,
@@ -26,10 +27,15 @@ from app.handlers.trading import cancel_trade, confirm_trade
 from app.kite_auth import auto_login, get_authenticated_kite
 from app.models import (
     AlertRequest,
+    ChartRequest,
     ChatRequest,
     ChatResponse,
+    CompareRequest,
     LoginRequest,
     RegisterRequest,
+    ResearchRequest,
+    ScanRequest,
+    SummariseRequest,
     TokenResponse,
     TradeActionRequest,
 )
@@ -112,6 +118,89 @@ async def chat(req: ChatRequest, username: str = Depends(get_current_user)):
         action_id=result.get("action_id"),
         conversation_id=result.get("conversation_id", ""),
     )
+
+
+# --- Deep Research (SSE streaming) ---
+
+@app.post("/api/research")
+async def research_stream(req: ResearchRequest, username: str = Depends(get_current_user)):
+    """Stream deep research via Server-Sent Events."""
+    from app.handlers.deep_research import stream_deep_research
+    return StreamingResponse(
+        stream_deep_research(req.stock, req.mode),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+# --- Feature endpoints ---
+
+@app.post("/api/scan")
+async def scan_endpoint(req: ScanRequest, username: str = Depends(get_current_user)):
+    from app.handlers.scan import run_scan
+    try:
+        data = await run_scan(req.scan_type)
+        return {"type": "scan", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@app.post("/api/chart")
+async def chart_endpoint(req: ChartRequest, username: str = Depends(get_current_user)):
+    from app.handlers.chart import generate_chart
+    try:
+        data = await generate_chart(req.stock, req.chart_type)
+        return {"type": "chart", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@app.post("/api/compare")
+async def compare_endpoint(req: CompareRequest, username: str = Depends(get_current_user)):
+    from app.handlers.compare import compare_stocks
+    try:
+        data = await compare_stocks(req.stocks)
+        return {"type": "compare", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@app.get("/api/ipo")
+async def ipo_endpoint(username: str = Depends(get_current_user)):
+    from app.handlers.ipo import get_ipo_data
+    try:
+        data = await get_ipo_data()
+        return {"type": "ipo", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@app.get("/api/macro")
+async def macro_endpoint(username: str = Depends(get_current_user)):
+    from app.handlers.macro import get_macro_data
+    try:
+        data = await get_macro_data()
+        return {"type": "macro", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@app.post("/api/summarise")
+async def summarise_endpoint(req: SummariseRequest, username: str = Depends(get_current_user)):
+    from app import ai_client
+    try:
+        prompt = (
+            f"Summarise the following in 3 bullet points + 1-line TL;DR. "
+            f"Be concise and specific:\n\n{req.text[:3000]}"
+        )
+        summary = await ai_client.chat(prompt)
+        return {"type": "text", "content": summary}
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 # --- Trade confirmation ---

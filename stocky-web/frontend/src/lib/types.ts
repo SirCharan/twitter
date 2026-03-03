@@ -13,7 +13,14 @@ export type MessageType =
   | "order_result"
   | "alerts"
   | "usage"
-  | "error";
+  | "error"
+  | "deep_research"
+  | "progress"
+  | "scan"
+  | "chart"
+  | "compare"
+  | "ipo"
+  | "macro";
 
 export interface ChatMessage {
   id: string;

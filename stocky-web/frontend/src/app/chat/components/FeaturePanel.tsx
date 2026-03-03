@@ -43,7 +43,7 @@ function StockInput({
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <input
