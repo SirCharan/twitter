@@ -1,23 +1,17 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from app.auth import (
-    create_access_token,
-    get_current_user,
-    hash_password,
-    verify_password,
-)
+from app.auth import create_access_token, hash_password, verify_password
 from app.config import ALLOWED_ORIGINS
 from app.database import (
     create_user,
     delete_conversation,
     get_conversation_list,
     get_conversation_messages,
-    get_pending_action,
     get_user,
     get_user_count,
     init_db,
@@ -98,14 +92,15 @@ async def login(req: LoginRequest):
 
 
 @app.get("/api/auth/me")
-async def me(username: str = Depends(get_current_user)):
-    return {"username": username}
+async def me():
+    return {"username": "CK"}
 
 
 # --- Chat ---
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest, username: str = Depends(get_current_user)):
+async def chat(req: ChatRequest):
+    username = "CK"
     result = await handle_chat(
         message=req.message,
         username=username,
@@ -123,7 +118,7 @@ async def chat(req: ChatRequest, username: str = Depends(get_current_user)):
 # --- Deep Research (SSE streaming) ---
 
 @app.post("/api/research")
-async def research_stream(req: ResearchRequest, username: str = Depends(get_current_user)):
+async def research_stream(req: ResearchRequest):
     """Stream deep research via Server-Sent Events."""
     from app.handlers.deep_research import stream_deep_research
     return StreamingResponse(
@@ -140,7 +135,7 @@ async def research_stream(req: ResearchRequest, username: str = Depends(get_curr
 # --- Feature endpoints ---
 
 @app.post("/api/scan")
-async def scan_endpoint(req: ScanRequest, username: str = Depends(get_current_user)):
+async def scan_endpoint(req: ScanRequest):
     from app.handlers.scan import run_scan
     try:
         data = await run_scan(req.scan_type)
@@ -150,7 +145,7 @@ async def scan_endpoint(req: ScanRequest, username: str = Depends(get_current_us
 
 
 @app.post("/api/chart")
-async def chart_endpoint(req: ChartRequest, username: str = Depends(get_current_user)):
+async def chart_endpoint(req: ChartRequest):
     from app.handlers.chart import generate_chart
     try:
         data = await generate_chart(req.stock, req.chart_type)
@@ -160,7 +155,7 @@ async def chart_endpoint(req: ChartRequest, username: str = Depends(get_current_
 
 
 @app.post("/api/compare")
-async def compare_endpoint(req: CompareRequest, username: str = Depends(get_current_user)):
+async def compare_endpoint(req: CompareRequest):
     from app.handlers.compare import compare_stocks
     try:
         data = await compare_stocks(req.stocks)
@@ -170,7 +165,7 @@ async def compare_endpoint(req: CompareRequest, username: str = Depends(get_curr
 
 
 @app.get("/api/ipo")
-async def ipo_endpoint(username: str = Depends(get_current_user)):
+async def ipo_endpoint():
     from app.handlers.ipo import get_ipo_data
     try:
         data = await get_ipo_data()
@@ -180,7 +175,7 @@ async def ipo_endpoint(username: str = Depends(get_current_user)):
 
 
 @app.get("/api/macro")
-async def macro_endpoint(username: str = Depends(get_current_user)):
+async def macro_endpoint():
     from app.handlers.macro import get_macro_data
     try:
         data = await get_macro_data()
@@ -190,7 +185,7 @@ async def macro_endpoint(username: str = Depends(get_current_user)):
 
 
 @app.post("/api/summarise")
-async def summarise_endpoint(req: SummariseRequest, username: str = Depends(get_current_user)):
+async def summarise_endpoint(req: SummariseRequest):
     from app import ai_client
     try:
         prompt = (
@@ -206,7 +201,8 @@ async def summarise_endpoint(req: SummariseRequest, username: str = Depends(get_
 # --- Trade confirmation ---
 
 @app.post("/api/trade/confirm")
-async def trade_action(req: TradeActionRequest, username: str = Depends(get_current_user)):
+async def trade_action(req: TradeActionRequest):
+    username = "CK"
     if req.action == "confirm":
         return await confirm_trade(req.action_id, username)
     elif req.action == "cancel":
@@ -217,32 +213,32 @@ async def trade_action(req: TradeActionRequest, username: str = Depends(get_curr
 # --- Conversations ---
 
 @app.get("/api/conversations")
-async def list_conversations(username: str = Depends(get_current_user)):
-    return await get_conversation_list(username)
+async def list_conversations():
+    return await get_conversation_list("CK")
 
 
 @app.get("/api/conversations/{conversation_id}")
-async def get_conversation(conversation_id: str, username: str = Depends(get_current_user)):
+async def get_conversation(conversation_id: str):
     messages = await get_conversation_messages(conversation_id)
     return {"conversation_id": conversation_id, "messages": messages}
 
 
 @app.delete("/api/conversations/{conversation_id}")
-async def remove_conversation(conversation_id: str, username: str = Depends(get_current_user)):
-    await delete_conversation(conversation_id, username)
+async def remove_conversation(conversation_id: str):
+    await delete_conversation(conversation_id, "CK")
     return {"status": "deleted"}
 
 
 # --- Kite ---
 
 @app.get("/api/kite/status")
-async def kite_status(username: str = Depends(get_current_user)):
+async def kite_status():
     kite_obj = await get_authenticated_kite()
     return {"connected": kite_obj is not None}
 
 
 @app.post("/api/kite/login")
-async def kite_login(username: str = Depends(get_current_user)):
+async def kite_login():
     try:
         await auto_login()
         return {"status": "success", "message": "Kite login successful"}
@@ -253,18 +249,18 @@ async def kite_login(username: str = Depends(get_current_user)):
 # --- Alerts ---
 
 @app.get("/api/alerts")
-async def list_alerts(username: str = Depends(get_current_user)):
+async def list_alerts():
     from app.handlers.alerts import get_alerts
     return await get_alerts()
 
 
 @app.post("/api/alerts")
-async def create_alert_endpoint(req: AlertRequest, username: str = Depends(get_current_user)):
+async def create_alert_endpoint(req: AlertRequest):
     from app.handlers.alerts import create_alert
     return await create_alert(req.symbol, req.direction, req.target_price)
 
 
 @app.delete("/api/alerts/{alert_id}")
-async def delete_alert_endpoint(alert_id: int, username: str = Depends(get_current_user)):
+async def delete_alert_endpoint(alert_id: int):
     from app.handlers.alerts import delete_alert
     return await delete_alert(alert_id)
