@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 interface ScanResult {
   symbol: string;
@@ -25,17 +26,22 @@ const SCAN_LABELS: Record<string, string> = {
   fii_dii: "FII / DII",
 };
 
+const INITIAL_ROWS = 5;
+
 export default function ScanCard({ data }: Props) {
+  const [showAll, setShowAll] = useState(false);
+
   const scanType = data.scan_type as string;
   const results = (data.results as ScanResult[]) || [];
   const count = data.count as number;
-
   const label = SCAN_LABELS[scanType] || scanType?.replace(/_/g, " ");
+  const visible = showAll ? results : results.slice(0, INITIAL_ROWS);
+  const hasMore = results.length > INITIAL_ROWS;
 
   if (!results.length) {
     return (
       <div
-        className="rounded-2xl border px-5 py-4"
+        className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
         style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
       >
         <p className="text-sm" style={{ color: "var(--muted)" }}>
@@ -47,7 +53,7 @@ export default function ScanCard({ data }: Props) {
 
   return (
     <div
-      className="rounded-2xl border px-5 py-4"
+      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
       style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
     >
       {/* Header */}
@@ -76,7 +82,7 @@ export default function ScanCard({ data }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
-            {results.map((r, i) => {
+            {visible.map((r, i) => {
               const isPositive = r.change_pct >= 0;
               return (
                 <tr key={i} className="hover:opacity-80 transition-opacity">
@@ -101,6 +107,16 @@ export default function ScanCard({ data }: Props) {
           </tbody>
         </table>
       </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-3 text-xs underline-offset-2 hover:underline"
+          style={{ color: "var(--muted)" }}
+        >
+          {showAll ? "Show less ↑" : `View all ${results.length} results ↓`}
+        </button>
+      )}
     </div>
   );
 }

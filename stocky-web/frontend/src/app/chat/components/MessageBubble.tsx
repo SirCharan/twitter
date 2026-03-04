@@ -14,26 +14,28 @@ import ChartCard from "./ChartCard";
 import CompareCard from "./CompareCard";
 import IpoCard from "./IpoCard";
 import MacroCard from "./MacroCard";
+import SuggestionCard from "./SuggestionCard";
 
 interface Props {
   message: ChatMessage;
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
+  onSend: (text: string) => void;
 }
 
 // These types render full-width without a bubble wrapper
 const FULL_WIDTH_TYPES = new Set([
   "analysis", "deep_research", "progress", "scan", "chart",
   "compare", "ipo", "macro", "portfolio", "positions",
-  "holdings", "orders", "overview", "news",
+  "holdings", "orders", "overview", "news", "suggestion",
 ]);
 
-export default function MessageBubble({ message, onTradeAction }: Props) {
+export default function MessageBubble({ message, onTradeAction, onSend }: Props) {
   const isUser = message.role === "user";
 
   if (!isUser && FULL_WIDTH_TYPES.has(message.type)) {
     return (
       <div className="animate-fade-in">
-        <RichContent message={message} onTradeAction={onTradeAction} />
+        <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
       </div>
     );
   }
@@ -41,7 +43,7 @@ export default function MessageBubble({ message, onTradeAction }: Props) {
   return (
     <div className={`flex animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-12" : "mr-12"}`}
+        className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-6 sm:ml-12" : "mr-6 sm:mr-12"}`}
         style={{
           background: isUser ? "var(--card-bg)" : "var(--surface)",
           border: "1px solid var(--card-border)",
@@ -53,7 +55,7 @@ export default function MessageBubble({ message, onTradeAction }: Props) {
             {message.content}
           </p>
         ) : (
-          <RichContent message={message} onTradeAction={onTradeAction} />
+          <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
         )}
       </div>
     </div>
@@ -63,9 +65,11 @@ export default function MessageBubble({ message, onTradeAction }: Props) {
 function RichContent({
   message,
   onTradeAction,
+  onSend,
 }: {
   message: ChatMessage;
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
+  onSend: (text: string) => void;
 }) {
   const { type, data } = message;
 
@@ -118,6 +122,9 @@ function RichContent({
 
     case "overview":
       return <OverviewCard data={data as Record<string, unknown>} />;
+
+    case "suggestion":
+      return <SuggestionCard data={data as Record<string, unknown>} onSend={onSend} />;
 
     case "trade_confirm":
       return (

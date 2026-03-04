@@ -27,7 +27,7 @@ interface Props {
 
 export default function FeatureBar({ active, onSelect, disabled }: Props) {
   return (
-    <div className="mt-2 flex flex-wrap gap-1.5">
+    <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
       {FEATURES.map((f) => {
         const isActive = active === f.id;
         return (

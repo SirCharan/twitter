@@ -70,7 +70,7 @@ export default function MacroCard({ data }: Props) {
 
   return (
     <div
-      className="rounded-2xl border px-5 py-4"
+      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
       style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
     >
       {/* Header */}

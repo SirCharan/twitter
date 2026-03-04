@@ -320,6 +320,9 @@ async def _dispatch(
         if not symbol:
             return {"type": "text", "content": "Give me a stock name. RELIANCE, INFY, TCS — anything."}
         data = await analyse.get_analysis(symbol)
+        # get_analysis may return suggestion or error if ticker not found
+        if data.get("type") in ("suggestion", "error"):
+            return data
         content = f"Analysis: {data.get('name', symbol)}"
         return {"type": "analysis", "content": content, "data": data}
 

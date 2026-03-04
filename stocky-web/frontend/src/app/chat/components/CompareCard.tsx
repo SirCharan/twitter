@@ -74,7 +74,7 @@ export default function CompareCard({ data }: Props) {
 
   return (
     <div
-      className="rounded-2xl border px-5 py-4"
+      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
       style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
     >
       {/* Header */}
@@ -84,6 +84,10 @@ export default function CompareCard({ data }: Props) {
           Stock Comparison
         </span>
       </div>
+
+      {/* Scores + rows — horizontally scrollable on mobile */}
+      <div className="overflow-x-auto">
+      <div style={{ minWidth: Math.max(320, stocks.length * 140) }}>
 
       {/* Scores */}
       <div className="mb-4 grid gap-3" style={{ gridTemplateColumns: `repeat(${stocks.length}, 1fr)` }}>
@@ -119,6 +123,8 @@ export default function CompareCard({ data }: Props) {
           </div>
         ))}
       </div>
+      </div>{/* min-width wrapper */}
+      </div>{/* overflow-x-auto */}
     </div>
   );
 }

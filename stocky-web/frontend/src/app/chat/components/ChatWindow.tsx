@@ -262,7 +262,7 @@ export default function ChatWindow({
 
         <div className="mx-auto max-w-3xl space-y-5">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} />
+            <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} onSend={handleSend} />
           ))}
           {isLoading && <TypingIndicator />}
           <div ref={bottomRef} />

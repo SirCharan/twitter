@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 interface IpoItem {
   company: string;
@@ -16,14 +17,22 @@ interface Props {
   data: Record<string, unknown>;
 }
 
+const INITIAL_ROWS = 3;
+
 export default function IpoCard({ data }: Props) {
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [showAllListed, setShowAllListed] = useState(false);
+
   const upcoming = (data.upcoming as IpoItem[]) || [];
   const listed = (data.listed as IpoItem[]) || [];
   const source = data.source as string;
 
+  const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, INITIAL_ROWS);
+  const visibleListed = showAllListed ? listed : listed.slice(0, INITIAL_ROWS);
+
   return (
     <div
-      className="rounded-2xl border px-5 py-4"
+      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
       style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
     >
       {/* Header */}
@@ -46,7 +55,7 @@ export default function IpoCard({ data }: Props) {
             Upcoming / Open
           </p>
           <div className="space-y-2">
-            {upcoming.map((ipo, i) => (
+            {visibleUpcoming.map((ipo, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between rounded-xl px-3 py-2"
@@ -67,6 +76,15 @@ export default function IpoCard({ data }: Props) {
               </div>
             ))}
           </div>
+          {upcoming.length > INITIAL_ROWS && (
+            <button
+              onClick={() => setShowAllUpcoming((v) => !v)}
+              className="mt-2 text-xs underline-offset-2 hover:underline"
+              style={{ color: "var(--muted)" }}
+            >
+              {showAllUpcoming ? "Show less ↑" : `Show ${upcoming.length - INITIAL_ROWS} more ↓`}
+            </button>
+          )}
         </div>
       )}
 
@@ -77,7 +95,7 @@ export default function IpoCard({ data }: Props) {
             Recent Listings
           </p>
           <div className="space-y-2">
-            {listed.map((ipo, i) => {
+            {visibleListed.map((ipo, i) => {
               const gain = ipo.current_gain;
               const isPositive = gain != null && gain >= 0;
               return (
@@ -112,6 +130,15 @@ export default function IpoCard({ data }: Props) {
               );
             })}
           </div>
+          {listed.length > INITIAL_ROWS && (
+            <button
+              onClick={() => setShowAllListed((v) => !v)}
+              className="mt-2 text-xs underline-offset-2 hover:underline"
+              style={{ color: "var(--muted)" }}
+            >
+              {showAllListed ? "Show less ↑" : `Show ${listed.length - INITIAL_ROWS} more ↓`}
+            </button>
+          )}
         </div>
       )}
 

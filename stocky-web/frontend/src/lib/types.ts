@@ -20,7 +20,8 @@ export type MessageType =
   | "chart"
   | "compare"
   | "ipo"
-  | "macro";
+  | "macro"
+  | "suggestion";
 
 export interface ChatMessage {
   id: string;
