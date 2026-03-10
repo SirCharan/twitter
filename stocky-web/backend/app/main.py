@@ -5,15 +5,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from app.auth import create_access_token, hash_password, verify_password
 from app.config import ALLOWED_ORIGINS
 from app.database import (
-    create_user,
     delete_conversation,
     get_conversation_list,
     get_conversation_messages,
-    get_user,
-    get_user_count,
     init_db,
 )
 from app.handlers.chat import handle_chat
@@ -25,12 +21,9 @@ from app.models import (
     ChatRequest,
     ChatResponse,
     CompareRequest,
-    LoginRequest,
-    RegisterRequest,
     ResearchRequest,
     ScanRequest,
     SummariseRequest,
-    TokenResponse,
     TradeActionRequest,
 )
 
@@ -68,28 +61,6 @@ async def health():
 
 
 # --- Auth ---
-
-@app.post("/api/auth/register", response_model=TokenResponse)
-async def register(req: RegisterRequest):
-    """Register a new user. Only works if no users exist yet (first-run setup)."""
-    count = await get_user_count()
-    if count > 0:
-        existing = await get_user(req.username)
-        if existing:
-            raise HTTPException(400, "User already exists")
-    await create_user(req.username, hash_password(req.password))
-    token = create_access_token(req.username)
-    return TokenResponse(access_token=token)
-
-
-@app.post("/api/auth/login", response_model=TokenResponse)
-async def login(req: LoginRequest):
-    user = await get_user(req.username)
-    if not user or not verify_password(req.password, user["password_hash"]):
-        raise HTTPException(401, "Invalid credentials")
-    token = create_access_token(req.username)
-    return TokenResponse(access_token=token)
-
 
 @app.get("/api/auth/me")
 async def me():
@@ -219,7 +190,7 @@ async def list_conversations():
 
 @app.get("/api/conversations/{conversation_id}")
 async def get_conversation(conversation_id: str):
-    messages = await get_conversation_messages(conversation_id)
+    messages = await get_conversation_messages(conversation_id, "CK")
     return {"conversation_id": conversation_id, "messages": messages}
 
 

@@ -1,4 +1,5 @@
 import os
+import secrets
 
 from dotenv import load_dotenv
 
@@ -19,7 +20,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 # Web auth
-WEB_SECRET_KEY = os.environ.get("WEB_SECRET_KEY", "change-me-in-production")
+WEB_SECRET_KEY = os.environ.get("WEB_SECRET_KEY", secrets.token_urlsafe(32))
 ACCESS_TOKEN_EXPIRE_DAYS = int(os.environ.get("ACCESS_TOKEN_EXPIRE_DAYS", "30"))
 
 # CORS
