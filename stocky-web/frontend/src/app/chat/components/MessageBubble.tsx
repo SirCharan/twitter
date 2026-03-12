@@ -14,6 +14,7 @@ import ChartCard from "./ChartCard";
 import CompareCard from "./CompareCard";
 import IpoCard from "./IpoCard";
 import MacroCard from "./MacroCard";
+import RrgCard from "./RrgCard";
 import SuggestionCard from "./SuggestionCard";
 
 interface Props {
@@ -25,7 +26,7 @@ interface Props {
 // These types render full-width without a bubble wrapper
 const FULL_WIDTH_TYPES = new Set([
   "analysis", "deep_research", "progress", "scan", "chart",
-  "compare", "ipo", "macro", "portfolio", "positions",
+  "compare", "ipo", "macro", "rrg", "portfolio", "positions",
   "holdings", "orders", "overview", "news", "suggestion",
 ]);
 
@@ -105,6 +106,9 @@ function RichContent({
 
     case "macro":
       return <MacroCard data={data as Record<string, unknown>} />;
+
+    case "rrg":
+      return <RrgCard data={data as Record<string, unknown>} />;
 
     case "price":
       return <PriceCard data={data as Record<string, unknown>} />;

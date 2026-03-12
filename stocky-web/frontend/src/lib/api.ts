@@ -37,41 +37,6 @@ async function apiFetch<T>(
   return res.json();
 }
 
-// --- Auth ---
-
-export async function login(
-  username: string,
-  password: string,
-): Promise<string> {
-  const data = await apiFetch<{ access_token: string }>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
-  localStorage.setItem("stocky_token", data.access_token);
-  return data.access_token;
-}
-
-export async function register(
-  username: string,
-  password: string,
-): Promise<string> {
-  const data = await apiFetch<{ access_token: string }>("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
-  localStorage.setItem("stocky_token", data.access_token);
-  return data.access_token;
-}
-
-export function logout() {
-  localStorage.removeItem("stocky_token");
-  window.location.href = "/login";
-}
-
-export function isAuthenticated(): boolean {
-  return !!getToken();
-}
-
 // --- Chat ---
 
 export async function sendMessage(
@@ -160,6 +125,10 @@ export async function getIpo() {
 
 export async function getMacro() {
   return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/macro");
+}
+
+export async function getRrg() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/rrg");
 }
 
 export async function summarise(text: string) {

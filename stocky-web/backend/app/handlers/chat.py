@@ -217,6 +217,11 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
         # Deep research goes through SSE, but provide a fallback chat response
         return "analyse", [m.group(1).strip().upper()]
 
+    if re.match(r"^(rrg|relative rotation|sector rotation|show rrg|rrg chart)\s*$", lower):
+        return "rrg", []
+    if re.search(r"\b(rrg|relative rotation|sector rotation)\b", lower):
+        return "rrg", []
+
     return None
 
 
@@ -490,6 +495,11 @@ async def _dispatch(
         from app.handlers.macro import get_macro_data
         data = await get_macro_data()
         return {"type": "macro", "content": "Macro Dashboard", "data": data}
+
+    if intent == "rrg":
+        from app.handlers.rrg import get_rrg_data
+        data = await get_rrg_data()
+        return {"type": "rrg", "content": "Relative Rotation Graph", "data": data}
 
     if intent == "summarise":
         text = args[0] if args else ""

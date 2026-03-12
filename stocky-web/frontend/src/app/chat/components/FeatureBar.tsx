@@ -7,6 +7,7 @@ export type FeatureId =
   | "compare"
   | "ipo"
   | "macro"
+  | "rrg"
   | "summarise";
 
 const FEATURES: { id: FeatureId; icon: string; label: string }[] = [
@@ -16,6 +17,7 @@ const FEATURES: { id: FeatureId; icon: string; label: string }[] = [
   { id: "compare",       icon: "⚖",  label: "Compare" },
   { id: "ipo",           icon: "🚀", label: "IPO" },
   { id: "macro",         icon: "🌐", label: "Macro" },
+  { id: "rrg",           icon: "🔄", label: "RRG" },
   { id: "summarise",     icon: "✦",  label: "Summarise" },
 ];
 

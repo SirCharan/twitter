@@ -53,6 +53,8 @@ function composeFeatureMessage(feature: FeatureId, params: Record<string, string
       return "ipo tracker";
     case "macro":
       return "macro dashboard";
+    case "rrg":
+      return "rrg";
     case "summarise":
       return `summarise this:\n\n${params.text}`;
   }

@@ -21,6 +21,7 @@ export type MessageType =
   | "compare"
   | "ipo"
   | "macro"
+  | "rrg"
   | "suggestion";
 
 export interface ChatMessage {

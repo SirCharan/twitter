@@ -155,6 +155,16 @@ async def macro_endpoint():
         raise HTTPException(500, str(e))
 
 
+@app.get("/api/rrg")
+async def rrg_endpoint():
+    from app.handlers.rrg import get_rrg_data
+    try:
+        data = await get_rrg_data()
+        return {"type": "rrg", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 @app.post("/api/summarise")
 async def summarise_endpoint(req: SummariseRequest):
     from app import ai_client
