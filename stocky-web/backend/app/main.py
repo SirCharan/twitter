@@ -16,6 +16,7 @@ from app.handlers.chat import handle_chat
 from app.handlers.trading import cancel_trade, confirm_trade
 from app.kite_auth import auto_login, get_authenticated_kite
 from app.models import (
+    AgentDebateRequest,
     AlertRequest,
     ChartRequest,
     ChatRequest,
@@ -94,6 +95,23 @@ async def research_stream(req: ResearchRequest):
     from app.handlers.deep_research import stream_deep_research
     return StreamingResponse(
         stream_deep_research(req.stock, req.mode),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+# --- General Deep Research (Agent Debate SSE) ---
+
+@app.post("/api/deep-research")
+async def deep_research_general(req: AgentDebateRequest):
+    """Stream general deep research via dual-agent debate SSE."""
+    from app.handlers.agent_debate import stream_agent_debate
+    return StreamingResponse(
+        stream_agent_debate(req.query),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

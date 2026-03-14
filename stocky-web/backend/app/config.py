@@ -19,6 +19,10 @@ DB_PATH = os.environ.get("DB_PATH", "stocky_web.db")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
+# OpenRouter AI (Deep Research)
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-pro-preview")
+
 # Web auth
 WEB_SECRET_KEY = os.environ.get("WEB_SECRET_KEY", secrets.token_urlsafe(32))
 ACCESS_TOKEN_EXPIRE_DAYS = int(os.environ.get("ACCESS_TOKEN_EXPIRE_DAYS", "30"))

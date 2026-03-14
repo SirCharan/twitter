@@ -149,3 +149,15 @@ export function streamResearch(stock: string, mode: string): Promise<Response> {
     body: JSON.stringify({ stock, mode }),
   });
 }
+
+/** Stream general deep research (agent debate) via SSE. */
+export function streamDeepResearchGeneral(query: string): Promise<Response> {
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return fetch(`${API_URL}/api/deep-research`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ query }),
+  });
+}

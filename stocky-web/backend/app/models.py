@@ -60,3 +60,8 @@ class CompareRequest(BaseModel):
 
 class SummariseRequest(BaseModel):
     text: str
+
+
+class AgentDebateRequest(BaseModel):
+    query: str
+    conversation_id: str | None = None

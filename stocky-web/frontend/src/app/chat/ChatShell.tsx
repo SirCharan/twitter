@@ -54,6 +54,7 @@ export default function ChatShell() {
           onTradeAction={chat.handleTradeAction}
           onMenuClick={() => setSidebarOpen(true)}
           onDeepResearch={chat.streamDeepResearch}
+          onGeneralDeepResearch={chat.streamGeneralDeepResearch}
         />
       </div>
     </div>

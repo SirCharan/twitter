@@ -2,7 +2,7 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import type { ChatMessage } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
-import ChatInput from "./ChatInput";
+import ChatInput, { type ChatMode } from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 import FeatureBar, { type FeatureId } from "./FeatureBar";
 import FeaturePanel from "./FeaturePanel";
@@ -14,6 +14,7 @@ interface Props {
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
   onMenuClick: () => void;
   onDeepResearch?: (stock: string, mode: string) => void;
+  onGeneralDeepResearch?: (query: string) => void;
 }
 
 const ANALYSE_MODES = [
@@ -98,9 +99,13 @@ export default function ChatWindow({
   onTradeAction,
   onMenuClick,
   onDeepResearch,
+  onGeneralDeepResearch,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const stockInputRef = useRef<HTMLInputElement>(null);
+
+  // Chat mode toggle
+  const [chatMode, setChatMode] = useState<ChatMode>("quick");
 
   // Analyse a stock (empty state picker)
   const [analyseOpen, setAnalyseOpen] = useState(false);
@@ -166,7 +171,11 @@ export default function ChatWindow({
   function handleSend(text: string) {
     setActiveFeature(null);
     setFeatureBarVisible(false);
-    onSend(text);
+    if (chatMode === "deep" && onGeneralDeepResearch) {
+      onGeneralDeepResearch(text);
+    } else {
+      onSend(text);
+    }
   }
 
   function handlePromptClick(helper: PromptHelper) {
@@ -354,7 +363,7 @@ export default function ChatWindow({
             />
           )}
 
-          <ChatInput onSend={handleSend} disabled={isLoading} />
+          <ChatInput onSend={handleSend} disabled={isLoading} mode={chatMode} onModeChange={setChatMode} />
         </div>
       </div>
     </div>

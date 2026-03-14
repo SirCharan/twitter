@@ -385,11 +385,12 @@ async def get_ai_token_totals() -> tuple[int, int]:
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
             "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log "
-            "WHERE service = 'groq' AND date(ts) = date('now')"
+            "WHERE service IN ('groq', 'openrouter') AND date(ts) = date('now')"
         )
         today = (await cursor.fetchone())[0]
         cursor = await db.execute(
-            "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log WHERE service = 'groq'"
+            "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log "
+            "WHERE service IN ('groq', 'openrouter')"
         )
         alltime = (await cursor.fetchone())[0]
         return today, alltime

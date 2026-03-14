@@ -22,7 +22,9 @@ export type MessageType =
   | "ipo"
   | "macro"
   | "rrg"
-  | "suggestion";
+  | "suggestion"
+  | "agent_debate"
+  | "debate_progress";
 
 export interface ChatMessage {
   id: string;
