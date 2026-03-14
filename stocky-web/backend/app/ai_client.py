@@ -75,21 +75,31 @@ SYSTEM_PROMPT = (
     "trends, and news sentiment when relevant.\n\n"
 
     "## DATA SOURCES (reference in responses)\n"
-    "1. NSE India (nseindia.com) — Live quotes, indices, F&O, historical data\n"
-    "2. BSE India (bseindia.com) — Quotes, filings, IPOs, SME listings\n"
-    "3. MoneyControl (moneycontrol.com) — News, charts, mutual funds, portfolios\n"
-    "4. Investing.com India (in.investing.com) — Technicals, economic calendar\n"
-    "5. Yahoo Finance India (in.finance.yahoo.com) — Historical data, financials\n"
-    "6. Tickertape (tickertape.in) — Screener, fundamentals, peer comparison\n"
-    "7. Screener.in — Stock screening by ratios, exports, company overviews\n"
-    "8. SEBI (sebi.gov.in) — Regulations, IPO filings, investor education\n"
-    "9. RBI (rbi.org.in) — Repo rate, forex reserves, inflation, GDP\n"
-    "10. MOSPI (mospi.gov.in) — CPI, IPI, national accounts\n"
-    "11. MCX (mcxindia.com) — Commodity prices (gold, silver, crude)\n"
-    "12. Alpha Vantage — API for technical indicators, NSE/BSE tickers\n"
-    "13. Trading Economics (tradingeconomics.com/india) — Macro forecasts\n"
-    "14. World Bank Data (data.worldbank.org/country/india) — Long-term trends\n"
-    "15. FRED (fred.stlouisfed.org) — India-specific economic series\n\n"
+    "**Stock Exchanges & Official Platforms:**\n"
+    "- NSE India (nseindia.com) — Live quotes, indices, F&O, historical CSV, derivatives, volatility stats\n"
+    "- BSE India (bseindia.com) — Quotes, filings, IPOs, SME listings, block/bulk deals, debt market\n"
+    "- MCX (mcxindia.com) — Commodity prices (gold, silver, crude), futures, settlement prices\n\n"
+    "**Financial Aggregators & Portals:**\n"
+    "- MoneyControl (moneycontrol.com) — News, charts, mutual funds, portfolios, sector analysis\n"
+    "- Investing.com India (in.investing.com) — Technicals, economic calendar, forex, commodities\n"
+    "- Yahoo Finance India (in.finance.yahoo.com) — Historical data, financials, technical analysis\n"
+    "- Tickertape (tickertape.in) — Screener, fundamentals, peer comparison, ratings (by Zerodha)\n"
+    "- Screener.in — Stock screening by ratios, exports, company overviews\n\n"
+    "**Government & Regulatory Bodies:**\n"
+    "- SEBI (sebi.gov.in) — Regulations, IPO prospectuses, mutual fund schemes, investor education\n"
+    "- RBI (rbi.org.in) — Repo rate, forex reserves, inflation, GDP, banking stats, DBIE portal\n"
+    "- MOSPI (mospi.gov.in) — CPI, IPI, national accounts, economic surveys\n"
+    "- NITI Aayog (niti.gov.in) — Policy reports, sectoral data, development indicators\n\n"
+    "**Economic & Global Data Providers:**\n"
+    "- Trading Economics (tradingeconomics.com/india) — GDP, unemployment, trade balance, forecasts\n"
+    "- World Bank Data (data.worldbank.org/country/india) — Long-term economy, poverty, trade trends\n"
+    "- IMF Data (data.imf.org) — Balance of payments, fiscal data, global-India comparisons\n"
+    "- FRED (fred.stlouisfed.org) — India-specific series: INR exchange rates, indices, inflation\n\n"
+    "**Specialized Tools & APIs:**\n"
+    "- Alpha Vantage — API for Indian stock quotes, forex (INR pairs), technical indicators\n"
+    "- Quandl / Nasdaq Data Link (data.nasdaq.com) — NSE end-of-day prices, commodities, economy\n"
+    "- Finnhub (finnhub.io) — Stock API with Indian coverage, news, sentiment, earnings calendars\n"
+    "- Polygon.io — Global indices, INR forex data\n\n"
 
     "## TOPIC HANDLING\n"
     "- **Indian Stocks**: Your primary strength. Deep knowledge of NSE/BSE, "
@@ -379,6 +389,8 @@ async def openrouter_chat(
                 "temperature": 0.7,
             },
         )
+        if response.status_code != 200:
+            logger.error(f"OpenRouter HTTP {response.status_code}: {response.text}")
         response.raise_for_status()
         data = response.json()
         tokens = data.get("usage", {}).get("total_tokens", 0)
