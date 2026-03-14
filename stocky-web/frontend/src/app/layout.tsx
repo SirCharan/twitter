@@ -25,6 +25,9 @@ export const metadata: Metadata = {
     "Zerodha AI assistant",
     "NSE stock analysis AI",
     "AI trading bot India",
+    "stock market AI chatbot",
+    "Indian stock market assistant",
+    "AI portfolio tracker India",
   ],
   authors: [{ name: "Charandeep Kapoor", url: "https://charandeepkapoor.com" }],
   icons: {
@@ -101,6 +104,18 @@ export default function RootLayout({
                 "price": "0",
                 "priceCurrency": "INR",
               },
+              "featureList": [
+                "AI stock analysis for NSE and BSE",
+                "Zerodha Kite integration for trade execution",
+                "Real-time market news from 25+ RSS sources",
+                "Technical and fundamental analysis",
+                "Deep Research with dual-agent AI system",
+                "Market scanning (breakouts, 52W high/low, volume)",
+                "Stock comparison and charting",
+                "Sector rotation analysis (RRG)",
+                "IPO tracking and macro dashboard",
+                "Portfolio and holdings overview",
+              ],
             }),
           }}
         />
