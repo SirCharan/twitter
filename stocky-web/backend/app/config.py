@@ -22,6 +22,7 @@ GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 # OpenRouter AI (Deep Research)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-pro-preview")
+OPENROUTER_CONV_MODEL = os.environ.get("OPENROUTER_CONV_MODEL", "openai/gpt-oss-20b")
 
 # Web auth
 WEB_SECRET_KEY = os.environ.get("WEB_SECRET_KEY", secrets.token_urlsafe(32))

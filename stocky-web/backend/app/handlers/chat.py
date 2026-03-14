@@ -253,10 +253,25 @@ async def handle_chat(
         if parsed:
             intent = parsed.get("intent", "chat")
             args = [str(a) for a in parsed.get("args", [])]
-            reply = parsed.get("reply", "")
 
             if intent == "chat":
-                content = reply or "I didn't catch that. Try asking about a stock or your portfolio."
+                # Use gpt-oss-20b via OpenRouter for conversations, fall back to Groq
+                content = None
+                try:
+                    content = await ai_client.openrouter_conversation(
+                        message, user_name=username, history=history,
+                    )
+                except Exception:
+                    logger.warning("OpenRouter conversation failed, falling back to Groq")
+                if not content:
+                    # Fallback: use Groq reply from intent parse, or direct Groq chat
+                    content = parsed.get("reply") or ""
+                    if not content:
+                        try:
+                            content = await ai_client.chat(message, user_name=username, history=history)
+                        except Exception:
+                            pass
+                content = content or "I didn't catch that. Try asking about a stock or your portfolio."
                 response = {"type": "text", "content": content, "conversation_id": conversation_id}
                 await database.save_message(conversation_id, username, "assistant", content, "text")
                 await database.log_command(intent, "", source="ai")
@@ -264,15 +279,23 @@ async def handle_chat(
 
             result = (intent, args)
         else:
-            # Try direct chat
+            # Try gpt-oss-20b via OpenRouter first, then Groq
+            ai_reply = None
             try:
-                ai_reply = await ai_client.chat(message, user_name=username, history=history)
-                if ai_reply:
-                    response = {"type": "text", "content": ai_reply, "conversation_id": conversation_id}
-                    await database.save_message(conversation_id, username, "assistant", ai_reply, "text")
-                    return response
+                ai_reply = await ai_client.openrouter_conversation(
+                    message, user_name=username, history=history,
+                )
             except Exception:
-                pass
+                logger.warning("OpenRouter conversation failed, falling back to Groq")
+            if not ai_reply:
+                try:
+                    ai_reply = await ai_client.chat(message, user_name=username, history=history)
+                except Exception:
+                    pass
+            if ai_reply:
+                response = {"type": "text", "content": ai_reply, "conversation_id": conversation_id}
+                await database.save_message(conversation_id, username, "assistant", ai_reply, "text")
+                return response
             content = "Didn't get that. Try something like 'analyse RELIANCE' or 'my portfolio'."
             response = {"type": "text", "content": content, "conversation_id": conversation_id}
             await database.save_message(conversation_id, username, "assistant", content, "text")
