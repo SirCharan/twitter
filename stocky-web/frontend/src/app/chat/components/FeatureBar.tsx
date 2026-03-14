@@ -1,6 +1,10 @@
 "use client";
 
 export type FeatureId =
+  | "market_overview"
+  | "market_news"
+  | "portfolio"
+  | "analyse"
   | "deep_research"
   | "scan"
   | "chart"
@@ -11,6 +15,15 @@ export type FeatureId =
   | "summarise";
 
 const CATEGORIES: { label: string; features: { id: FeatureId; icon: string; label: string }[] }[] = [
+  {
+    label: "Quick",
+    features: [
+      { id: "market_overview", icon: "📈", label: "Market Overview" },
+      { id: "market_news",     icon: "📰", label: "News" },
+      { id: "portfolio",       icon: "💼", label: "Portfolio" },
+      { id: "analyse",         icon: "🔍", label: "Analyse" },
+    ],
+  },
   {
     label: "Research",
     features: [
@@ -47,7 +60,7 @@ export default function FeatureBar({ active, onSelect, disabled, visible = true 
   if (!visible) return null;
 
   return (
-    <div className="mb-2 space-y-2" style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}>
+    <div className="mb-1.5 space-y-1.5" style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}>
       {CATEGORIES.map((cat) => (
         <div key={cat.label}>
           <span

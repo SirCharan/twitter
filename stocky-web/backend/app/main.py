@@ -38,7 +38,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    logger.info("Stocky Web API started")
+    from app.config import OPENROUTER_API_KEY
+    logger.info("Stocky Web API started | OpenRouter configured: %s", bool(OPENROUTER_API_KEY))
     yield
     logger.info("Stocky Web API shutting down")
 

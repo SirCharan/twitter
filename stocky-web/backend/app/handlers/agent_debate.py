@@ -76,10 +76,10 @@ async def stream_agent_debate(query: str):
             agent_b_response = await ai_client.openrouter_chat(
                 critique_prompt,
                 system_prompt=ai_client.SYSTEM_PROMPT + "\n\n" + ai_client.DEEP_AGENT_B_PROMPT,
-                max_tokens=4096,
+                max_tokens=2048,
             )
         except Exception as e:
-            logger.error(f"Agent B error: {e}")
+            logger.error(f"Agent B error: {e}", exc_info=True)
             agent_b_response = None
 
         agent_b_elapsed = round(time.time() - t0, 1)

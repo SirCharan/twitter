@@ -10,14 +10,18 @@ interface Props {
 }
 
 const FEATURE_META: Record<FeatureId, { icon: string; label: string }> = {
-  deep_research: { icon: "🔬", label: "Deep Research" },
-  scan:          { icon: "📊", label: "Market Scan" },
-  chart:         { icon: "📈", label: "Chart" },
-  compare:       { icon: "⚖",  label: "Compare Stocks" },
-  ipo:           { icon: "🚀", label: "IPO Tracker" },
-  macro:         { icon: "🌐", label: "Macro View" },
-  rrg:           { icon: "🔄", label: "Sector Rotation (RRG)" },
-  summarise:     { icon: "✦",  label: "Summarise" },
+  market_overview: { icon: "📈", label: "Market Overview" },
+  market_news:     { icon: "📰", label: "News" },
+  portfolio:       { icon: "💼", label: "Portfolio" },
+  analyse:         { icon: "🔍", label: "Analyse" },
+  deep_research:   { icon: "🔬", label: "Deep Research" },
+  scan:            { icon: "📊", label: "Market Scan" },
+  chart:           { icon: "📈", label: "Chart" },
+  compare:         { icon: "⚖",  label: "Compare Stocks" },
+  ipo:             { icon: "🚀", label: "IPO Tracker" },
+  macro:           { icon: "🌐", label: "Macro View" },
+  rrg:             { icon: "🔄", label: "Sector Rotation (RRG)" },
+  summarise:       { icon: "✦",  label: "Summarise" },
 };
 
 function Chip({
