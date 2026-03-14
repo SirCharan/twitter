@@ -138,6 +138,7 @@ export default function ChatWindow({
       return;
     }
     // All others — open feature panel
+    setAnalyseOpen(false);
     setActiveFeature(id);
     setFeatureBarVisible(false);
   }
@@ -302,7 +303,7 @@ export default function ChatWindow({
             active={activeFeature}
             onSelect={handleFeatureSelect}
             disabled={isLoading}
-            visible={featureBarVisible}
+            visible={featureBarVisible && !analyseOpen}
           />
 
           {/* Feature panel (expands when chip selected) */}
@@ -313,6 +314,74 @@ export default function ChatWindow({
               onSend={handleSend}
               onFeatureSend={handleFeatureSend}
             />
+          )}
+
+          {/* Analyse stock picker (works in both empty and message states) */}
+          {analyseOpen && !showEmpty && (
+            <div
+              className="mb-3 rounded-2xl border p-5"
+              style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+            >
+              <div className="mb-4 flex items-center gap-3">
+                <button
+                  onClick={() => setAnalyseOpen(false)}
+                  className="flex items-center gap-1 text-xs hover:opacity-70"
+                  style={{ color: "var(--muted)" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M9 2L4 7l5 5" />
+                  </svg>
+                  back
+                </button>
+                <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
+                  🔍 Analyse a stock
+                </span>
+              </div>
+
+              <input
+                ref={stockInputRef}
+                type="text"
+                value={stockQuery}
+                onChange={(e) => setStockQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
+                placeholder="e.g. Reliance, TCS, HDFC Bank..."
+                className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none"
+                style={{ borderColor: stockQuery ? "var(--accent)" : "var(--card-border)", color: "var(--foreground)" }}
+              />
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {ANALYSE_MODES.map((m) => {
+                  const sel = analyseMode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setAnalyseMode(m.id)}
+                      className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
+                      style={{
+                        borderColor: sel ? "var(--accent)" : "var(--card-border)",
+                        background: sel ? "rgba(201,169,110,0.08)" : "transparent",
+                        color: sel ? "var(--accent)" : "var(--muted)",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleAnalyseSubmit}
+                disabled={!stockQuery.trim()}
+                className="mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
+                style={{
+                  background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
+                  color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",
+                  cursor: stockQuery.trim() ? "pointer" : "not-allowed",
+                }}
+              >
+                Analyse →
+              </button>
+            </div>
           )}
 
           <ChatInput onSend={handleSend} disabled={isLoading} mode={chatMode} onModeChange={setChatMode} />

@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 # RSS feeds for Indian market news
 NEWS_FEEDS = [
+    # Indian Markets & Business
     ("LiveMint Markets", "https://www.livemint.com/rss/markets"),
     ("LiveMint Companies", "https://www.livemint.com/rss/companies"),
     ("Mint Money", "https://www.livemint.com/rss/money"),
@@ -21,9 +22,29 @@ NEWS_FEEDS = [
     ("ET Stocks", "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms"),
     ("Moneycontrol", "https://www.moneycontrol.com/rss/latestnews.xml"),
     ("CNBC-TV18", "https://www.cnbctv18.com/commonfeeds/v1/cne/rss/market.xml"),
+    ("CNBC-TV18 Buzz", "https://www.cnbctv18.com/commonfeeds/v1/cne/rss/market-buzz.xml"),
     ("Business Standard", "https://www.business-standard.com/rss/markets-106.rss"),
     ("NDTV Profit", "https://feeds.feedburner.com/ndtvprofit-latest"),
     ("Hindu BusinessLine", "https://www.thehindubusinessline.com/markets/feeder/default.rss"),
+    ("The Hindu Business", "https://www.thehindu.com/business/feeder/default.rss"),
+    ("Indian Express Biz", "https://indianexpress.com/section/business/feed/"),
+    ("Business Today", "https://www.businesstoday.in/rss/home"),
+    # Commodities
+    ("ET Commodities", "https://economictimes.indiatimes.com/markets/commodities/rssfeeds/1808152900.cms"),
+    ("MC Commodities", "https://www.moneycontrol.com/rss/commodities.xml"),
+    # Global / US Markets
+    ("Reuters", "https://www.reutersagency.com/feed/"),
+    ("BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"),
+    ("CNBC US", "https://www.cnbc.com/id/10000664/device/rss/rss.html"),
+    ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories"),
+    ("Yahoo Finance US", "https://finance.yahoo.com/rss/topstories"),
+    # Energy & Metals
+    ("OilPrice", "https://oilprice.com/rss/main"),
+    ("Kitco Gold", "https://www.kitco.com/rss/gold.xml"),
+    # Asia
+    ("Nikkei Asia", "https://asia.nikkei.com/rss"),
+    # Central Banks & Geopolitics
+    ("FED Press", "https://www.federalreserve.gov/feeds/press_all.xml"),
 ]
 FEED_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; StockyAI/1.0)"}
 

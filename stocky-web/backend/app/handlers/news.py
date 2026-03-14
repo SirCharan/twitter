@@ -19,7 +19,7 @@ from app.handlers.analyse import (
 logger = logging.getLogger(__name__)
 
 
-def _fetch_all_headlines(max_per_feed: int = 15) -> list[dict]:
+def _fetch_all_headlines(max_per_feed: int = 8) -> list[dict]:
     articles = []
     for feed_name, feed_url in NEWS_FEEDS:
         try:
