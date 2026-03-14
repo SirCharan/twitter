@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
 import ChatInput, { type ChatMode } from "./ChatInput";
@@ -25,46 +25,17 @@ const ANALYSE_MODES = [
 ] as const;
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 
-/* ── Market-hours detection (IST) ── */
-function isMarketOpen(): boolean {
-  const now = new Date();
-  const ist = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-  const day = ist.getDay();
-  if (day === 0 || day === 6) return false;
-  const minutes = ist.getHours() * 60 + ist.getMinutes();
-  return minutes >= 555 && minutes <= 930; // 9:15 AM – 3:30 PM
-}
-
-/* ── Dynamic prompt helpers ── */
-type PromptHelper = { label: string; text: string } | { label: string; action: "analyse" };
-
-function getPromptHelpers(marketOpen: boolean): PromptHelper[] {
-  const common: PromptHelper[] = [
-    { label: "📈 Market overview", text: "how's the market" },
-    { label: "📰 Latest news", text: "market news" },
-    { label: "💼 My portfolio", text: "my portfolio" },
-    { label: "🔍 Analyse a stock", action: "analyse" },
-  ];
-
-  if (marketOpen) {
-    return [
-      ...common,
-      { label: "🔥 Top movers", text: "market scan — volume pump" },
-      { label: "📊 52W highs", text: "market scan — 52w high" },
-      { label: "⚡ Breakouts", text: "market scan — breakouts" },
-    ];
-  }
-  return [
-    ...common,
-    { label: "🌐 Macro outlook", text: "macro dashboard" },
-    { label: "🔄 Sector rotation", text: "rrg" },
-    { label: "🚀 IPO tracker", text: "ipo tracker" },
-  ];
-}
-
 /** Compose the chat message for each feature */
 function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
   switch (feature) {
+    case "market_overview":
+      return "how's the market";
+    case "market_news":
+      return "market news";
+    case "portfolio":
+      return "my portfolio";
+    case "analyse":
+      return ""; // handled separately via analyseOpen
     case "deep_research": {
       const mode = params.mode ?? "full";
       const modeLabel: Record<string, string> = {
@@ -117,12 +88,7 @@ export default function ChatWindow({
   const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
   const [featureBarVisible, setFeatureBarVisible] = useState(true);
 
-  // Prompt helpers
-  const promptHelpers = useMemo(() => getPromptHelpers(isMarketOpen()), []);
   const lastMsg = messages[messages.length - 1];
-  const showPromptHelpers =
-    (messages.length === 0 && !isLoading) ||
-    (lastMsg?.role === "assistant" && !isLoading);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -154,9 +120,26 @@ export default function ChatWindow({
     setAnalyseNote("");
   }
 
+  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio"]);
+
   function handleFeatureSelect(id: FeatureId | null) {
+    if (!id) {
+      setActiveFeature(null);
+      return;
+    }
+    // Quick-send features — send message immediately, no panel
+    if (QUICK_SEND_FEATURES.has(id)) {
+      handleSend(composeFeatureMessage(id, {}));
+      return;
+    }
+    // Analyse — open the stock picker
+    if (id === "analyse") {
+      setAnalyseOpen(true);
+      return;
+    }
+    // All others — open feature panel
     setActiveFeature(id);
-    if (id) setFeatureBarVisible(false);
+    setFeatureBarVisible(false);
   }
 
   function handleFeatureSend(feature: FeatureId, params: Record<string, string>) {
@@ -175,14 +158,6 @@ export default function ChatWindow({
       onGeneralDeepResearch(text);
     } else {
       onSend(text);
-    }
-  }
-
-  function handlePromptClick(helper: PromptHelper) {
-    if ("action" in helper) {
-      setAnalyseOpen(true);
-    } else {
-      handleSend(helper.text);
     }
   }
 
@@ -320,31 +295,8 @@ export default function ChatWindow({
       </div>
 
       {/* Input + Feature bar + Prompt helpers */}
-      <div className="px-3 pb-4 pt-2 sm:px-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
+      <div className="px-3 pb-3 pt-1.5 sm:px-4" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
         <div className="mx-auto max-w-3xl">
-          {/* Prompt helpers */}
-          {showPromptHelpers && (
-            <div className="mb-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {promptHelpers.map((h) => {
-                const isAnalyse = "action" in h;
-                return (
-                  <button
-                    key={h.label}
-                    onClick={() => handlePromptClick(h)}
-                    className="whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80"
-                    style={{
-                      borderColor: isAnalyse ? "var(--accent)" : "var(--card-border)",
-                      color: isAnalyse ? "var(--accent)" : "var(--foreground)",
-                      background: isAnalyse ? "rgba(201,169,110,0.06)" : "transparent",
-                    }}
-                  >
-                    {h.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           {/* Feature bar (above input, auto-hides after selection) */}
           <FeatureBar
             active={activeFeature}

@@ -35,7 +35,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {/* Mode toggle */}
       <div className="flex items-center gap-1">
         <div
