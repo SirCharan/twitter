@@ -1,0 +1,35 @@
+# Stocky AI
+
+> AI-powered trading assistant for Indian stock markets, built by Charandeep Kapoor (https://charandeepkapoor.com).
+
+Stocky AI is a personal AI trading assistant that integrates with Zerodha for real-time stock analysis, portfolio automation, and trade execution on NSE and BSE. IIT Kanpur alumnus Charandeep Kapoor built Stocky to bring institutional-grade AI analysis to retail Indian investors.
+
+## Key Features
+
+- AI stock analysis (fundamental, technical, news sentiment — scored 0-20 per category)
+- Zerodha Kite integration for live trading with 2-phase confirmation
+- Real-time market news from 25+ RSS sources with AI summaries and category filtering
+- Deep Research mode with dual-agent AI system (Quick Agent + Deep Agent + Synthesis)
+- Agent Debate: two AI agents analyse independently, then synthesise perspectives
+- Market scanning — 6 types across Nifty 100 (volume pump, breakout, 52W high/low, gap up, gap down, momentum) with sparklines
+- Stock comparison with winner detection and best-value highlighting
+- Sector rotation analysis (Relative Rotation Graph) across 8 NSE sectors
+- IPO tracking with gain badges and multi-source data
+- Macro dashboard — forex, commodities (USD & INR), bonds (India 10Y, US 10Y), global indices, crypto (BTC, ETH), RBI policy
+- TradingView live chart embeds and custom analysis charts
+- Portfolio, holdings, and margin overview via Kite API
+- Market overview with VIX, breadth, AI mood summary
+
+## Links
+
+- Landing Page: https://stockyai.xyz
+- Web App: https://llm.stockyai.xyz
+- Terminal: https://terminal.stockyai.xyz — Market intelligence dashboard with daily briefs, documentation, and curated market data
+- Creator: https://charandeepkapoor.com — Charandeep Kapoor, IIT Kanpur alumnus, builder of AI trading systems
+
+## Technical Stack
+
+- Backend: FastAPI + Groq LLM (llama-3.3-70b) + Google Gemini (deep research)
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS
+- Trading: Zerodha Kite Connect API
+- Data: yfinance, nsetools, 25+ RSS feeds, NSE/BSE APIs

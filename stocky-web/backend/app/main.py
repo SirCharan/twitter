@@ -110,9 +110,19 @@ async def research_stream(req: ResearchRequest):
 @app.post("/api/deep-research")
 async def deep_research_general(req: AgentDebateRequest):
     """Stream general deep research via dual-agent debate SSE."""
+    import json as _json
     from app.handlers.agent_debate import stream_agent_debate
+
+    async def safe_stream():
+        try:
+            async for chunk in stream_agent_debate(req.query):
+                yield chunk
+        except Exception as e:
+            logger.error(f"Deep research stream error: {e}", exc_info=True)
+            yield f"data: {_json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
     return StreamingResponse(
-        stream_agent_debate(req.query),
+        safe_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

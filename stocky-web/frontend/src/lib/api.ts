@@ -139,25 +139,51 @@ export async function summarise(text: string) {
 }
 
 /** Stream deep research via SSE. Returns a ReadableStream. */
-export function streamResearch(stock: string, mode: string): Promise<Response> {
+export async function streamResearch(stock: string, mode: string): Promise<Response> {
   const token = getToken();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  return fetch(`${API_URL}/api/research`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ stock, mode }),
-  });
+  const url = `${API_URL}/api/research`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ stock, mode }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Research API ${res.status}: ${body || res.statusText} [${url}]`);
+    }
+    return res;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error(`Network error reaching ${url} — backend may be down or unreachable. (${err.message})`);
+    }
+    throw err;
+  }
 }
 
 /** Stream general deep research (agent debate) via SSE. */
-export function streamDeepResearchGeneral(query: string): Promise<Response> {
+export async function streamDeepResearchGeneral(query: string): Promise<Response> {
   const token = getToken();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  return fetch(`${API_URL}/api/deep-research`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query }),
-  });
+  const url = `${API_URL}/api/deep-research`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Deep Research API ${res.status}: ${body || res.statusText} [${url}]`);
+    }
+    return res;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error(`Network error reaching ${url} — backend may be down or unreachable. (${err.message})`);
+    }
+    throw err;
+  }
 }

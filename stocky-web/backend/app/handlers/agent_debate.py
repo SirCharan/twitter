@@ -28,6 +28,7 @@ async def stream_agent_debate(query: str):
         "phase": "agent_a",
         "status": "started",
         "label": DEBATE_PHASES[0]["label"],
+        "thinking": "Analyzing with Groq llama-3.3-70b — scanning market data, fundamentals, and news...",
     })
 
     t0 = time.time()
@@ -63,6 +64,7 @@ async def stream_agent_debate(query: str):
             "phase": "agent_b",
             "status": "started",
             "label": DEBATE_PHASES[1]["label"],
+            "thinking": "Deep analysis with Gemini 2.5 Pro — critiquing Quick Agent's findings, cross-referencing data...",
         })
 
         t0 = time.time()
@@ -113,6 +115,7 @@ async def stream_agent_debate(query: str):
         "phase": "synthesis",
         "status": "started",
         "label": DEBATE_PHASES[2]["label"],
+        "thinking": "Merging both perspectives into a definitive answer...",
     })
 
     t0 = time.time()

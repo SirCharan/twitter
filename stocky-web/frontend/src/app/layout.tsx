@@ -25,8 +25,15 @@ export const metadata: Metadata = {
     "Zerodha AI assistant",
     "NSE stock analysis AI",
     "AI trading bot India",
+    "stock market AI chatbot",
+    "Indian stock market assistant",
+    "AI portfolio tracker India",
+    "deep research stocks India",
+    "market scanner India",
+    "macro dashboard India",
   ],
   authors: [{ name: "Charandeep Kapoor", url: "https://charandeepkapoor.com" }],
+  creator: "Charandeep Kapoor",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -65,6 +72,7 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      "max-video-preview": -1,
       "max-image-preview": "large" as const,
       "max-snippet": -1,
     },
@@ -101,6 +109,25 @@ export default function RootLayout({
                 "price": "0",
                 "priceCurrency": "INR",
               },
+              "sameAs": [
+                "https://stockyai.xyz",
+                "https://terminal.stockyai.xyz",
+                "https://charandeepkapoor.com",
+              ],
+              "featureList": [
+                "AI stock analysis for NSE and BSE (fundamental, technical, news sentiment)",
+                "Zerodha Kite integration for trade execution with 2-phase confirmation",
+                "Real-time market news from 25+ RSS sources with category filtering",
+                "Deep Research with dual-agent AI system (Quick Agent + Deep Agent)",
+                "Agent Debate — two AI agents analyse independently then synthesise",
+                "Market scanning — 6 types across Nifty 100 with sparklines",
+                "Stock comparison with winner detection and best-value highlighting",
+                "TradingView live chart embeds and custom analysis charts",
+                "Sector rotation analysis (Relative Rotation Graph)",
+                "IPO tracking with gain badges and multi-source data",
+                "Macro dashboard — forex, bonds, commodities (USD & INR), crypto",
+                "Portfolio, holdings, and margin overview via Kite API",
+              ],
             }),
           }}
         />

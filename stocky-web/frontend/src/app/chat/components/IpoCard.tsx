@@ -11,13 +11,29 @@ interface IpoItem {
   close_date?: string;
   current_gain?: number;
   status: string;
+  issue_size?: string;
 }
 
 interface Props {
   data: Record<string, unknown>;
 }
 
-const INITIAL_ROWS = 3;
+function GainBadge({ gain }: { gain: number }) {
+  const isPositive = gain >= 0;
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums"
+      style={{
+        background: isPositive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+        color: isPositive ? "var(--positive)" : "var(--negative)",
+      }}
+    >
+      {isPositive ? "+" : ""}{gain.toFixed(1)}%
+    </span>
+  );
+}
+
+const INITIAL_ROWS = 5;
 
 export default function IpoCard({ data }: Props) {
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
@@ -41,11 +57,19 @@ export default function IpoCard({ data }: Props) {
         <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
           IPO Tracker
         </span>
-        {source === "fallback" && (
-          <span className="ml-auto text-[10px]" style={{ color: "var(--muted)" }}>
-            (cached data)
+        <div className="ml-auto flex items-center gap-2">
+          {source === "fallback" && (
+            <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+              (cached data)
+            </span>
+          )}
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ background: "rgba(201,169,110,0.1)", color: "var(--accent)" }}
+          >
+            {upcoming.length + listed.length} IPOs
           </span>
-        )}
+        </div>
       </div>
 
       {/* Upcoming */}
@@ -58,21 +82,31 @@ export default function IpoCard({ data }: Props) {
             {visibleUpcoming.map((ipo, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-xl px-3 py-2"
+                className="rounded-xl px-3 py-2.5"
                 style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--card-border)" }}
               >
-                <div>
-                  <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>{ipo.company}</p>
-                  <p className="text-[10px]" style={{ color: "var(--muted)" }}>
-                    {ipo.open_date && `Opens: ${ipo.open_date}`}
-                    {ipo.close_date && ` · Closes: ${ipo.close_date}`}
-                  </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>{ipo.company}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px]" style={{ color: "var(--muted)" }}>
+                      {ipo.open_date && <span>Opens: {ipo.open_date}</span>}
+                      {ipo.close_date && <span>· Closes: {ipo.close_date}</span>}
+                      {ipo.issue_size && (
+                        <span
+                          className="rounded-full px-1.5 py-0.5 text-[9px]"
+                          style={{ background: "rgba(201,169,110,0.06)", color: "var(--accent)" }}
+                        >
+                          {ipo.issue_size}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {ipo.issue_price && (
+                    <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                      ₹{ipo.issue_price}
+                    </span>
+                  )}
                 </div>
-                {ipo.issue_price && (
-                  <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-                    ₹{ipo.issue_price}
-                  </span>
-                )}
               </div>
             ))}
           </div>
@@ -96,35 +130,36 @@ export default function IpoCard({ data }: Props) {
           </p>
           <div className="space-y-2">
             {visibleListed.map((ipo, i) => {
-              const gain = ipo.current_gain;
-              const isPositive = gain != null && gain >= 0;
               return (
                 <div
                   key={i}
-                  className="flex items-center justify-between rounded-xl px-3 py-2"
+                  className="rounded-xl px-3 py-2.5"
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--card-border)" }}
                 >
-                  <div>
-                    <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>{ipo.company}</p>
-                    <p className="text-[10px]" style={{ color: "var(--muted)" }}>
-                      {ipo.listing_date && `Listed: ${ipo.listing_date}`}
-                      {ipo.issue_price && ` · Issue: ₹${ipo.issue_price}`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    {ipo.current_price && (
-                      <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
-                        ₹{ipo.current_price.toFixed(2)}
-                      </p>
-                    )}
-                    {gain != null && (
-                      <p
-                        className="text-[10px] font-medium"
-                        style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}
-                      >
-                        {isPositive ? "+" : ""}{gain.toFixed(2)}%
-                      </p>
-                    )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>{ipo.company}</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px]" style={{ color: "var(--muted)" }}>
+                        {ipo.listing_date && <span>Listed: {ipo.listing_date}</span>}
+                        {ipo.issue_price && <span>· Issue: ₹{ipo.issue_price}</span>}
+                        {ipo.issue_size && (
+                          <span
+                            className="rounded-full px-1.5 py-0.5 text-[9px]"
+                            style={{ background: "rgba(201,169,110,0.06)", color: "var(--accent)" }}
+                          >
+                            {ipo.issue_size}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {ipo.current_price && (
+                        <span className="text-xs font-medium tabular-nums" style={{ color: "var(--foreground)" }}>
+                          ₹{ipo.current_price.toFixed(0)}
+                        </span>
+                      )}
+                      {ipo.current_gain != null && <GainBadge gain={ipo.current_gain} />}
+                    </div>
                   </div>
                 </div>
               );

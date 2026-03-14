@@ -18,6 +18,20 @@ from app.handlers.analyse import (
 
 logger = logging.getLogger(__name__)
 
+FEED_CATEGORIES = {
+    "LiveMint Markets": "Indian", "LiveMint Companies": "Indian", "LiveMint Economy": "Indian",
+    "ET Markets": "Indian", "ET Industry": "Indian",
+    "Moneycontrol": "Indian", "CNBC-TV18": "Indian", "Business Standard": "Indian",
+    "NDTV Profit": "Indian", "Hindu BusinessLine": "Indian",
+    "CNBC-TV18 Buzz": "Indian", "The Hindu Biz": "Indian",
+    "Indian Express Biz": "Indian", "Business Today": "Indian",
+    "ET Commodities": "Commodities", "MC Commodities": "Commodities",
+    "Reuters": "Global", "BBC World": "Global", "CNBC US": "Global",
+    "MarketWatch": "Global", "Yahoo Finance US": "Global",
+    "OilPrice": "Energy", "Kitco Gold": "Energy",
+    "Nikkei Asia": "Global", "FED Press": "Global",
+}
+
 
 def _fetch_all_headlines(max_per_feed: int = 8) -> list[dict]:
     articles = []
@@ -58,6 +72,7 @@ def _fetch_all_headlines(max_per_feed: int = 8) -> list[dict]:
                     "sentiment": round(sentiment, 3),
                     "summary": clean_summary or None,
                     "_text": title + " " + summary,
+                    "category": FEED_CATEGORIES.get(feed_name, "Indian"),
                 })
         except Exception as e:
             logger.debug(f"Failed to parse {feed_name}: {e}")
@@ -159,7 +174,7 @@ async def get_news(symbol: str | None = None) -> dict:
             seen.add(key)
             unique.append(a)
 
-    final_articles = _clean_articles(unique[:15])
+    final_articles = _clean_articles(unique[:20])
     ai_summary = await _generate_news_summary(
         [a["title"] for a in final_articles[:6]], None
     )
@@ -168,4 +183,5 @@ async def get_news(symbol: str | None = None) -> dict:
         "headline": "Market Headlines",
         "count": len(unique),
         "ai_summary": ai_summary,
+        "categories": sorted(set(a.get("category", "Indian") for a in unique)),
     }

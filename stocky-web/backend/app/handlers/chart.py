@@ -74,7 +74,7 @@ def _make_analysis_chart(yf_symbol: str, nse_symbol: str) -> str:
     RED = "#F87171"
     MUTED = "#555555"
 
-    fig = plt.figure(figsize=(12, 9), facecolor=BG)
+    fig = plt.figure(figsize=(14, 10), facecolor=BG)
     gs = gridspec.GridSpec(4, 1, height_ratios=[3, 1, 1, 1], hspace=0.05)
 
     # Price
@@ -135,7 +135,7 @@ def _make_analysis_chart(yf_symbol: str, nse_symbol: str) -> str:
 
     plt.tight_layout()
     buf = BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", facecolor=BG, dpi=110)
+    fig.savefig(buf, format="png", bbox_inches="tight", facecolor=BG, dpi=130)
     plt.close(fig)
     buf.seek(0)
     return base64.b64encode(buf.read()).decode()

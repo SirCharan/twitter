@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
+import MarkdownRich from "./MarkdownRich";
 
 interface AgentData {
   model: string;
@@ -20,84 +21,41 @@ interface Props {
   data: Record<string, unknown>;
 }
 
-function MarkdownLite({ text }: { text: string }) {
-  return (
-    <div className="space-y-1">
-      {text.split("\n").map((line, i) => {
-        if (line.startsWith("## ")) {
-          return (
-            <p key={i} className="mb-2 mt-4 text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-              {line.slice(3)}
-            </p>
-          );
-        }
-        if (line.startsWith("### ")) {
-          return (
-            <p key={i} className="mb-1 mt-3 text-xs font-semibold" style={{ color: "var(--foreground)" }}>
-              {line.slice(4)}
-            </p>
-          );
-        }
-        if (line.startsWith("**") && line.endsWith("**")) {
-          return (
-            <p key={i} className="mb-1 font-medium" style={{ color: "var(--accent)" }}>
-              {line.slice(2, -2)}
-            </p>
-          );
-        }
-        if (line.startsWith("- ") || line.startsWith("* ")) {
-          return (
-            <p key={i} className="mb-0.5 pl-3" style={{ color: "var(--foreground)", opacity: 0.88 }}>
-              <span style={{ color: "var(--accent)", marginRight: 6 }}>-</span>
-              {line.slice(2)}
-            </p>
-          );
-        }
-        if (line.trim() === "") return <div key={i} className="h-2" />;
-        return (
-          <p key={i} className="mb-0.5" style={{ color: "var(--foreground)", opacity: 0.88 }}>
-            {line}
-          </p>
-        );
-      })}
-    </div>
-  );
-}
-
+/* ── Collapsible agent section ── */
 function AgentSection({
   title,
   model,
   elapsed,
   content,
-  defaultOpen,
   accentColor,
+  icon,
 }: {
   title: string;
   model: string;
   elapsed: number;
   content: string;
-  defaultOpen: boolean;
   accentColor: string;
+  icon: string;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(false);
 
   return (
     <div
-      className="rounded-xl border"
-      style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+      className="rounded-xl border transition-colors"
+      style={{ borderColor: open ? "rgba(201,169,110,0.12)" : "var(--card-border)", background: "var(--surface)" }}
     >
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
       >
-        <div
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ background: accentColor }}
-        />
-        <span className="flex-1 text-xs font-medium" style={{ color: "var(--foreground)" }}>
+        <span className="text-xs">{icon}</span>
+        <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--foreground)" }}>
           {title}
         </span>
-        <span className="text-[10px] font-medium" style={{ color: "var(--muted)" }}>
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{ background: `${accentColor}15`, color: accentColor }}
+        >
           {model}
         </span>
         <span className="text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
@@ -105,7 +63,7 @@ function AgentSection({
         </span>
         <svg
           width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className="shrink-0 transition-transform"
+          className="shrink-0 transition-transform duration-200"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           <path d="M3 4.5L6 7.5L9 4.5" stroke="var(--muted)" strokeWidth="1.2" />
@@ -116,44 +74,60 @@ function AgentSection({
           className="border-t px-4 py-3 text-xs leading-relaxed"
           style={{ borderColor: "var(--card-border)" }}
         >
-          <MarkdownLite text={content} />
+          <MarkdownRich text={content} />
         </div>
       )}
     </div>
   );
 }
 
+/* ── Main card ── */
 export default function AgentDebateCard({ data }: Props) {
   const d = data as unknown as DebateData;
 
   return (
-    <div>
-      {/* Header badge */}
-      <div className="mb-3 flex items-center gap-2">
-        <div
-          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-wider"
-          style={{ background: "rgba(201,169,110,0.1)", color: "var(--accent)" }}
-        >
-          Agent Debate
+    <div className="max-w-full">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="var(--accent)" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <span
+            className="text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: "var(--accent)" }}
+          >
+            Agent Debate
+          </span>
         </div>
-        <span className="text-[10px]" style={{ color: "var(--muted)" }}>
-          {d.total_elapsed.toFixed(1)}s total
+        <div className="divider-gradient flex-1" />
+        <span className="text-[10px] tabular-nums font-medium" style={{ color: "var(--muted)" }}>
+          {d.total_elapsed.toFixed(1)}s
         </span>
       </div>
 
       {/* Synthesis — main answer */}
       <div
-        className="mb-3 rounded-2xl border px-5 py-4"
-        style={{ borderColor: "rgba(201,169,110,0.2)", background: "var(--card-bg)" }}
+        className="mb-4 rounded-2xl border px-4 py-4 sm:px-5"
+        style={{
+          borderColor: "rgba(201,169,110,0.12)",
+          background: "linear-gradient(135deg, rgba(201,169,110,0.03) 0%, var(--card-bg) 100%)",
+        }}
       >
-        <p
-          className="mb-3 text-[10px] font-medium uppercase tracking-wider"
-          style={{ color: "var(--accent)" }}
-        >
-          Final Synthesis
-        </p>
+        <div className="mb-3 flex items-center gap-2">
+          <div className="h-1 w-6 rounded-full" style={{ background: "var(--accent)" }} />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--accent)" }}
+          >
+            Final Synthesis
+          </span>
+          <span className="text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
+            {d.synthesis_elapsed.toFixed(1)}s
+          </span>
+        </div>
         <div className="text-xs leading-relaxed">
-          <MarkdownLite text={d.synthesis} />
+          <MarkdownRich text={d.synthesis} />
         </div>
       </div>
 
@@ -161,20 +135,20 @@ export default function AgentDebateCard({ data }: Props) {
       <div className="space-y-2">
         <AgentSection
           title="Quick Agent"
+          icon="⚡"
           model={d.agent_a.model}
           elapsed={d.agent_a.elapsed}
           content={d.agent_a.response}
-          defaultOpen={false}
           accentColor="var(--positive)"
         />
         {d.agent_b && (
           <AgentSection
             title="Deep Agent"
+            icon="🔬"
             model={d.agent_b.model}
             elapsed={d.agent_b.elapsed}
             content={d.agent_b.response}
-            defaultOpen={false}
-            accentColor="#6366f1"
+            accentColor="#818cf8"
           />
         )}
       </div>

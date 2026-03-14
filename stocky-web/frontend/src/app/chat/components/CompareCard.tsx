@@ -17,6 +17,8 @@ interface StockCompare {
   macd_signal?: string;
   sma_signal?: string;
   price?: number;
+  revenue_growth?: number;
+  dividend_yield?: number;
 }
 
 interface Props {
@@ -59,15 +61,34 @@ const ROWS: Row[] = [
   { label: "ROE", getValue: (s) => fmt(s.roe, 1, "%"), higher: true },
   { label: "D/E", getValue: (s) => fmt(s.debt_to_equity, 2, "×") },
   { label: "EPS Growth", getValue: (s) => fmt(s.earnings_growth, 1, "%"), higher: true },
+  { label: "Rev Growth", getValue: (s) => fmt(s.revenue_growth, 1, "%"), higher: true },
   { label: "Profit Margin", getValue: (s) => fmt(s.profit_margin, 1, "%"), higher: true },
+  { label: "Div Yield", getValue: (s) => fmt(s.dividend_yield, 2, "%"), higher: true },
   { label: "Market Cap", getValue: (s) => fmtCap(s.market_cap) },
   { label: "RSI", getValue: (s) => s.rsi ? `${s.rsi.toFixed(0)} (${s.rsi_label || ""})` : "—" },
   { label: "MACD", getValue: (s) => s.macd_signal || "—" },
   { label: "SMA", getValue: (s) => s.sma_signal || "—" },
 ];
 
+function getBestIndex(stocks: StockCompare[], row: Row): number | null {
+  if (!row.higher || stocks.length < 2) return null;
+  let bestIdx = -1;
+  let bestVal = -Infinity;
+  stocks.forEach((s, i) => {
+    const raw = row.getValue(s);
+    const num = parseFloat(raw.replace(/[₹×%,]/g, ""));
+    if (!isNaN(num) && num > bestVal) {
+      bestVal = num;
+      bestIdx = i;
+    }
+  });
+  return bestIdx >= 0 ? bestIdx : null;
+}
+
 export default function CompareCard({ data }: Props) {
   const stocks = (data.stocks as StockCompare[]) || [];
+  const winner = data.winner as string | undefined;
+
   if (!stocks.length) {
     return <p className="text-sm" style={{ color: "var(--muted)" }}>No comparison data.</p>;
   }
@@ -83,6 +104,14 @@ export default function CompareCard({ data }: Props) {
         <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
           Stock Comparison
         </span>
+        {winner && (
+          <span
+            className="ml-auto flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+            style={{ background: "rgba(34,197,94,0.1)", color: "var(--positive)" }}
+          >
+            🏆 {winner}
+          </span>
+        )}
       </div>
 
       {/* Scores + rows — horizontally scrollable on mobile */}
@@ -91,37 +120,59 @@ export default function CompareCard({ data }: Props) {
 
       {/* Scores */}
       <div className="mb-4 grid gap-3" style={{ gridTemplateColumns: `repeat(${stocks.length}, 1fr)` }}>
-        {stocks.map((s) => (
-          <div key={s.symbol}>
-            <p className="mb-0.5 text-xs font-medium" style={{ color: "var(--foreground)" }}>{s.symbol}</p>
-            <p className="mb-2 text-[10px]" style={{ color: "var(--muted)" }}>{s.name}</p>
-            <ScoreBar score={s.overall_score} max={20} />
-            <p className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>
-              F: {s.fundamental_score.toFixed(1)} · T: {s.technical_score.toFixed(1)}
-            </p>
-          </div>
-        ))}
+        {stocks.map((s) => {
+          const isWinner = s.symbol === winner;
+          return (
+            <div
+              key={s.symbol}
+              className="rounded-xl px-3 py-2"
+              style={{
+                background: isWinner ? "rgba(34,197,94,0.04)" : "transparent",
+                border: isWinner ? "1px solid rgba(34,197,94,0.15)" : "1px solid transparent",
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>{s.symbol}</p>
+                {isWinner && <span className="text-[10px]">🏆</span>}
+              </div>
+              <p className="mb-2 text-[10px]" style={{ color: "var(--muted)" }}>{s.name}</p>
+              <ScoreBar score={s.overall_score} max={20} />
+              <p className="mt-1 text-[10px]" style={{ color: "var(--muted)" }}>
+                F: {s.fundamental_score.toFixed(1)} · T: {s.technical_score.toFixed(1)}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Comparison rows */}
       <div className="space-y-0.5">
-        {ROWS.map((row) => (
-          <div
-            key={row.label}
-            className="grid items-center py-1.5"
-            style={{
-              gridTemplateColumns: `80px repeat(${stocks.length}, 1fr)`,
-              borderBottom: "1px solid rgba(255,255,255,0.04)",
-            }}
-          >
-            <span className="text-[10px]" style={{ color: "var(--muted)" }}>{row.label}</span>
-            {stocks.map((s) => (
-              <span key={s.symbol} className="text-xs tabular-nums" style={{ color: "var(--foreground)" }}>
-                {row.getValue(s)}
-              </span>
-            ))}
-          </div>
-        ))}
+        {ROWS.map((row) => {
+          const bestIdx = getBestIndex(stocks, row);
+          return (
+            <div
+              key={row.label}
+              className="grid items-center py-1.5"
+              style={{
+                gridTemplateColumns: `80px repeat(${stocks.length}, 1fr)`,
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
+              }}
+            >
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>{row.label}</span>
+              {stocks.map((s, si) => (
+                <span
+                  key={s.symbol}
+                  className="text-xs tabular-nums font-medium"
+                  style={{
+                    color: si === bestIdx ? "var(--positive)" : "var(--foreground)",
+                  }}
+                >
+                  {row.getValue(s)}
+                </span>
+              ))}
+            </div>
+          );
+        })}
       </div>
       </div>{/* min-width wrapper */}
       </div>{/* overflow-x-auto */}

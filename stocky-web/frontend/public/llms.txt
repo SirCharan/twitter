@@ -1,0 +1,42 @@
+# Stocky AI — Web App
+
+> Chat-based AI trading assistant for Indian stock markets. Ask anything about stocks, markets, and trading.
+
+Stocky AI is a conversational AI assistant for Indian retail investors. It provides real-time stock analysis, market news, portfolio tracking, and trade execution through Zerodha. Built by Charandeep Kapoor (https://charandeepkapoor.com).
+
+## Capabilities
+
+- **Stock Analysis**: Fundamental (P/E, ROE, D/E, earnings), technical (RSI, MACD, SMA), news sentiment scoring — 0-20 per category
+- **Market Overview**: Live indices (NIFTY, SENSEX, Bank Nifty), top gainers/losers, advances/declines, India VIX, AI market mood summary
+- **News Aggregation**: 25+ RSS feeds (Indian, Global, Commodities, Energy, Asia) with AI summaries and category filtering
+- **Deep Research**: Dual-agent system — Quick Agent (Groq llama-3.3-70b) + Deep Agent (Google Gemini) with live thinking text and final synthesis
+- **Agent Debate**: Two AI agents analyse independently, then a synthesis agent merges their perspectives with rich markdown output (tables, charts, formatted text)
+- **Market Scanning**: 6 scan types across Nifty 100 — volume pump, breakout, 52W high/low, gap up, gap down, momentum — with sparkline charts and color-coded volume bars
+- **Charting**: TradingView live embeds and custom dark-theme analysis charts (matplotlib, 14x10 @ 130 DPI)
+- **Stock Comparison**: Side-by-side fundamental and technical comparison with winner detection, best-value cell highlighting, revenue growth and dividend yield
+- **Sector Rotation (RRG)**: Relative strength analysis across 8 NSE sectors
+- **IPO Tracker**: Upcoming and recently listed IPOs with performance gain badges, issue size, and multi-source data
+- **Macro Dashboard**: Forex (USD/INR, EUR/INR, GBP/INR), commodities (gold & crude in USD and INR, silver), bonds (India 10Y, US 10Y), global indices (Nifty, VIX, Dow, Nasdaq, S&P 500), crypto (BTC, ETH), RBI repo rate
+- **Trade Execution**: Buy/sell via Zerodha Kite with 2-phase confirmation
+- **Portfolio**: Holdings, positions, margins, day P&L via Kite API
+- **Summarise**: Paste any text for AI-powered summary
+
+## Data Sources
+
+25+ RSS feeds, yfinance, nsetools, NSE India API, Zerodha Kite Connect, Finnhub, Twelve Data, Gold API, USGS, NASA EONET
+
+## Technical Stack
+
+- Backend: FastAPI + Groq LLM (llama-3.3-70b for complex, llama-3.1-8b for basic) + Google Gemini (deep research)
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS
+- Trading: Zerodha Kite Connect API
+- Data: yfinance, nsetools, 25+ RSS feeds, NSE/BSE APIs
+- Rendering: Shared MarkdownRich component for tables, inline formatting, lists across all card outputs
+- Analytics: Google Analytics (G-93SFBS9CDS)
+
+## Links
+
+- Web App: https://llm.stockyai.xyz
+- Landing Page: https://stockyai.xyz
+- Terminal: https://terminal.stockyai.xyz — Market intelligence dashboard with daily briefs, documentation, and curated market data
+- Creator: https://charandeepkapoor.com — Charandeep Kapoor, IIT Kanpur alumnus, builder of AI trading systems

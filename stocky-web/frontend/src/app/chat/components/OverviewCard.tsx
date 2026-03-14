@@ -1,4 +1,5 @@
 import type { OverviewData } from "@/lib/types";
+import MarkdownRich from "./MarkdownRich";
 
 function fmt(v: number) {
   return v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -17,22 +18,70 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
     : decPct > 55 ? { label: "Bearish", color: "var(--negative)", bg: "rgba(239,68,68,0.1)" }
     : { label: "Neutral", color: "var(--muted)", bg: "rgba(107,107,107,0.12)" };
 
+  // VIX color coding
+  const vix = d.vix;
+  const vixColor = vix
+    ? vix.value < 15 ? "var(--positive)"
+    : vix.value < 20 ? "var(--accent)"
+    : "var(--negative)"
+    : null;
+
   return (
     <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
-          Market Overview
-        </p>
+      {/* Header with gradient */}
+      <div
+        className="flex items-center justify-between rounded-xl px-4 py-3"
+        style={{
+          background: "linear-gradient(135deg, rgba(201,169,110,0.06) 0%, transparent 100%)",
+          border: "1px solid rgba(201,169,110,0.1)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 12L6 6l3 4 5-8" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+            Market Overview
+          </p>
+        </div>
         {sentiment && (
           <span
-            className="rounded-md px-2 py-0.5 text-[11px] font-medium"
+            className="rounded-md px-2.5 py-1 text-[11px] font-semibold"
             style={{ background: sentiment.bg, color: sentiment.color }}
           >
             {sentiment.label}
           </span>
         )}
       </div>
+
+      {/* VIX tile */}
+      {vix && (
+        <div
+          className="flex items-center justify-between rounded-xl border px-4 py-2.5"
+          style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xs">🌡</span>
+            <span className="text-[11px] uppercase tracking-wide" style={{ color: "var(--muted)" }}>
+              India VIX
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold tabular-nums" style={{ color: vixColor! }}>
+              {vix.value.toFixed(2)}
+            </span>
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                background: vix.pct_change >= 0 ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)",
+                color: vix.pct_change >= 0 ? "var(--negative)" : "var(--positive)",
+              }}
+            >
+              {vix.pct_change >= 0 ? "+" : ""}{vix.pct_change.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Indices grid */}
       {d.indices && d.indices.length > 0 && (
@@ -155,12 +204,30 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         </div>
       )}
 
-      {/* Market summary */}
-      {(d.summary || (d.gainers?.length > 0) || (d.losers?.length > 0)) && (
-        <div className="mt-1 rounded-lg border-l-2 px-3 py-2"
+      {/* AI Mood */}
+      {d.ai_mood && (
+        <div
+          className="rounded-xl border-l-2 px-4 py-3"
+          style={{
+            borderColor: "var(--accent)",
+            background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)",
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent)" }}>
+            Stocky&apos;s Market Mood
+          </p>
+          <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+            <MarkdownRich text={d.ai_mood} />
+          </div>
+        </div>
+      )}
+
+      {/* Market summary (fallback if no AI mood) */}
+      {!d.ai_mood && (d.summary || (d.gainers?.length > 0) || (d.losers?.length > 0)) && (
+        <div className="rounded-lg border-l-2 px-3 py-2"
           style={{ borderColor: "var(--accent)", background: "var(--surface)" }}>
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
-            Stocky's Summary
+            Stocky&apos;s Summary
           </p>
           {d.summary && (
             <p className="mt-1 text-sm leading-snug" style={{ color: "var(--foreground)" }}>

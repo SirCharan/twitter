@@ -210,6 +210,7 @@ export interface NewsArticle {
   sentiment: number;
   link?: string;
   summary?: string;
+  category?: string;
 }
 
 export interface OverviewData {
@@ -230,4 +231,6 @@ export interface OverviewData {
     unchanged: number;
   };
   summary?: string;
+  vix?: { value: number; change: number; pct_change: number };
+  ai_mood?: string;
 }
