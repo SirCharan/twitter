@@ -62,10 +62,13 @@ export function useChat() {
 
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (err) {
+        const detail = err instanceof TypeError
+          ? `Network error — backend may be down. (${err.message})`
+          : err instanceof Error ? err.message : "Something went wrong.";
         const errorMsg: ChatMessage = {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: err instanceof Error ? err.message : "Something went wrong.",
+          content: detail,
           type: "error",
           timestamp: new Date().toISOString(),
           conversationId: conversationId || "",
@@ -127,8 +130,7 @@ export function useChat() {
 
       try {
         const res = await streamResearch(stock, mode);
-        if (!res.ok) throw new Error(`Research failed: ${res.status}`);
-        if (!res.body) throw new Error("No response body");
+        if (!res.body) throw new Error("No response body from research API");
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -146,7 +148,9 @@ export function useChat() {
             try {
               const event = JSON.parse(line.slice(6));
 
-              if (event.type === "progress") {
+              if (event.type === "error") {
+                throw new Error(`Backend error: ${event.message || "Unknown server error"}`);
+              } else if (event.type === "progress") {
                 const idx = event.index as number;
                 stepStatuses[idx] = "done";
                 stepElapsed[idx] = event.elapsed;
@@ -159,7 +163,8 @@ export function useChat() {
                   data: event.data as Record<string, unknown>,
                 });
               }
-            } catch {
+            } catch (parseErr) {
+              if (parseErr instanceof Error && parseErr.message.startsWith("Backend error:")) throw parseErr;
               // skip malformed line
             }
           }
@@ -307,8 +312,7 @@ export function useChat() {
 
       try {
         const res = await streamDeepResearchGeneral(query);
-        if (!res.ok) throw new Error(`Deep research failed: ${res.status}`);
-        if (!res.body) throw new Error("No response body");
+        if (!res.body) throw new Error("No response body from deep research API");
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -354,6 +358,8 @@ export function useChat() {
                 updateMessage(progressId, {
                   data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
                 });
+              } else if (event.type === "error") {
+                throw new Error(`Backend error: ${event.message || "Unknown server error"}`);
               } else if (event.type === "result") {
                 updateMessage(progressId, {
                   type: "agent_debate",
@@ -361,7 +367,8 @@ export function useChat() {
                   data: event.data as Record<string, unknown>,
                 });
               }
-            } catch {
+            } catch (parseErr) {
+              if (parseErr instanceof Error && parseErr.message.startsWith("Backend error:")) throw parseErr;
               // skip malformed line
             }
           }
