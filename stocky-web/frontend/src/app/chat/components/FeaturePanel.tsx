@@ -16,6 +16,7 @@ const FEATURE_META: Record<FeatureId, { icon: string; label: string }> = {
   compare:       { icon: "⚖",  label: "Compare Stocks" },
   ipo:           { icon: "🚀", label: "IPO Tracker" },
   macro:         { icon: "🌐", label: "Macro View" },
+  rrg:           { icon: "🔄", label: "Sector Rotation (RRG)" },
   summarise:     { icon: "✦",  label: "Summarise" },
 };
 
@@ -43,7 +44,7 @@ function StockInput({
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <input
@@ -268,6 +269,13 @@ export default function FeaturePanel({ feature, onClose, onFeatureSend }: Props)
         <SimplePanel
           description="View the macro dashboard — RBI repo rate, CPI inflation, G-Sec yield, USD/INR, crude oil, gold, and FII/DII flows."
           btnLabel="Load Macro Dashboard →"
+          onSubmit={() => submit({})}
+        />
+      );
+      case "rrg":           return (
+        <SimplePanel
+          description="View the Relative Rotation Graph — see which sectors are Leading, Weakening, Lagging, or Improving relative to Nifty 50."
+          btnLabel="Load RRG →"
           onSubmit={() => submit({})}
         />
       );

@@ -38,3 +38,30 @@ class AlertRequest(BaseModel):
     symbol: str
     direction: str  # "above" or "below"
     target_price: float
+
+
+class ResearchRequest(BaseModel):
+    stock: str
+    mode: str = "full"
+
+
+class ScanRequest(BaseModel):
+    scan_type: str = "volume_pump"
+
+
+class ChartRequest(BaseModel):
+    stock: str
+    chart_type: str = "tradingview"
+
+
+class CompareRequest(BaseModel):
+    stocks: str  # comma-separated
+
+
+class SummariseRequest(BaseModel):
+    text: str
+
+
+class AgentDebateRequest(BaseModel):
+    query: str
+    conversation_id: str | None = None

@@ -1,4 +1,5 @@
 import asyncio
+import difflib
 import logging
 import re
 
@@ -119,6 +120,22 @@ def _validate_yf_ticker(yf_symbol: str) -> str | None:
         except Exception:
             pass
     return None
+
+
+def _suggest_similar(query: str) -> list[str]:
+    """Return up to 3 closest stock names/symbols using fuzzy matching."""
+    upper = query.upper().strip()
+    # Build candidate pool: all map keys + all NSE symbols
+    candidates = list(STOCK_NAME_MAP.keys()) + list(STOCK_NAME_MAP.values())
+    candidates += list(STOCK_FULL_NAMES.keys())
+    candidates = list(dict.fromkeys(candidates))  # dedupe
+    matches = difflib.get_close_matches(upper, candidates, n=3, cutoff=0.55)
+    resolved = []
+    for m in matches:
+        sym = STOCK_NAME_MAP.get(m, m)
+        if sym not in resolved:
+            resolved.append(sym)
+    return resolved[:3]
 
 
 def _calculate_rsi(closes, period=14):
@@ -427,8 +444,19 @@ async def get_analysis(symbol: str) -> dict:
 
     await log_api_call("yfinance", "validate_ticker")
     valid = await loop.run_in_executor(None, _validate_yf_ticker, yf_symbol)
-    if valid:
-        yf_symbol = valid
+    if not valid:
+        suggestions = _suggest_similar(symbol)
+        if suggestions:
+            return {
+                "type": "suggestion",
+                "content": f"Couldn't find '{symbol}'. Did you mean one of these?",
+                "data": {"query": symbol, "suggestions": suggestions},
+            }
+        return {
+            "type": "error",
+            "content": f"Couldn't find stock: {symbol}. Try the NSE symbol (e.g. RELIANCE, TCS, INFY).",
+        }
+    yf_symbol = valid
 
     ticker = yf.Ticker(yf_symbol)
 

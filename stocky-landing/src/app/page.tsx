@@ -124,15 +124,18 @@ export default function Home() {
     <main className="min-h-screen">
       {/* Nav */}
       <nav className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-6 flex items-center justify-between">
-        <span className="font-cursive text-2xl tracking-wide" style={{ color: "#F5F0EB" }}>
+        <a href="https://stockyai.xyz" className="font-cursive text-2xl tracking-wide" style={{ color: "#F5F0EB" }}>
           Stocky
-        </span>
-        <span
-          className="text-xs tracking-widest uppercase"
-          style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
+        </a>
+        <a
+          href="https://llm.stockyai.xyz"
+          target="_blank"
+          rel="noopener"
+          className="text-xs tracking-widest uppercase hover:opacity-80 transition-opacity"
+          style={{ color: "#C9A96E", letterSpacing: "0.25em" }}
         >
-          By Invitation
-        </span>
+          Try Stocky AI
+        </a>
       </nav>
 
       {/* Hero */}
@@ -140,6 +143,7 @@ export default function Home() {
         <div className="opacity-0 animate-fade-in-up">
           <h1 className="font-cursive text-5xl md:text-8xl font-medium tracking-tight leading-none">
             <span className="gradient-text-shimmer">Stocky</span>
+            <span className="sr-only"> — AI Trading Assistant for Indian Stock Markets</span>
           </h1>
         </div>
 
@@ -157,7 +161,7 @@ export default function Home() {
             className="mt-5 text-base md:text-lg leading-relaxed max-w-lg mx-auto font-light"
             style={{ color: "#6B6B6B" }}
           >
-            An AI trading engine built for the few who think in payoffs, not predictions.
+            An AI trading assistant built for Indian markets — stock analysis, portfolio automation, and trade execution through Zerodha.
           </p>
         </div>
 
@@ -216,12 +220,12 @@ export default function Home() {
       {/* Performance */}
       <section className="max-w-5xl mx-auto px-4 py-16 md:px-6 md:py-28" ref={statsRef}>
         <div className="text-center mb-6 reveal">
-          <p
+          <h2
             className="text-xs uppercase tracking-widest mb-8 md:mb-12"
             style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
           >
             Track Record
-          </p>
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -265,18 +269,18 @@ export default function Home() {
 
       {/* What's Next — Teasers */}
       <section className="max-w-4xl mx-auto px-4 py-16 md:px-6 md:py-28 text-center" ref={teasersRef}>
-        <p
+        <h2
           className="text-xs uppercase tracking-widest mb-10 md:mb-16 reveal"
           style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
         >
           On the Horizon
-        </p>
+        </h2>
 
         <div className="space-y-14 md:space-y-20">
           <div className="reveal reveal-delay-1">
-            <p className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+            <h3 className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
               A mind trained on Indian markets.
-            </p>
+            </h3>
             <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
               A fine-tuned LLM chat interface built on Claude Opus 4.6 — purpose-built for
               NSE, BSE, and the patterns that move them. Ask anything. Get a take, not a disclaimer.
@@ -284,9 +288,9 @@ export default function Home() {
           </div>
 
           <div className="reveal reveal-delay-2">
-            <p className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+            <h3 className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
               Your portfolio on autopilot.
-            </p>
+            </h3>
             <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
               Full portfolio automation — from entry logic to risk management to rebalancing.
               Define your rules once. Stocky executes, monitors, and adapts.
@@ -294,9 +298,9 @@ export default function Home() {
           </div>
 
           <div className="reveal reveal-delay-3">
-            <p className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
+            <h3 className="font-cursive text-xl md:text-3xl" style={{ color: "#F5F0EB" }}>
               Your market. Delivered.
-            </p>
+            </h3>
             <p className="mt-4 text-sm font-light max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
               Timely news, portfolio movements, and the signals that matter —
               delivered straight to your inbox. No noise. No searching. Just clarity, when it counts.
@@ -312,15 +316,15 @@ export default function Home() {
 
       {/* Convergence — "Six tools. One conversation." */}
       <section className="max-w-4xl mx-auto px-4 py-16 md:px-6 md:py-24 text-center" ref={convergenceRef}>
-        <p
+        <h2
           className="text-xs uppercase tracking-widest mb-3 reveal"
           style={{ color: "#6B6B6B", letterSpacing: "0.25em" }}
         >
           One Platform
-        </p>
-        <p className="font-cursive text-2xl md:text-4xl mb-3 reveal reveal-delay-1" style={{ color: "#F5F0EB" }}>
+        </h2>
+        <h3 className="font-cursive text-2xl md:text-4xl mb-3 reveal reveal-delay-1" style={{ color: "#F5F0EB" }}>
           Seven tools. One conversation.
-        </p>
+        </h3>
         <p className="text-sm mb-10 md:mb-14 reveal reveal-delay-2" style={{ color: "#6B6B6B" }}>
           News · Research · Options · Analysis · Data · Charts · Trading — all in Stocky.
         </p>
@@ -510,9 +514,9 @@ export default function Home() {
           <div className="divider-line" />
         </div>
         <div className="reveal">
-          <p className="font-cursive text-xl md:text-3xl mb-3" style={{ color: "#F5F0EB" }}>
+          <h2 className="font-cursive text-xl md:text-3xl mb-3" style={{ color: "#F5F0EB" }}>
             Built for those who move first.
-          </p>
+          </h2>
           <p className="text-sm mb-8" style={{ color: "#6B6B6B", letterSpacing: "0.15em" }}>
           </p>
           {!submitted ? (
@@ -558,9 +562,14 @@ export default function Home() {
       <footer className="max-w-6xl mx-auto px-4 pb-8 md:px-6 md:pb-10">
         <div style={{ height: "1px", background: "#1F1F1F", marginBottom: "2rem" }} />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-cursive text-lg" style={{ color: "#F5F0EB" }}>
+          <a href="/" className="font-cursive text-lg" style={{ color: "#F5F0EB" }}>
             Stocky
-          </span>
+          </a>
+          <div className="flex items-center gap-6">
+            <a href="https://llm.stockyai.xyz" target="_blank" rel="noopener" className="text-xs hover:text-[#C9A96E] transition-colors" style={{ color: "#6B6B6B" }}>Web App</a>
+            <a href="https://terminal.stockyai.xyz" target="_blank" rel="noopener" className="text-xs hover:text-[#C9A96E] transition-colors" style={{ color: "#6B6B6B" }}>Terminal</a>
+            <a href="https://charandeepkapoor.com" target="_blank" rel="noopener" className="text-xs hover:text-[#C9A96E] transition-colors" style={{ color: "#6B6B6B" }}>By Charandeep Kapoor</a>
+          </div>
         </div>
       </footer>
     </main>

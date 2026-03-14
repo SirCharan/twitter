@@ -175,15 +175,15 @@ async def save_message(
 
 
 async def get_conversation_messages(
-    conversation_id: str, limit: int = 50
+    conversation_id: str, username: str = "CK", limit: int = 50
 ) -> list[dict]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             """SELECT * FROM conversations
-               WHERE conversation_id = ?
+               WHERE conversation_id = ? AND username = ?
                ORDER BY id ASC LIMIT ?""",
-            (conversation_id, limit),
+            (conversation_id, username, limit),
         )
         rows = await cursor.fetchall()
         results = []
@@ -385,11 +385,12 @@ async def get_ai_token_totals() -> tuple[int, int]:
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
             "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log "
-            "WHERE service = 'groq' AND date(ts) = date('now')"
+            "WHERE service IN ('groq', 'openrouter') AND date(ts) = date('now')"
         )
         today = (await cursor.fetchone())[0]
         cursor = await db.execute(
-            "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log WHERE service = 'groq'"
+            "SELECT COALESCE(SUM(tokens), 0) FROM api_call_log "
+            "WHERE service IN ('groq', 'openrouter')"
         )
         alltime = (await cursor.fetchone())[0]
         return today, alltime
