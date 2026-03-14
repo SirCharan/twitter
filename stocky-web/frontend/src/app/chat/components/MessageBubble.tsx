@@ -1,4 +1,5 @@
 import type { ChatMessage } from "@/lib/types";
+import MarkdownRich from "./MarkdownRich";
 import AnalysisCard from "./AnalysisCard";
 import PriceCard from "./PriceCard";
 import PortfolioCard from "./PortfolioCard";
@@ -189,9 +190,9 @@ function RichContent({
 
     default:
       return (
-        <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--foreground)" }}>
-          {message.content}
-        </p>
+        <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+          <MarkdownRich text={message.content} />
+        </div>
       );
   }
 }

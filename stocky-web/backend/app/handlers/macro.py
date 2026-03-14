@@ -22,6 +22,8 @@ SYMBOLS = {
     "nasdaq": "^IXIC",
     "sp500": "^GSPC",
     "btc": "BTC-USD",
+    "eth": "ETH-USD",
+    "india_10y": "^IRX",
 }
 
 
@@ -72,6 +74,7 @@ def _fetch_macro() -> dict:
             "gold": raw.get("gold_usd"),
             "gold_inr": raw.get("gold_inr"),
             "crude": raw.get("crude_usd"),
+            "crude_inr": raw.get("crude_inr"),
             "silver": raw.get("silver_usd"),
         },
         "indices": {
@@ -84,6 +87,10 @@ def _fetch_macro() -> dict:
         },
         "crypto": {
             "btc": raw.get("btc"),
+            "eth": raw.get("eth"),
+        },
+        "bonds": {
+            "india_10y": raw.get("india_10y"),
         },
         "rbi": {
             "repo_rate": RBI_REPO_RATE,

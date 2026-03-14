@@ -12,7 +12,7 @@ interface Props {
   isLoading: boolean;
   onSend: (text: string) => void;
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
-  onMenuClick: () => void;
+  onNewChat: () => void;
   onDeepResearch?: (stock: string, mode: string) => void;
   onGeneralDeepResearch?: (query: string) => void;
 }
@@ -68,7 +68,7 @@ export default function ChatWindow({
   isLoading,
   onSend,
   onTradeAction,
-  onMenuClick,
+  onNewChat,
   onDeepResearch,
   onGeneralDeepResearch,
 }: Props) {
@@ -166,14 +166,9 @@ export default function ChatWindow({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div
-        className="glass flex items-center gap-3 px-5 py-2 sm:py-3"
+        className="glass flex items-center justify-between px-5 py-2 sm:py-3"
         style={{ borderBottom: "1px solid var(--card-border)" }}
       >
-        <button onClick={onMenuClick} className="md:hidden" style={{ color: "var(--muted)" }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M3 5h14M3 10h14M3 15h14" />
-          </svg>
-        </button>
         <div className="flex items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.png" alt="Stocky" width={22} height={22} style={{ objectFit: "contain" }} />
@@ -182,6 +177,16 @@ export default function ChatWindow({
           </span>
           <div className="h-2 w-2 rounded-full" style={{ background: "var(--positive)" }} />
         </div>
+        <button
+          onClick={onNewChat}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium tracking-wide transition-all hover:opacity-90"
+          style={{ background: "var(--accent)", color: "var(--background)" }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M6 1v10M1 6h10" />
+          </svg>
+          New
+        </button>
       </div>
 
       {/* Messages */}

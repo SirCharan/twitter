@@ -17,6 +17,16 @@ SCAN_UNIVERSE = [
     "JSWSTEEL.NS", "INDUSINDBK.NS", "BAJAJ-AUTO.NS", "GRASIM.NS", "DIVISLAB.NS",
     "BPCL.NS", "SBILIFE.NS", "BRITANNIA.NS", "APOLLOHOSP.NS", "TATACONSUM.NS",
     "VEDL.NS", "HDFCLIFE.NS", "HINDALCO.NS", "BANKBARODA.NS", "ZOMATO.NS",
+    "TRENT.NS", "SHRIRAMFIN.NS", "JIOFIN.NS", "PIDILITIND.NS", "HAVELLS.NS",
+    "DLF.NS", "ABB.NS", "GODREJCP.NS", "DABUR.NS", "SIEMENS.NS",
+    "TORNTPHARM.NS", "AMBUJACEM.NS", "ICICIPRULI.NS", "PFC.NS", "RECLTD.NS",
+    "TATAPOWER.NS", "IOC.NS", "INDIGO.NS", "CHOLAFIN.NS", "CANBK.NS",
+    "HAL.NS", "BEL.NS", "IRFC.NS", "MANKIND.NS", "PERSISTENT.NS",
+    "LTIM.NS", "MPHASIS.NS", "COFORGE.NS", "MAXHEALTH.NS", "POLYCAB.NS",
+    "ADANIGREEN.NS", "ADANIPOWER.NS", "ATGL.NS", "AWL.NS", "SBICARD.NS",
+    "UNIONBANK.NS", "PNB.NS", "INDIANB.NS", "FEDERALBNK.NS", "BANDHANBNK.NS",
+    "JUBLFOOD.NS", "PAGEIND.NS", "MUTHOOTFIN.NS", "LICI.NS", "IRCTC.NS",
+    "PAYTM.NS", "NYKAA.NS", "DELHIVERY.NS", "LODHA.NS", "MOTHERSON.NS",
 ]
 
 SECTOR_INDICES = {
@@ -35,7 +45,7 @@ async def run_scan(scan_type: str) -> dict:
     """Run a market scan and return results."""
     loop = asyncio.get_event_loop()
 
-    if scan_type in ("volume_pump", "breakout", "52w_high", "52w_low"):
+    if scan_type in ("volume_pump", "breakout", "52w_high", "52w_low", "gap_up", "gap_down", "momentum"):
         results = await loop.run_in_executor(None, _scan_stocks, scan_type)
     elif scan_type == "sector_movers":
         results = await loop.run_in_executor(None, _get_sector_movers)
@@ -54,7 +64,7 @@ async def run_scan(scan_type: str) -> dict:
 def _scan_stocks(scan_type: str) -> list[dict]:
     """Batch download and scan stocks."""
     results = []
-    universe = SCAN_UNIVERSE[:30]
+    universe = SCAN_UNIVERSE
 
     try:
         data = yf.download(universe, period="3mo", progress=False, auto_adjust=True)
@@ -85,6 +95,8 @@ def _scan_stocks(scan_type: str) -> list[dict]:
                     prev = float(s_close.iloc[-2])
                     chg_1d = round((current - prev) / prev * 100, 2) if prev else 0
 
+                sparkline = [round(float(x), 2) for x in s_close.tail(5).tolist()]
+
                 short = sym.replace(".NS", "")
 
                 if scan_type == "volume_pump" and volumes is not None and sym in volumes.columns:
@@ -98,6 +110,7 @@ def _scan_stocks(scan_type: str) -> list[dict]:
                                 "symbol": short,
                                 "ltp": round(current, 2),
                                 "change_pct": chg_1d,
+                                "sparkline": sparkline,
                                 "volume_ratio": round(ratio, 1),
                                 "trigger": f"{round(ratio, 1)}× avg volume",
                             })
@@ -109,6 +122,7 @@ def _scan_stocks(scan_type: str) -> list[dict]:
                             "symbol": short,
                             "ltp": round(current, 2),
                             "change_pct": chg_1d,
+                            "sparkline": sparkline,
                             "high_52w": round(high_52, 2),
                             "pct_from_high": pct,
                             "trigger": f"Near 52W high ({pct}%)",
@@ -120,6 +134,7 @@ def _scan_stocks(scan_type: str) -> list[dict]:
                         "symbol": short,
                         "ltp": round(current, 2),
                         "change_pct": chg_1d,
+                        "sparkline": sparkline,
                         "high_52w": round(high_52, 2),
                         "pct_from_high": pct,
                         "trigger": f"{pct}% from 52W high",
@@ -131,10 +146,65 @@ def _scan_stocks(scan_type: str) -> list[dict]:
                         "symbol": short,
                         "ltp": round(current, 2),
                         "change_pct": chg_1d,
+                        "sparkline": sparkline,
                         "low_52w": round(low_52, 2),
                         "pct_from_low": pct,
                         "trigger": f"{pct}% from 52W low",
                     })
+
+                elif scan_type == "gap_up":
+                    if len(s_close) >= 2:
+                        try:
+                            opens = data["Open"] if "Open" in data.columns else data.xs("Open", axis=1, level=0)
+                            if sym in opens.columns:
+                                today_open = float(opens[sym].dropna().iloc[-1])
+                                prev_close = float(s_close.iloc[-2])
+                                gap_pct = round((today_open - prev_close) / prev_close * 100, 2)
+                                if gap_pct >= 1.0:
+                                    results.append({
+                                        "symbol": short,
+                                        "ltp": round(current, 2),
+                                        "change_pct": chg_1d,
+                                        "sparkline": sparkline,
+                                        "trigger": f"Gap up {gap_pct}%",
+                                    })
+                        except Exception:
+                            pass
+
+                elif scan_type == "gap_down":
+                    if len(s_close) >= 2:
+                        try:
+                            opens = data["Open"] if "Open" in data.columns else data.xs("Open", axis=1, level=0)
+                            if sym in opens.columns:
+                                today_open = float(opens[sym].dropna().iloc[-1])
+                                prev_close = float(s_close.iloc[-2])
+                                gap_pct = round((today_open - prev_close) / prev_close * 100, 2)
+                                if gap_pct <= -1.0:
+                                    results.append({
+                                        "symbol": short,
+                                        "ltp": round(current, 2),
+                                        "change_pct": chg_1d,
+                                        "sparkline": sparkline,
+                                        "trigger": f"Gap down {gap_pct}%",
+                                    })
+                        except Exception:
+                            pass
+
+                elif scan_type == "momentum":
+                    if len(s_close) >= 20:
+                        sma20 = float(s_close.tail(20).mean())
+                        delta = s_close.diff()
+                        gain = delta.clip(lower=0).ewm(span=14, adjust=False).mean()
+                        loss_s = (-delta.clip(upper=0)).ewm(span=14, adjust=False).mean()
+                        rsi_val = 100 - (100 / (1 + float(gain.iloc[-1]) / max(float(loss_s.iloc[-1]), 1e-9)))
+                        if rsi_val > 60 and current > sma20:
+                            results.append({
+                                "symbol": short,
+                                "ltp": round(current, 2),
+                                "change_pct": chg_1d,
+                                "sparkline": sparkline,
+                                "trigger": f"RSI {rsi_val:.0f} + above SMA20",
+                            })
 
             except Exception:
                 continue
@@ -145,6 +215,12 @@ def _scan_stocks(scan_type: str) -> list[dict]:
             results.sort(key=lambda x: x.get("pct_from_high", -100), reverse=True)
         elif scan_type == "52w_low":
             results.sort(key=lambda x: x.get("pct_from_low", 9999))
+        elif scan_type in ("gap_up",):
+            results.sort(key=lambda x: float(x.get("trigger", "0").split()[2].replace("%", "")), reverse=True)
+        elif scan_type in ("gap_down",):
+            results.sort(key=lambda x: float(x.get("trigger", "0").split()[2].replace("%", "")))
+        elif scan_type == "momentum":
+            results.sort(key=lambda x: x.get("change_pct", 0), reverse=True)
 
         return results[:15]
 

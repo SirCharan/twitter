@@ -100,7 +100,7 @@ function TradingViewChart({ symbol, stock }: { symbol: string; stock: string }) 
       <div
         ref={containerRef}
         className="tradingview-widget-container"
-        style={{ height: 420, width: "100%" }}
+        style={{ height: 550, width: "100%" }}
       />
     </div>
   );

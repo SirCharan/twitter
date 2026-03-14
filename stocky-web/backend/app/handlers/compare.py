@@ -67,4 +67,5 @@ async def compare_stocks(stocks_input: str) -> dict:
     if not stocks:
         raise ValueError("Could not fetch data for any of the stocks")
 
-    return {"stocks": stocks}
+    winner = max(stocks, key=lambda s: s.get("overall_score", 0)) if len(stocks) > 1 else None
+    return {"stocks": stocks, "winner": winner["symbol"] if winner else None}

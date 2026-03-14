@@ -7,6 +7,9 @@ logger = logging.getLogger(__name__)
 
 # Recent major Indian IPOs — updated periodically as a reliable fallback
 KNOWN_IPOS = [
+    {"company": "Hexaware Technologies", "symbol": "HEXAWARE", "issue_price": 674, "listing_date": "Feb 2025"},
+    {"company": "Dr Agarwals Eye Hospital", "symbol": "DRAGARWAL", "issue_price": 402, "listing_date": "Feb 2025"},
+    {"company": "Quality Power Electrical", "symbol": "QUALPOWER", "issue_price": 425, "listing_date": "Feb 2025"},
     {"company": "Hyundai India", "symbol": "HYUNDAI", "issue_price": 1960, "listing_date": "Oct 2024"},
     {"company": "Swiggy", "symbol": "SWIGGY", "issue_price": 390, "listing_date": "Nov 2024"},
     {"company": "NTPC Green Energy", "symbol": "NTPCGREEN", "issue_price": 108, "listing_date": "Nov 2024"},

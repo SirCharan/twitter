@@ -1,6 +1,9 @@
 import asyncio
 import logging
 
+import yfinance as yf
+
+from app import ai_client
 from app.database import log_api_call
 
 logger = logging.getLogger(__name__)
@@ -40,6 +43,19 @@ def _fetch_nse_overview() -> dict:
                 })
         except Exception:
             pass
+
+    # VIX
+    try:
+        vix_ticker = yf.Ticker("^INDIAVIX")
+        vix_info = vix_ticker.info
+        vix_price = vix_info.get("regularMarketPrice") or vix_info.get("currentPrice")
+        if vix_price:
+            result["vix"] = {
+                "value": round(float(vix_price), 2),
+                "change_pct": round(float(vix_info.get("regularMarketChangePercent", 0) or 0), 2),
+            }
+    except Exception:
+        pass
 
     try:
         gainers = nse.get_top_gainers()
@@ -105,4 +121,24 @@ async def get_overview() -> dict:
     """Market overview — indices, gainers/losers, breadth."""
     loop = asyncio.get_event_loop()
     await log_api_call("nse", "overview")
-    return await loop.run_in_executor(None, _fetch_nse_overview)
+    data = await loop.run_in_executor(None, _fetch_nse_overview)
+
+    # AI market mood
+    try:
+        indices = data.get("indices", [])
+        ad = data.get("advances_declines")
+        mood_prompt = "Indian market today: "
+        for idx in indices[:3]:
+            mood_prompt += f"{idx['name']} {idx['pct_change']:+.2f}%, "
+        if ad:
+            mood_prompt += f"Breadth: {ad['advances']} up / {ad['declines']} down. "
+        if data.get("vix"):
+            mood_prompt += f"VIX: {data['vix']['value']}. "
+        mood_prompt += "Give a one-sentence market mood summary. Be specific and direct."
+        mood = await ai_client.quick_chat(mood_prompt)
+        if mood:
+            data["ai_mood"] = mood
+    except Exception:
+        pass
+
+    return data
