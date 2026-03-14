@@ -258,11 +258,11 @@ async def handle_chat(
                 # Use gpt-oss-20b via OpenRouter for conversations, fall back to Groq
                 content = None
                 try:
-                    content = await ai_client.openrouter_conversation(
+                    content = await ai_client.groq_conversation(
                         message, user_name=username, history=history,
                     )
                 except Exception:
-                    logger.warning("OpenRouter conversation failed, falling back to Groq")
+                    logger.warning("Groq conversation (gpt-oss-120b) failed, falling back to default model")
                 if not content:
                     # Fallback: use Groq reply from intent parse, or direct Groq chat
                     content = parsed.get("reply") or ""
@@ -282,11 +282,11 @@ async def handle_chat(
             # Try gpt-oss-20b via OpenRouter first, then Groq
             ai_reply = None
             try:
-                ai_reply = await ai_client.openrouter_conversation(
+                ai_reply = await ai_client.groq_conversation(
                     message, user_name=username, history=history,
                 )
             except Exception:
-                logger.warning("OpenRouter conversation failed, falling back to Groq")
+                logger.warning("Groq conversation (gpt-oss-120b) failed, falling back to default model")
             if not ai_reply:
                 try:
                     ai_reply = await ai_client.chat(message, user_name=username, history=history)
