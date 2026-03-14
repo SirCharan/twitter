@@ -6,9 +6,9 @@ from groq import AsyncGroq
 
 from app.config import (
     GROQ_API_KEY,
+    GROQ_CONV_MODEL,
     GROQ_MODEL,
     OPENROUTER_API_KEY,
-    OPENROUTER_CONV_MODEL,
     OPENROUTER_MODEL,
 )
 from app.database import log_api_call
@@ -420,15 +420,15 @@ async def openrouter_chat(
         raise
 
 
-async def openrouter_conversation(
+async def groq_conversation(
     user_message: str,
     user_name: str = "boss",
     history: list[dict] | None = None,
     system_prompt: str | None = None,
     max_tokens: int = 2048,
 ) -> str | None:
-    """Call OpenRouter (gpt-oss-20b) for conversations and high-level queries."""
-    client = _get_openrouter_client()
+    """Use gpt-oss-120b via Groq for conversations and high-level queries."""
+    client = _get_client()
     if not client:
         return None
 
@@ -438,22 +438,15 @@ async def openrouter_conversation(
     messages.append({"role": "user", "content": f"[User: {user_name}] {user_message}"})
 
     try:
-        response = await client.post(
-            "/chat/completions",
-            json={
-                "model": OPENROUTER_CONV_MODEL,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": 0.7,
-            },
+        response = await client.chat.completions.create(
+            model=GROQ_CONV_MODEL,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=max_tokens,
         )
-        if response.status_code != 200:
-            logger.error(f"OpenRouter conv HTTP {response.status_code}: {response.text}")
-        response.raise_for_status()
-        data = response.json()
-        tokens = data.get("usage", {}).get("total_tokens", 0)
-        await log_api_call("openrouter", "conversation", tokens)
-        return data["choices"][0]["message"]["content"]
+        tokens = response.usage.total_tokens if response.usage else 0
+        await log_api_call("groq", "conversation", tokens)
+        return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"OpenRouter conversation error: {e}")
+        logger.error(f"Groq conversation error: {e}")
         raise
