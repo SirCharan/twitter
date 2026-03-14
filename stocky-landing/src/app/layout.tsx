@@ -19,7 +19,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Stocky AI — AI Trading Assistant for Indian Markets",
   description:
-    "AI-powered stock analysis and trading assistant for Zerodha. Real-time market intelligence, portfolio automation, and trade execution for NSE & BSE. 150%+ returns since June 2025.",
+    "AI-powered stock analysis and trading assistant for Zerodha. Real-time market intelligence, portfolio automation, and trade execution for NSE & BSE.",
   metadataBase: new URL("https://stockyai.xyz"),
   alternates: {
     canonical: "https://stockyai.xyz",
@@ -117,13 +117,18 @@ export default function RootLayout({
                     "priceCurrency": "INR",
                   },
                   "featureList": [
-                    "AI stock analysis for NSE and BSE",
-                    "Zerodha Kite integration for trade execution",
-                    "Real-time market news aggregation with AI summaries",
-                    "Technical and fundamental analysis",
-                    "Portfolio automation and rebalancing",
-                    "Sector rotation analysis (RRG)",
-                    "IPO tracking and macro dashboard",
+                    "AI stock analysis for NSE and BSE (fundamental, technical, news sentiment)",
+                    "Zerodha Kite integration for trade execution with 2-phase confirmation",
+                    "Real-time market news from 25+ RSS sources with category filtering",
+                    "Deep Research with dual-agent AI system (Quick Agent + Deep Agent)",
+                    "Agent Debate — two AI agents analyse independently then synthesise",
+                    "Market scanning — 6 types across Nifty 100 with sparklines",
+                    "Stock comparison with winner detection",
+                    "TradingView live chart embeds and custom analysis charts",
+                    "Sector rotation analysis (Relative Rotation Graph)",
+                    "IPO tracking with gain badges",
+                    "Macro dashboard — forex, bonds, commodities (USD & INR), crypto (BTC, ETH)",
+                    "Portfolio, holdings, and margin overview via Kite API",
                   ],
                 },
                 {
@@ -154,7 +159,7 @@ export default function RootLayout({
           }}
         />
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-2NNX6VPP2E"
+          src="https://www.googletagmanager.com/gtag/js?id=G-93SFBS9CDS"
           strategy="afterInteractive"
         />
         <Script id="gtag-init" strategy="afterInteractive">
@@ -162,7 +167,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-2NNX6VPP2E');
+            gtag('config', 'G-93SFBS9CDS');
           `}
         </Script>
       </head>
