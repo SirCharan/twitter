@@ -1,8 +1,14 @@
 import type { OverviewData } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
 
-function fmt(v: number) {
+function fmt(v: number | null | undefined) {
+  if (v == null) return "—";
   return v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
+function pct(v: number | null | undefined, decimals = 2) {
+  if (v == null) return "—";
+  return v.toFixed(decimals);
 }
 
 export default function OverviewCard({ data }: { data: Record<string, unknown> }) {
@@ -68,16 +74,16 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold tabular-nums" style={{ color: vixColor! }}>
-              {vix.value.toFixed(2)}
+              {pct(vix.value)}
             </span>
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-medium"
               style={{
-                background: vix.pct_change >= 0 ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)",
-                color: vix.pct_change >= 0 ? "var(--negative)" : "var(--positive)",
+                background: (vix.pct_change ?? 0) >= 0 ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)",
+                color: (vix.pct_change ?? 0) >= 0 ? "var(--negative)" : "var(--positive)",
               }}
             >
-              {vix.pct_change >= 0 ? "+" : ""}{vix.pct_change.toFixed(2)}%
+              {(vix.pct_change ?? 0) >= 0 ? "+" : ""}{pct(vix.pct_change)}%
             </span>
           </div>
         </div>
@@ -87,7 +93,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
       {d.indices && d.indices.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {d.indices.map((idx, i) => {
-            const isPos = idx.change >= 0;
+            const isPos = (idx.change ?? 0) >= 0;
             const color = isPos ? "var(--positive)" : "var(--negative)";
             return (
               <div
@@ -102,7 +108,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
                   {fmt(idx.value)}
                 </p>
                 <p className="text-xs font-medium mt-0.5" style={{ color }}>
-                  {isPos ? "+" : ""}{fmt(idx.change)} ({isPos ? "+" : ""}{idx.pct_change.toFixed(2)}%)
+                  {isPos ? "+" : ""}{fmt(idx.change)} ({isPos ? "+" : ""}{pct(idx.pct_change)}%)
                 </p>
                 {(idx.open || idx.high || idx.low) && (
                   <div className="mt-1.5 flex gap-2 text-[10px]" style={{ color: "var(--muted)" }}>
@@ -158,7 +164,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
                     </span>
                     <div className="text-right shrink-0">
                       <span className="block text-[11px] font-semibold" style={{ color: "var(--positive)" }}>
-                        +{g.pct_change.toFixed(2)}%
+                        +{pct(g.pct_change)}%
                       </span>
                       {g.ltp > 0 && (
                         <span className="block text-[10px]" style={{ color: "var(--muted)" }}>
@@ -188,7 +194,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
                     </span>
                     <div className="text-right shrink-0">
                       <span className="block text-[11px] font-semibold" style={{ color: "var(--negative)" }}>
-                        {l.pct_change.toFixed(2)}%
+                        {pct(l.pct_change)}%
                       </span>
                       {l.ltp > 0 && (
                         <span className="block text-[10px]" style={{ color: "var(--muted)" }}>
@@ -236,14 +242,14 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
           )}
           {d.gainers?.[0] && (
             <p className="mt-1 text-sm leading-snug" style={{ color: "var(--foreground)" }}>
-              Top gainer: {d.gainers[0].symbol} +{d.gainers[0].pct_change.toFixed(1)}%
-              {d.gainers[1] ? `, followed by ${d.gainers[1].symbol} +${d.gainers[1].pct_change.toFixed(1)}%` : ""}.
+              Top gainer: {d.gainers[0].symbol} +{pct(d.gainers[0].pct_change, 1)}%
+              {d.gainers[1] ? `, followed by ${d.gainers[1].symbol} +${pct(d.gainers[1].pct_change, 1)}%` : ""}.
             </p>
           )}
           {d.losers?.[0] && (
             <p className="mt-0.5 text-sm leading-snug" style={{ color: "var(--foreground)" }}>
-              Biggest drag: {d.losers[0].symbol} {d.losers[0].pct_change.toFixed(1)}%
-              {d.losers[1] ? `, ${d.losers[1].symbol} ${d.losers[1].pct_change.toFixed(1)}%` : ""}.
+              Biggest drag: {d.losers[0].symbol} {pct(d.losers[0].pct_change, 1)}%
+              {d.losers[1] ? `, ${d.losers[1].symbol} ${pct(d.losers[1].pct_change, 1)}%` : ""}.
             </p>
           )}
         </div>
