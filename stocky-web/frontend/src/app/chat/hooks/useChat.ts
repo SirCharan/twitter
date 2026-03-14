@@ -270,9 +270,9 @@ export function useChat() {
       // Add debate progress placeholder
       const progressId = `debate-${Date.now()}`;
       const DEBATE_PHASES = [
-        "Quick Agent analyzing...",
-        "Deep Agent analyzing...",
-        "Synthesizing final answer...",
+        "Stocky AI is analyzing...",
+        "Stocky AI is deep-diving...",
+        "Stocky AI is synthesizing...",
       ];
 
       const makeDebateData = (

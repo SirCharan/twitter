@@ -97,7 +97,7 @@ export default function AgentDebateCard({ data }: Props) {
             className="text-[10px] font-semibold uppercase tracking-widest"
             style={{ color: "var(--accent)" }}
           >
-            Agent Debate
+            Stocky AI Debate
           </span>
         </div>
         <div className="divider-gradient flex-1" />
@@ -134,7 +134,7 @@ export default function AgentDebateCard({ data }: Props) {
       {/* Agent sections (collapsed by default) */}
       <div className="space-y-2">
         <AgentSection
-          title="Quick Agent"
+          title="Stocky Quick"
           icon="⚡"
           model={d.agent_a.model}
           elapsed={d.agent_a.elapsed}
@@ -143,7 +143,7 @@ export default function AgentDebateCard({ data }: Props) {
         />
         {d.agent_b && (
           <AgentSection
-            title="Deep Agent"
+            title="Stocky Deep"
             icon="🔬"
             model={d.agent_b.model}
             elapsed={d.agent_b.elapsed}

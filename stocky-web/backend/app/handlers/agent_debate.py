@@ -8,9 +8,9 @@ from app.config import OPENROUTER_API_KEY
 logger = logging.getLogger(__name__)
 
 DEBATE_PHASES = [
-    {"phase": "agent_a", "label": "Quick Agent analyzing..."},
-    {"phase": "agent_b", "label": "Deep Agent analyzing..."},
-    {"phase": "synthesis", "label": "Synthesizing final answer..."},
+    {"phase": "agent_a", "label": "Stocky AI is analyzing..."},
+    {"phase": "agent_b", "label": "Stocky AI is deep-diving..."},
+    {"phase": "synthesis", "label": "Stocky AI is synthesizing..."},
 ]
 
 
@@ -28,7 +28,7 @@ async def stream_agent_debate(query: str):
         "phase": "agent_a",
         "status": "started",
         "label": DEBATE_PHASES[0]["label"],
-        "thinking": "Analyzing with Groq llama-3.3-70b — scanning market data, fundamentals, and news...",
+        "thinking": "Stocky AI is scanning market data, fundamentals, and news...",
     })
 
     t0 = time.time()
@@ -43,7 +43,7 @@ async def stream_agent_debate(query: str):
             agent_a_response = "Unable to generate initial analysis."
     except Exception as e:
         logger.error(f"Agent A error: {e}")
-        agent_a_response = f"Quick Agent encountered an error: {e}"
+        agent_a_response = f"Stocky AI encountered an error: {e}"
 
     agent_a_elapsed = round(time.time() - t0, 1)
     yield _sse({
@@ -51,10 +51,10 @@ async def stream_agent_debate(query: str):
         "agent": "quick",
         "content": agent_a_response,
         "elapsed": agent_a_elapsed,
-        "model": "llama-3.3-70b",
+        "model": "Stocky Quick",
     })
 
-    # ── Phase 2: Agent B (OpenRouter/Gemini) — critique + deep analysis ──
+    # ── Phase 2: Agent B — critique + deep analysis ──
     agent_b_response = None
     agent_b_elapsed = 0.0
 
@@ -64,7 +64,7 @@ async def stream_agent_debate(query: str):
             "phase": "agent_b",
             "status": "started",
             "label": DEBATE_PHASES[1]["label"],
-            "thinking": "Deep analysis with Gemini 2.5 Pro — critiquing Quick Agent's findings, cross-referencing data...",
+            "thinking": "Stocky AI is critiquing initial findings, cross-referencing data...",
         })
 
         t0 = time.time()
@@ -92,30 +92,30 @@ async def stream_agent_debate(query: str):
                 "agent": "deep",
                 "content": agent_b_response,
                 "elapsed": agent_b_elapsed,
-                "model": "gemini-2.5-pro",
+                "model": "Stocky Deep",
             })
         else:
             yield _sse({
                 "type": "phase",
                 "phase": "agent_b",
                 "status": "error",
-                "label": "Deep Agent unavailable — using Quick Agent only",
+                "label": "Stocky Deep unavailable — using single analysis",
             })
     else:
         yield _sse({
             "type": "phase",
             "phase": "agent_b",
             "status": "skipped",
-            "label": "Deep Agent not configured — using Quick Agent only",
+            "label": "Stocky Deep not configured — using single analysis",
         })
 
-    # ── Phase 3: Synthesis (Groq) — merge both analyses ──
+    # ── Phase 3: Synthesis — merge both analyses ──
     yield _sse({
         "type": "phase",
         "phase": "synthesis",
         "status": "started",
         "label": DEBATE_PHASES[2]["label"],
-        "thinking": "Merging both perspectives into a definitive answer...",
+        "thinking": "Stocky AI is merging both perspectives into a definitive answer...",
     })
 
     t0 = time.time()
@@ -123,8 +123,8 @@ async def stream_agent_debate(query: str):
         if agent_b_response:
             synthesis_input = (
                 f"User's question: {query}\n\n"
-                f"--- Quick Agent (llama-3.3-70b) ---\n{agent_a_response}\n\n"
-                f"--- Deep Agent (gemini-2.5-pro) ---\n{agent_b_response}\n\n"
+                f"--- Quick Agent ---\n{agent_a_response}\n\n"
+                f"--- Deep Agent ---\n{agent_b_response}\n\n"
                 "Synthesize the definitive answer as instructed."
             )
             synthesis = await ai_client.chat(
@@ -157,12 +157,12 @@ async def stream_agent_debate(query: str):
         "data": {
             "query": query,
             "agent_a": {
-                "model": "llama-3.3-70b",
+                "model": "Stocky Quick",
                 "response": agent_a_response,
                 "elapsed": agent_a_elapsed,
             },
             "agent_b": {
-                "model": "gemini-2.5-pro",
+                "model": "Stocky Deep",
                 "response": agent_b_response,
                 "elapsed": agent_b_elapsed,
             } if agent_b_response else None,
