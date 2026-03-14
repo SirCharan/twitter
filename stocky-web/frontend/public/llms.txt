@@ -34,6 +34,14 @@ Stocky AI is a conversational AI assistant for Indian retail investors. It provi
 - Rendering: Shared MarkdownRich component for tables, inline formatting, lists across all card outputs
 - Analytics: Google Analytics (G-93SFBS9CDS)
 
+## Screenshots
+
+![Empty chat state with feature bar and Quick/Deep Research toggle](https://llm.stockyai.xyz/screenshots/chat-empty.png)
+![Market Overview — live indices, gainers, losers](https://llm.stockyai.xyz/screenshots/market-overview.png)
+![News feed with source badges and category filtering](https://llm.stockyai.xyz/screenshots/news.png)
+![Macro Dashboard — RBI policy, forex, commodities](https://llm.stockyai.xyz/screenshots/macro-dashboard.png)
+![Market Scan — Volume Pump with color-coded volume bars](https://llm.stockyai.xyz/screenshots/scan-results.png)
+
 ## Links
 
 - Web App: https://llm.stockyai.xyz

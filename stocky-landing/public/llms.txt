@@ -20,6 +20,14 @@ Stocky AI is a personal AI trading assistant that integrates with Zerodha for re
 - Portfolio, holdings, and margin overview via Kite API
 - Market overview with VIX, breadth, AI mood summary
 
+## Screenshots
+
+![Empty chat state with feature bar and Quick/Deep Research toggle](https://stockyai.xyz/screenshots/chat-empty.png)
+![Market Overview — live indices, gainers, losers](https://stockyai.xyz/screenshots/market-overview.png)
+![News feed with source badges and category filtering](https://stockyai.xyz/screenshots/news.png)
+![Macro Dashboard — RBI policy, forex, commodities](https://stockyai.xyz/screenshots/macro-dashboard.png)
+![Market Scan — Volume Pump with color-coded volume bars](https://stockyai.xyz/screenshots/scan-results.png)
+
 ## Links
 
 - Landing Page: https://stockyai.xyz
