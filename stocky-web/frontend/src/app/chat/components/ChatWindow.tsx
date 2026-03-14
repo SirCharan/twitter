@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useEffect, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
+import { track } from "@/lib/analytics";
 import MessageBubble from "./MessageBubble";
 import ChatInput, { type ChatMode } from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
@@ -110,6 +111,7 @@ export default function ChatWindow({
   function handleAnalyseSubmit() {
     const stock = stockQuery.trim();
     if (!stock) return;
+    track("feature_use", "analyse_submit", { stock, mode: analyseMode, has_note: !!analyseNote.trim() });
     const mode = ANALYSE_MODES.find((m) => m.id === analyseMode)!;
     let msg = mode.msg(stock);
     if (analyseNote.trim()) msg += ` — ${analyseNote.trim()}`;
@@ -144,6 +146,7 @@ export default function ChatWindow({
   }
 
   function handleFeatureSend(feature: FeatureId, params: Record<string, string>) {
+    track("feature_use", feature, params);
     if (feature === "deep_research" && onDeepResearch) {
       onDeepResearch(params.stock || "", params.mode || "full");
     } else {

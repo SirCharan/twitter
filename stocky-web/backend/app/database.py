@@ -87,6 +87,20 @@ async def init_db():
                 tokens INTEGER DEFAULT 0,
                 ts TEXT DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS analytics_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                event_name TEXT NOT NULL,
+                event_data TEXT,
+                platform TEXT NOT NULL DEFAULT 'web',
+                conversation_id TEXT,
+                session_id TEXT,
+                ts TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_analytics_ts ON analytics_events(ts);
+            CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics_events(event_type);
         """)
         await db.commit()
 
@@ -394,3 +408,105 @@ async def get_ai_token_totals() -> tuple[int, int]:
         )
         alltime = (await cursor.fetchone())[0]
         return today, alltime
+
+
+# --- Analytics ---
+
+async def log_analytics_batch(events: list[dict]):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.executemany(
+            """INSERT INTO analytics_events
+               (event_type, event_name, event_data, platform, conversation_id, session_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            [
+                (
+                    e["event_type"],
+                    e["event_name"],
+                    json.dumps(e.get("event_data")) if e.get("event_data") else None,
+                    e.get("platform", "web"),
+                    e.get("conversation_id"),
+                    e.get("session_id"),
+                )
+                for e in events
+            ],
+        )
+        await db.commit()
+
+
+async def get_analytics_daily_counts(days: int = 30) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """SELECT date(ts) as day, COUNT(*) as count
+               FROM analytics_events
+               WHERE ts >= datetime('now', ?)
+               GROUP BY date(ts) ORDER BY day""",
+            (f"-{days} days",),
+        )
+        return [{"day": r[0], "count": r[1]} for r in await cursor.fetchall()]
+
+
+async def get_analytics_feature_counts(days: int = 30) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """SELECT event_name, COUNT(*) as count
+               FROM analytics_events
+               WHERE ts >= datetime('now', ?)
+               GROUP BY event_name ORDER BY count DESC LIMIT 20""",
+            (f"-{days} days",),
+        )
+        return [{"name": r[0], "count": r[1]} for r in await cursor.fetchall()]
+
+
+async def get_analytics_hourly_distribution(days: int = 30) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """SELECT CAST(strftime('%%H', ts) AS INTEGER) as hour, COUNT(*) as count
+               FROM analytics_events
+               WHERE ts >= datetime('now', ?)
+               GROUP BY hour ORDER BY hour""",
+            (f"-{days} days",),
+        )
+        return [{"hour": r[0], "count": r[1]} for r in await cursor.fetchall()]
+
+
+async def get_analytics_platform_breakdown(days: int = 30) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """SELECT platform, COUNT(*) as count
+               FROM analytics_events
+               WHERE ts >= datetime('now', ?)
+               GROUP BY platform""",
+            (f"-{days} days",),
+        )
+        return [{"platform": r[0], "count": r[1]} for r in await cursor.fetchall()]
+
+
+async def get_analytics_recent(limit: int = 50) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM analytics_events ORDER BY id DESC LIMIT ?", (limit,)
+        )
+        rows = await cursor.fetchall()
+        results = []
+        for r in rows:
+            d = dict(r)
+            if d.get("event_data"):
+                d["event_data"] = json.loads(d["event_data"])
+            results.append(d)
+        return results
+
+
+async def get_analytics_summary() -> dict:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT COUNT(*) FROM analytics_events WHERE date(ts) = date('now')"
+        )
+        today = (await cursor.fetchone())[0]
+        cursor = await db.execute("SELECT COUNT(*) FROM analytics_events")
+        alltime = (await cursor.fetchone())[0]
+        cursor = await db.execute(
+            "SELECT COUNT(DISTINCT session_id) FROM analytics_events WHERE date(ts) = date('now') AND session_id IS NOT NULL"
+        )
+        sessions_today = (await cursor.fetchone())[0]
+        return {"today": today, "alltime": alltime, "sessions_today": sessions_today}

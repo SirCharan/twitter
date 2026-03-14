@@ -18,6 +18,7 @@ from app.kite_auth import auto_login, get_authenticated_kite
 from app.models import (
     AgentDebateRequest,
     AlertRequest,
+    AnalyticsBatchRequest,
     ChartRequest,
     ChatRequest,
     ChatResponse,
@@ -274,3 +275,33 @@ async def create_alert_endpoint(req: AlertRequest):
 async def delete_alert_endpoint(alert_id: int):
     from app.handlers.alerts import delete_alert
     return await delete_alert(alert_id)
+
+
+# --- Analytics ---
+
+@app.post("/api/analytics/track")
+async def track_analytics(req: AnalyticsBatchRequest):
+    from app.database import log_analytics_batch
+    events = [e.model_dump() for e in req.events]
+    await log_analytics_batch(events)
+    return {"status": "ok", "count": len(events)}
+
+
+@app.get("/api/analytics/dashboard")
+async def analytics_dashboard(days: int = 30):
+    from app.database import (
+        get_analytics_daily_counts,
+        get_analytics_feature_counts,
+        get_analytics_hourly_distribution,
+        get_analytics_platform_breakdown,
+        get_analytics_recent,
+        get_analytics_summary,
+    )
+    return {
+        "daily_counts": await get_analytics_daily_counts(days),
+        "feature_counts": await get_analytics_feature_counts(days),
+        "hourly_distribution": await get_analytics_hourly_distribution(days),
+        "platform_breakdown": await get_analytics_platform_breakdown(days),
+        "recent_activity": await get_analytics_recent(),
+        "summary": await get_analytics_summary(),
+    }

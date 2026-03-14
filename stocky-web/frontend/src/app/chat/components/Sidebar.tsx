@@ -1,4 +1,5 @@
 import type { ConversationSummary } from "@/lib/types";
+import { track } from "@/lib/analytics";
 
 interface Props {
   conversations: ConversationSummary[];
@@ -41,7 +42,7 @@ export default function Sidebar({
           </span>
         </div>
         <button
-          onClick={onNewChat}
+          onClick={() => { track("click", "new_chat"); onNewChat(); }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium tracking-wide transition-all hover:opacity-90"
           style={{ background: "var(--accent)", color: "var(--background)" }}
         >
@@ -66,7 +67,7 @@ export default function Sidebar({
           return (
             <div
               key={c.conversation_id}
-              onClick={() => onSelect(c.conversation_id)}
+              onClick={() => { track("navigation", "load_conversation", { conversation_id: c.conversation_id }); onSelect(c.conversation_id); }}
               className={`conv-item group mb-0.5 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm ${
                 isActive ? "bg-[var(--card-bg)]" : ""
               }`}
@@ -88,6 +89,7 @@ export default function Sidebar({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  track("click", "delete_conversation", { conversation_id: c.conversation_id });
                   onDelete(c.conversation_id);
                 }}
                 className="ml-2 hidden rounded p-1 text-xs opacity-40 transition-opacity hover:opacity-100 group-hover:block"
@@ -105,10 +107,17 @@ export default function Sidebar({
       <div className="divider-gradient mx-4" />
 
       {/* Footer */}
-      <div className="px-5 py-4">
+      <div className="px-5 py-4 flex items-center justify-between">
         <p className="text-[10px] tracking-wide" style={{ color: "var(--muted)" }}>
           Stocky AI
         </p>
+        <a
+          href="/analytics"
+          className="text-[10px] tracking-wide transition-opacity hover:opacity-80"
+          style={{ color: "var(--accent)" }}
+        >
+          Analytics
+        </a>
       </div>
     </div>
   );

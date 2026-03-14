@@ -65,3 +65,16 @@ class SummariseRequest(BaseModel):
 class AgentDebateRequest(BaseModel):
     query: str
     conversation_id: str | None = None
+
+
+class AnalyticsEvent(BaseModel):
+    event_type: str
+    event_name: str
+    event_data: dict | None = None
+    platform: str = "web"
+    conversation_id: str | None = None
+    session_id: str | None = None
+
+
+class AnalyticsBatchRequest(BaseModel):
+    events: list[AnalyticsEvent]

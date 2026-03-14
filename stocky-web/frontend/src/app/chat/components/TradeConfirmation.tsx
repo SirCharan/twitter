@@ -1,4 +1,5 @@
 import type { TradeConfirmData } from "@/lib/types";
+import { track } from "@/lib/analytics";
 
 interface Props {
   data: Record<string, unknown>;
@@ -84,14 +85,14 @@ export default function TradeConfirmation({ data, actionId, onAction }: Props) {
       {/* Buttons — stacked, confirm full-width */}
       <div className="flex flex-col gap-2 px-4 pb-4">
         <button
-          onClick={() => onAction(actionId, "confirm")}
+          onClick={() => { track("trade_action", "trade_confirm", { action_id: actionId, symbol: d.symbol }); onAction(actionId, "confirm"); }}
           className="w-full rounded-xl py-2.5 text-sm font-semibold tracking-wide transition-all hover:opacity-90"
           style={{ background: accentColor, color: "#0A0A0A" }}
         >
           Confirm {d.txn_type}
         </button>
         <button
-          onClick={() => onAction(actionId, "cancel")}
+          onClick={() => { track("trade_action", "trade_cancel", { action_id: actionId, symbol: d.symbol }); onAction(actionId, "cancel"); }}
           className="w-full rounded-xl border py-2 text-xs font-medium tracking-wide transition-all hover:opacity-80"
           style={{ borderColor: "var(--card-border)", color: "var(--muted)", background: "transparent" }}
         >

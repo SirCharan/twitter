@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from bot.auth_check import authorized
-from bot import ai_client, database
+from bot import ai_client, analytics, database
 from bot.handlers import alert, analyse, auth, exitrule, help, market, maxloss, news, overview, portfolio, stoploss, trading, usage
 
 logger = logging.getLogger(__name__)
@@ -370,6 +370,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     name = _get_name(update)
+    await analytics.track("query", "telegram_message", {"text": text[:200]})
     result = _parse_natural(text)
 
     # --- Regex matched a command — dispatch directly ---

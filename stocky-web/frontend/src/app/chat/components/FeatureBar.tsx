@@ -1,4 +1,5 @@
 "use client";
+import { track } from "@/lib/analytics";
 
 export type FeatureId =
   | "market_overview"
@@ -75,7 +76,10 @@ export default function FeatureBar({ active, onSelect, disabled, visible = true 
               return (
                 <button
                   key={f.id}
-                  onClick={() => onSelect(isActive ? null : f.id)}
+                  onClick={() => {
+                    track("click", "feature_chip_click", { feature: f.id, category: cat.label });
+                    onSelect(isActive ? null : f.id);
+                  }}
                   disabled={disabled}
                   className="flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-medium transition-all disabled:opacity-30"
                   style={{

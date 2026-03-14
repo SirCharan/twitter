@@ -172,6 +172,28 @@ export async function streamResearch(stock: string, mode: string): Promise<Respo
   }
 }
 
+// --- Analytics ---
+
+export interface AnalyticsDashboard {
+  daily_counts: { day: string; count: number }[];
+  feature_counts: { name: string; count: number }[];
+  hourly_distribution: { hour: number; count: number }[];
+  platform_breakdown: { platform: string; count: number }[];
+  recent_activity: {
+    id: number;
+    event_type: string;
+    event_name: string;
+    event_data: Record<string, unknown> | null;
+    platform: string;
+    ts: string;
+  }[];
+  summary: { today: number; alltime: number; sessions_today: number };
+}
+
+export async function getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboard> {
+  return apiFetch<AnalyticsDashboard>(`/api/analytics/dashboard?days=${days}`);
+}
+
 /** Stream general deep research (agent debate) via SSE. */
 export async function streamDeepResearchGeneral(query: string): Promise<Response> {
   const token = getToken();

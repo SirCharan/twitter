@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { track } from "@/lib/analytics";
 
 export type ChatMode = "quick" | "deep";
 
@@ -23,6 +24,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
   function handleSubmit() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
+    track("query", "chat_message", { mode, length: trimmed.length });
     onSend(trimmed);
     setText("");
   }
@@ -43,7 +45,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           style={{ background: "var(--surface)", border: "1px solid var(--card-border)" }}
         >
           <button
-            onClick={() => onModeChange("quick")}
+            onClick={() => { track("click", "mode_toggle", { mode: "quick" }); onModeChange("quick"); }}
             disabled={disabled}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all"
             style={{
@@ -62,7 +64,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
             Quick
           </button>
           <button
-            onClick={() => onModeChange("deep")}
+            onClick={() => { track("click", "mode_toggle", { mode: "deep" }); onModeChange("deep"); }}
             disabled={disabled}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all"
             style={{
