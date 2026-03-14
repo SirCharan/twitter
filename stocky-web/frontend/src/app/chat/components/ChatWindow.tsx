@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import type { ChatMessage } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
@@ -16,12 +16,6 @@ interface Props {
   onDeepResearch?: (stock: string, mode: string) => void;
 }
 
-const QUICK_ACTIONS = [
-  { label: "Market overview", text: "how's the market" },
-  { label: "Check portfolio", text: "my portfolio" },
-  { label: "Latest news",     text: "market news" },
-];
-
 const ANALYSE_MODES = [
   { id: "full",       label: "Full Analysis", msg: (s: string) => `how is ${s} doing` },
   { id: "news",       label: "News",          msg: (s: string) => `${s} latest news` },
@@ -29,6 +23,43 @@ const ANALYSE_MODES = [
   { id: "technical",  label: "Technical",     msg: (s: string) => `${s} technical analysis` },
 ] as const;
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
+
+/* ── Market-hours detection (IST) ── */
+function isMarketOpen(): boolean {
+  const now = new Date();
+  const ist = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const day = ist.getDay();
+  if (day === 0 || day === 6) return false;
+  const minutes = ist.getHours() * 60 + ist.getMinutes();
+  return minutes >= 555 && minutes <= 930; // 9:15 AM – 3:30 PM
+}
+
+/* ── Dynamic prompt helpers ── */
+type PromptHelper = { label: string; text: string } | { label: string; action: "analyse" };
+
+function getPromptHelpers(marketOpen: boolean): PromptHelper[] {
+  const common: PromptHelper[] = [
+    { label: "📈 Market overview", text: "how's the market" },
+    { label: "📰 Latest news", text: "market news" },
+    { label: "💼 My portfolio", text: "my portfolio" },
+    { label: "🔍 Analyse a stock", action: "analyse" },
+  ];
+
+  if (marketOpen) {
+    return [
+      ...common,
+      { label: "🔥 Top movers", text: "market scan — volume pump" },
+      { label: "📊 52W highs", text: "market scan — 52w high" },
+      { label: "⚡ Breakouts", text: "market scan — breakouts" },
+    ];
+  }
+  return [
+    ...common,
+    { label: "🌐 Macro outlook", text: "macro dashboard" },
+    { label: "🔄 Sector rotation", text: "rrg" },
+    { label: "🚀 IPO tracker", text: "ipo tracker" },
+  ];
+}
 
 /** Compose the chat message for each feature */
 function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
@@ -79,6 +110,14 @@ export default function ChatWindow({
 
   // Feature bar
   const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
+  const [featureBarVisible, setFeatureBarVisible] = useState(true);
+
+  // Prompt helpers
+  const promptHelpers = useMemo(() => getPromptHelpers(isMarketOpen()), []);
+  const lastMsg = messages[messages.length - 1];
+  const showPromptHelpers =
+    (messages.length === 0 && !isLoading) ||
+    (lastMsg?.role === "assistant" && !isLoading);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,6 +126,13 @@ export default function ChatWindow({
   useEffect(() => {
     if (analyseOpen) setTimeout(() => stockInputRef.current?.focus(), 50);
   }, [analyseOpen]);
+
+  // Show feature bar again after AI responds
+  useEffect(() => {
+    if (lastMsg?.role === "assistant" && !isLoading) {
+      setFeatureBarVisible(true);
+    }
+  }, [lastMsg?.role, isLoading]);
 
   const showEmpty = messages.length === 0 && !isLoading;
 
@@ -103,6 +149,11 @@ export default function ChatWindow({
     setAnalyseNote("");
   }
 
+  function handleFeatureSelect(id: FeatureId | null) {
+    setActiveFeature(id);
+    if (id) setFeatureBarVisible(false);
+  }
+
   function handleFeatureSend(feature: FeatureId, params: Record<string, string>) {
     if (feature === "deep_research" && onDeepResearch) {
       onDeepResearch(params.stock || "", params.mode || "full");
@@ -114,14 +165,23 @@ export default function ChatWindow({
 
   function handleSend(text: string) {
     setActiveFeature(null);
+    setFeatureBarVisible(false);
     onSend(text);
+  }
+
+  function handlePromptClick(helper: PromptHelper) {
+    if ("action" in helper) {
+      setAnalyseOpen(true);
+    } else {
+      handleSend(helper.text);
+    }
   }
 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div
-        className="glass flex items-center gap-3 px-5 py-3"
+        className="glass flex items-center gap-3 px-5 py-2 sm:py-3"
         style={{ borderBottom: "1px solid var(--card-border)" }}
       >
         <button onClick={onMenuClick} className="md:hidden" style={{ color: "var(--muted)" }}>
@@ -161,7 +221,7 @@ export default function ChatWindow({
                 Your AI trading assistant. Ask me anything.
               </p>
 
-              {analyseOpen ? (
+              {analyseOpen && (
                 /* Grok-style stock picker */
                 <div
                   className="mt-8 rounded-2xl border p-5 text-left"
@@ -236,27 +296,6 @@ export default function ChatWindow({
                     Analyse →
                   </button>
                 </div>
-              ) : (
-                /* Quick action chips */
-                <div className="mt-8 flex flex-wrap justify-center gap-2">
-                  <button
-                    onClick={() => setAnalyseOpen(true)}
-                    className="suggestion-chip rounded-full border px-4 py-2 text-xs"
-                    style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "rgba(201,169,110,0.06)" }}
-                  >
-                    Analyse a stock
-                  </button>
-                  {QUICK_ACTIONS.map((s) => (
-                    <button
-                      key={s.text}
-                      onClick={() => handleSend(s.text)}
-                      className="suggestion-chip rounded-full border px-4 py-2 text-xs"
-                      style={{ borderColor: "var(--card-border)", color: "var(--foreground)", background: "transparent" }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
               )}
             </div>
           </div>
@@ -271,10 +310,41 @@ export default function ChatWindow({
         </div>
       </div>
 
-      {/* Input + Feature bar */}
-      <div className="px-4 pb-4 pt-2">
+      {/* Input + Feature bar + Prompt helpers */}
+      <div className="px-3 pb-4 pt-2 sm:px-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
         <div className="mx-auto max-w-3xl">
-          {/* Feature panel (slide up above input) */}
+          {/* Prompt helpers */}
+          {showPromptHelpers && (
+            <div className="mb-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {promptHelpers.map((h) => {
+                const isAnalyse = "action" in h;
+                return (
+                  <button
+                    key={h.label}
+                    onClick={() => handlePromptClick(h)}
+                    className="whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80"
+                    style={{
+                      borderColor: isAnalyse ? "var(--accent)" : "var(--card-border)",
+                      color: isAnalyse ? "var(--accent)" : "var(--foreground)",
+                      background: isAnalyse ? "rgba(201,169,110,0.06)" : "transparent",
+                    }}
+                  >
+                    {h.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Feature bar (above input, auto-hides after selection) */}
+          <FeatureBar
+            active={activeFeature}
+            onSelect={handleFeatureSelect}
+            disabled={isLoading}
+            visible={featureBarVisible}
+          />
+
+          {/* Feature panel (expands when chip selected) */}
           {activeFeature && (
             <FeaturePanel
               feature={activeFeature}
@@ -285,12 +355,6 @@ export default function ChatWindow({
           )}
 
           <ChatInput onSend={handleSend} disabled={isLoading} />
-
-          <FeatureBar
-            active={activeFeature}
-            onSelect={setActiveFeature}
-            disabled={isLoading}
-          />
         </div>
       </div>
     </div>
