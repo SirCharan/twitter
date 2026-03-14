@@ -310,7 +310,7 @@ export default function ChatWindow({
           {activeFeature && (
             <FeaturePanel
               feature={activeFeature}
-              onClose={() => setActiveFeature(null)}
+              onClose={() => { setActiveFeature(null); setFeatureBarVisible(true); }}
               onSend={handleSend}
               onFeatureSend={handleFeatureSend}
             />
@@ -324,7 +324,7 @@ export default function ChatWindow({
             >
               <div className="mb-4 flex items-center gap-3">
                 <button
-                  onClick={() => setAnalyseOpen(false)}
+                  onClick={() => { setAnalyseOpen(false); setFeatureBarVisible(true); }}
                   className="flex items-center gap-1 text-xs hover:opacity-70"
                   style={{ color: "var(--muted)" }}
                 >
