@@ -17,6 +17,7 @@ import MacroCard from "./MacroCard";
 import RrgCard from "./RrgCard";
 import SuggestionCard from "./SuggestionCard";
 import AgentDebateCard from "./AgentDebateCard";
+import DebateProgressCard from "./DebateProgressCard";
 
 interface Props {
   message: ChatMessage;
@@ -134,67 +135,14 @@ function RichContent({
 
     case "debate_progress": {
       const dp = data as Record<string, unknown> | undefined;
-      const phases = (dp?.phases as Array<{ label: string; status: string; content?: string }>) || [];
-      return (
-        <div
-          className="rounded-2xl border px-5 py-4"
-          style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-        >
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
-              Agent Debate
-            </span>
-            <div
-              className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
-              style={{ background: "rgba(201,169,110,0.1)", color: "var(--accent)" }}
-            >
-              Debating
-            </div>
-          </div>
-          <div className="space-y-2">
-            {phases.map((phase, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center">
-                  {phase.status === "done" && (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="6.5" stroke="var(--positive)" />
-                      <path d="M4 7l2 2 4-4" stroke="var(--positive)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                  {phase.status === "running" && (
-                    <div
-                      className="h-3.5 w-3.5 rounded-full border-2 border-transparent animate-spin"
-                      style={{ borderTopColor: "var(--accent)", borderRightColor: "var(--accent)" }}
-                    />
-                  )}
-                  {phase.status === "pending" && (
-                    <div
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ background: "var(--card-border)" }}
-                    />
-                  )}
-                </div>
-                <span
-                  className="flex-1 text-xs"
-                  style={{
-                    color: phase.status === "pending" ? "var(--muted)" : "var(--foreground)",
-                    opacity: phase.status === "pending" ? 0.45 : 1,
-                  }}
-                >
-                  {phase.status === "running" ? (
-                    <>
-                      {phase.label}
-                      <span className="ml-1 animate-pulse" style={{ color: "var(--accent)" }}>...</span>
-                    </>
-                  ) : (
-                    phase.label
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+      const phases = (dp?.phases as Array<{
+        label: string;
+        status: string;
+        content?: string;
+        thinking?: string;
+        elapsed?: number;
+      }>) || [];
+      return <DebateProgressCard phases={phases} />;
     }
 
     case "suggestion":

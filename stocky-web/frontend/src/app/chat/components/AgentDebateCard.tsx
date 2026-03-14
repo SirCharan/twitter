@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState, Fragment } from "react";
 
 interface AgentData {
   model: string;
@@ -20,84 +20,272 @@ interface Props {
   data: Record<string, unknown>;
 }
 
-function MarkdownLite({ text }: { text: string }) {
-  return (
-    <div className="space-y-1">
-      {text.split("\n").map((line, i) => {
-        if (line.startsWith("## ")) {
-          return (
-            <p key={i} className="mb-2 mt-4 text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-              {line.slice(3)}
-            </p>
-          );
-        }
-        if (line.startsWith("### ")) {
-          return (
-            <p key={i} className="mb-1 mt-3 text-xs font-semibold" style={{ color: "var(--foreground)" }}>
-              {line.slice(4)}
-            </p>
-          );
-        }
-        if (line.startsWith("**") && line.endsWith("**")) {
-          return (
-            <p key={i} className="mb-1 font-medium" style={{ color: "var(--accent)" }}>
-              {line.slice(2, -2)}
-            </p>
-          );
-        }
-        if (line.startsWith("- ") || line.startsWith("* ")) {
-          return (
-            <p key={i} className="mb-0.5 pl-3" style={{ color: "var(--foreground)", opacity: 0.88 }}>
-              <span style={{ color: "var(--accent)", marginRight: 6 }}>-</span>
-              {line.slice(2)}
-            </p>
-          );
-        }
-        if (line.trim() === "") return <div key={i} className="h-2" />;
+/* ── Inline formatting: **bold**, `code`, *italic* ── */
+function renderInline(text: string) {
+  const parts: Array<{ type: "text" | "bold" | "code" | "italic"; value: string }> = [];
+  const regex = /(\*\*(.+?)\*\*|`(.+?)`|\*(.+?)\*)/g;
+  let last = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push({ type: "text", value: text.slice(last, match.index) });
+    }
+    if (match[2]) parts.push({ type: "bold", value: match[2] });
+    else if (match[3]) parts.push({ type: "code", value: match[3] });
+    else if (match[4]) parts.push({ type: "italic", value: match[4] });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ type: "text", value: text.slice(last) });
+
+  return parts.map((p, i) => {
+    switch (p.type) {
+      case "bold":
+        return <strong key={i} style={{ color: "var(--foreground)", fontWeight: 600 }}>{p.value}</strong>;
+      case "code":
         return (
-          <p key={i} className="mb-0.5" style={{ color: "var(--foreground)", opacity: 0.88 }}>
-            {line}
-          </p>
+          <code
+            key={i}
+            className="rounded px-1 py-0.5 text-[11px]"
+            style={{ background: "rgba(201,169,110,0.08)", color: "var(--accent)" }}
+          >
+            {p.value}
+          </code>
         );
-      })}
+      case "italic":
+        return <em key={i} style={{ color: "var(--foreground)", opacity: 0.9 }}>{p.value}</em>;
+      default:
+        return <Fragment key={i}>{p.value}</Fragment>;
+    }
+  });
+}
+
+/* ── Table renderer ── */
+function MarkdownTable({ rows }: { rows: string[][] }) {
+  if (rows.length < 2) return null;
+  const headers = rows[0];
+  // Skip separator row (|---|---|)
+  const startIdx = rows[1]?.every((c) => /^[-:]+$/.test(c.trim())) ? 2 : 1;
+  const body = rows.slice(startIdx);
+
+  return (
+    <div className="my-3 overflow-x-auto rounded-xl border" style={{ borderColor: "var(--card-border)" }}>
+      <table className="w-full text-[11px]">
+        <thead>
+          <tr style={{ background: "rgba(201,169,110,0.06)" }}>
+            {headers.map((h, i) => (
+              <th
+                key={i}
+                className="whitespace-nowrap px-3 py-2 text-left font-semibold"
+                style={{ color: "var(--accent)", borderBottom: "1px solid var(--card-border)" }}
+              >
+                {renderInline(h.trim())}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr
+              key={ri}
+              style={{
+                background: ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+                borderBottom: ri < body.length - 1 ? "1px solid var(--card-border)" : undefined,
+              }}
+            >
+              {row.map((cell, ci) => (
+                <td
+                  key={ci}
+                  className="whitespace-nowrap px-3 py-1.5"
+                  style={{ color: "var(--foreground)", opacity: 0.88 }}
+                >
+                  {renderInline(cell.trim())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
+/* ── Full markdown renderer ── */
+function MarkdownRich({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const elements: React.ReactElement[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Table: collect consecutive lines starting with |
+    if (line.trimStart().startsWith("|")) {
+      const tableRows: string[][] = [];
+      while (i < lines.length && lines[i].trimStart().startsWith("|")) {
+        const cells = lines[i]
+          .split("|")
+          .slice(1, -1) // Remove empty first/last from leading/trailing |
+          .map((c) => c.trim());
+        if (cells.length > 0) tableRows.push(cells);
+        i++;
+      }
+      elements.push(<MarkdownTable key={`t-${i}`} rows={tableRows} />);
+      continue;
+    }
+
+    // H2
+    if (line.startsWith("## ")) {
+      elements.push(
+        <h2
+          key={i}
+          className="mb-2 mt-5 text-[15px] font-bold first:mt-0"
+          style={{ color: "var(--foreground)" }}
+        >
+          {renderInline(line.slice(3))}
+        </h2>,
+      );
+      i++;
+      continue;
+    }
+
+    // H3
+    if (line.startsWith("### ")) {
+      elements.push(
+        <h3
+          key={i}
+          className="mb-1.5 mt-4 text-[13px] font-semibold"
+          style={{ color: "var(--foreground)" }}
+        >
+          {renderInline(line.slice(4))}
+        </h3>,
+      );
+      i++;
+      continue;
+    }
+
+    // H4
+    if (line.startsWith("#### ")) {
+      elements.push(
+        <h4
+          key={i}
+          className="mb-1 mt-3 text-xs font-semibold"
+          style={{ color: "var(--accent)" }}
+        >
+          {renderInline(line.slice(5))}
+        </h4>,
+      );
+      i++;
+      continue;
+    }
+
+    // Numbered list
+    if (/^\d+\.\s/.test(line)) {
+      const match = line.match(/^(\d+)\.\s(.*)/);
+      if (match) {
+        elements.push(
+          <div key={i} className="mb-1 flex gap-2 pl-1">
+            <span className="shrink-0 text-[11px] tabular-nums font-medium" style={{ color: "var(--accent)", minWidth: 16 }}>
+              {match[1]}.
+            </span>
+            <span className="text-xs leading-relaxed" style={{ color: "var(--foreground)", opacity: 0.88 }}>
+              {renderInline(match[2])}
+            </span>
+          </div>,
+        );
+      }
+      i++;
+      continue;
+    }
+
+    // Bullet
+    if (line.startsWith("- ") || line.startsWith("* ")) {
+      elements.push(
+        <div key={i} className="mb-1 flex gap-2 pl-1">
+          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full" style={{ background: "var(--accent)" }} />
+          <span className="text-xs leading-relaxed" style={{ color: "var(--foreground)", opacity: 0.88 }}>
+            {renderInline(line.slice(2))}
+          </span>
+        </div>,
+      );
+      i++;
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^[-*_]{3,}$/.test(line.trim())) {
+      elements.push(
+        <div key={i} className="divider-gradient my-3" />,
+      );
+      i++;
+      continue;
+    }
+
+    // Empty line
+    if (line.trim() === "") {
+      elements.push(<div key={i} className="h-2" />);
+      i++;
+      continue;
+    }
+
+    // Full-line bold
+    if (line.startsWith("**") && line.endsWith("**") && !line.slice(2, -2).includes("**")) {
+      elements.push(
+        <p key={i} className="mb-1 text-xs font-semibold" style={{ color: "var(--accent)" }}>
+          {line.slice(2, -2)}
+        </p>,
+      );
+      i++;
+      continue;
+    }
+
+    // Regular text
+    elements.push(
+      <p key={i} className="mb-0.5 text-xs leading-relaxed" style={{ color: "var(--foreground)", opacity: 0.88 }}>
+        {renderInline(line)}
+      </p>,
+    );
+    i++;
+  }
+
+  return <div>{elements}</div>;
+}
+
+/* ── Collapsible agent section ── */
 function AgentSection({
   title,
   model,
   elapsed,
   content,
-  defaultOpen,
   accentColor,
+  icon,
 }: {
   title: string;
   model: string;
   elapsed: number;
   content: string;
-  defaultOpen: boolean;
   accentColor: string;
+  icon: string;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(false);
 
   return (
     <div
-      className="rounded-xl border"
-      style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+      className="rounded-xl border transition-colors"
+      style={{ borderColor: open ? "rgba(201,169,110,0.12)" : "var(--card-border)", background: "var(--surface)" }}
     >
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
       >
-        <div
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ background: accentColor }}
-        />
-        <span className="flex-1 text-xs font-medium" style={{ color: "var(--foreground)" }}>
+        <span className="text-xs">{icon}</span>
+        <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--foreground)" }}>
           {title}
         </span>
-        <span className="text-[10px] font-medium" style={{ color: "var(--muted)" }}>
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{ background: `${accentColor}15`, color: accentColor }}
+        >
           {model}
         </span>
         <span className="text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
@@ -105,7 +293,7 @@ function AgentSection({
         </span>
         <svg
           width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className="shrink-0 transition-transform"
+          className="shrink-0 transition-transform duration-200"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           <path d="M3 4.5L6 7.5L9 4.5" stroke="var(--muted)" strokeWidth="1.2" />
@@ -116,44 +304,60 @@ function AgentSection({
           className="border-t px-4 py-3 text-xs leading-relaxed"
           style={{ borderColor: "var(--card-border)" }}
         >
-          <MarkdownLite text={content} />
+          <MarkdownRich text={content} />
         </div>
       )}
     </div>
   );
 }
 
+/* ── Main card ── */
 export default function AgentDebateCard({ data }: Props) {
   const d = data as unknown as DebateData;
 
   return (
-    <div>
-      {/* Header badge */}
-      <div className="mb-3 flex items-center gap-2">
-        <div
-          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-wider"
-          style={{ background: "rgba(201,169,110,0.1)", color: "var(--accent)" }}
-        >
-          Agent Debate
+    <div className="max-w-full">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="var(--accent)" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <span
+            className="text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: "var(--accent)" }}
+          >
+            Agent Debate
+          </span>
         </div>
-        <span className="text-[10px]" style={{ color: "var(--muted)" }}>
-          {d.total_elapsed.toFixed(1)}s total
+        <div className="divider-gradient flex-1" />
+        <span className="text-[10px] tabular-nums font-medium" style={{ color: "var(--muted)" }}>
+          {d.total_elapsed.toFixed(1)}s
         </span>
       </div>
 
       {/* Synthesis — main answer */}
       <div
-        className="mb-3 rounded-2xl border px-5 py-4"
-        style={{ borderColor: "rgba(201,169,110,0.2)", background: "var(--card-bg)" }}
+        className="mb-4 rounded-2xl border px-4 py-4 sm:px-5"
+        style={{
+          borderColor: "rgba(201,169,110,0.12)",
+          background: "linear-gradient(135deg, rgba(201,169,110,0.03) 0%, var(--card-bg) 100%)",
+        }}
       >
-        <p
-          className="mb-3 text-[10px] font-medium uppercase tracking-wider"
-          style={{ color: "var(--accent)" }}
-        >
-          Final Synthesis
-        </p>
+        <div className="mb-3 flex items-center gap-2">
+          <div className="h-1 w-6 rounded-full" style={{ background: "var(--accent)" }} />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--accent)" }}
+          >
+            Final Synthesis
+          </span>
+          <span className="text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
+            {d.synthesis_elapsed.toFixed(1)}s
+          </span>
+        </div>
         <div className="text-xs leading-relaxed">
-          <MarkdownLite text={d.synthesis} />
+          <MarkdownRich text={d.synthesis} />
         </div>
       </div>
 
@@ -161,20 +365,20 @@ export default function AgentDebateCard({ data }: Props) {
       <div className="space-y-2">
         <AgentSection
           title="Quick Agent"
+          icon="⚡"
           model={d.agent_a.model}
           elapsed={d.agent_a.elapsed}
           content={d.agent_a.response}
-          defaultOpen={false}
           accentColor="var(--positive)"
         />
         {d.agent_b && (
           <AgentSection
             title="Deep Agent"
+            icon="🔬"
             model={d.agent_b.model}
             elapsed={d.agent_b.elapsed}
             content={d.agent_b.response}
-            defaultOpen={false}
-            accentColor="#6366f1"
+            accentColor="#818cf8"
           />
         )}
       </div>

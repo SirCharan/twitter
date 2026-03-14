@@ -273,25 +273,32 @@ export function useChat() {
       const makeDebateData = (
         statuses: Array<"pending" | "running" | "done">,
         contents: Array<string | undefined>,
+        thinkings: Array<string | undefined>,
+        elapseds: Array<number | undefined>,
       ) => ({
         query,
         title: "Agent Debate",
+        startTime: Date.now(),
         phases: DEBATE_PHASES.map((label, i) => ({
           label,
           status: statuses[i],
           content: contents[i],
+          thinking: thinkings[i],
+          elapsed: elapseds[i],
         })),
       });
 
       const phaseStatuses: Array<"pending" | "running" | "done"> = ["running", "pending", "pending"];
       const phaseContents: Array<string | undefined> = [undefined, undefined, undefined];
+      const phaseThinkings: Array<string | undefined> = [undefined, undefined, undefined];
+      const phaseElapseds: Array<number | undefined> = [undefined, undefined, undefined];
 
       const progressMsg: ChatMessage = {
         id: progressId,
         role: "assistant",
         content: "Agent Debate",
         type: "debate_progress",
-        data: makeDebateData(phaseStatuses, phaseContents),
+        data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
         timestamp: new Date().toISOString(),
         conversationId: convId,
       };
@@ -326,26 +333,26 @@ export function useChat() {
                       : 2;
                 if (event.status === "started") {
                   phaseStatuses[phaseIdx] = "running";
+                  if (event.thinking) phaseThinkings[phaseIdx] = event.thinking;
                 } else if (event.status === "error" || event.status === "skipped") {
                   phaseStatuses[phaseIdx] = "done";
-                  // Move to next phase
                   if (phaseIdx + 1 < DEBATE_PHASES.length) {
                     phaseStatuses[phaseIdx + 1] = "running";
                   }
                 }
                 updateMessage(progressId, {
-                  data: makeDebateData(phaseStatuses, phaseContents),
+                  data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
                 });
               } else if (event.type === "agent_response") {
                 const phaseIdx = event.agent === "quick" ? 0 : 1;
                 phaseStatuses[phaseIdx] = "done";
                 phaseContents[phaseIdx] = event.content;
-                // Start next phase
+                phaseElapseds[phaseIdx] = event.elapsed;
                 if (phaseIdx + 1 < DEBATE_PHASES.length) {
                   phaseStatuses[phaseIdx + 1] = "running";
                 }
                 updateMessage(progressId, {
-                  data: makeDebateData(phaseStatuses, phaseContents),
+                  data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
                 });
               } else if (event.type === "result") {
                 updateMessage(progressId, {
