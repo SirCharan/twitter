@@ -20,10 +20,19 @@ async function apiFetch<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const url = `${API_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error(`Network error reaching ${url} — backend may be down or unreachable. (${err.message})`);
+    }
+    throw err;
+  }
 
   if (res.status === 401) {
     throw new Error("Unauthorized");
@@ -31,7 +40,7 @@ async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `API error: ${res.status}`);
+    throw new Error(body.detail || `API error ${res.status} [${url}]`);
   }
 
   return res.json();
