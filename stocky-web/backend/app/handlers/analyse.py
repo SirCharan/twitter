@@ -503,13 +503,32 @@ async def get_analysis(symbol: str) -> dict:
 
     news_analysis = await _generate_news_analysis(news_articles, name)
 
-    # Build summary for AI verdict
+    # Build rich summary for AI verdict
     data_summary = (
-        f"Fundamental: {fundamental_score}/10\n"
-        f"Technical: {technical_score}/10\n"
-        f"News: {news_score}/10\n"
-        f"Overall: {overall}/30"
+        f"Scores — Fundamental: {fundamental_score}/10 | Technical: {technical_score}/10 | "
+        f"News: {news_score}/10 | Overall: {overall}/30\n"
+        f"P/E: {fundamental.get('pe', '?')} | Forward P/E: {fundamental.get('forward_pe', '?')} | "
+        f"ROE: {fundamental.get('roe', '?')}% | D/E: {fundamental.get('debt_to_equity', '?')}\n"
+        f"Earnings Growth: {fundamental.get('earnings_growth', '?')}% | "
+        f"Revenue Growth: {fundamental.get('revenue_growth', '?')}%\n"
+        f"RSI: {technical.get('rsi', '?')} ({technical.get('rsi_label', '')}) | "
+        f"MACD: {technical.get('macd_signal', '?')} | SMA: {technical.get('sma_signal', '?')}\n"
+        f"SMA50: {technical.get('sma50', '?')} | SMA200: {technical.get('sma200', '?')} | "
+        f"Price: {technical.get('price', '?')}\n"
     )
+    range_52w = technical.get("range_52w")
+    if range_52w:
+        data_summary += (
+            f"52W Range: {range_52w.get('low', '?')} - {range_52w.get('high', '?')} "
+            f"(Position: {range_52w.get('position', '?')}%)\n"
+        )
+    if quarterly:
+        q = quarterly[0]
+        data_summary += (
+            f"Latest Quarter ({q.get('period', '?')}): "
+            f"Revenue QoQ: {q.get('revenue_qoq', '?')}% | "
+            f"Net Income QoQ: {q.get('net_income_qoq', '?')}%\n"
+        )
     try:
         verdict = await ai_client.analyse_verdict(name, data_summary)
     except Exception:

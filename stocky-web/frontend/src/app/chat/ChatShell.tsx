@@ -1,28 +1,108 @@
 "use client";
+import { useState, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useChat } from "./hooks/useChat";
+import { useConversations } from "./hooks/useConversations";
+import { useMediaQuery } from "./hooks/useMediaQuery";
 import ChatWindow from "./components/ChatWindow";
+import Sidebar from "./components/Sidebar";
 import ToastContainer from "./components/Toast";
 import { ToastProvider } from "./hooks/useToast";
+import { TooltipProvider } from "./components/ui/Tooltip";
 
 export default function ChatShell() {
   const chat = useChat();
+  const { conversations, refresh, deleteConversation } = useConversations();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // On desktop, sidebar is always visible when open
+  // On mobile, sidebar is an overlay
+  const showSidebar = isDesktop ? sidebarOpen : sidebarOpen;
+
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      chat.loadConversation(id);
+      if (!isDesktop) setSidebarOpen(false);
+    },
+    [chat, isDesktop],
+  );
+
+  const handleNewChat = useCallback(() => {
+    chat.newChat();
+    refresh();
+    if (!isDesktop) setSidebarOpen(false);
+  }, [chat, refresh, isDesktop]);
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await deleteConversation(id);
+      if (chat.conversationId === id) chat.newChat();
+    },
+    [deleteConversation, chat],
+  );
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+    if (!sidebarOpen) refresh();
+  }, [sidebarOpen, refresh]);
 
   return (
-    <ToastProvider>
-      <div className="flex h-screen overflow-hidden">
-        <div className="flex flex-1 flex-col min-w-0">
-          <ChatWindow
-            messages={chat.messages}
-            isLoading={chat.isLoading}
-            onSend={chat.sendMessage}
-            onTradeAction={chat.handleTradeAction}
-            onNewChat={chat.newChat}
-            onDeepResearch={chat.streamDeepResearch}
-            onGeneralDeepResearch={chat.streamGeneralDeepResearch}
-          />
+    <TooltipProvider>
+      <ToastProvider>
+        <div className="flex h-screen overflow-hidden">
+          {/* Sidebar */}
+          <AnimatePresence>
+            {showSidebar && (
+              <>
+                {/* Mobile backdrop */}
+                {!isDesktop && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-40"
+                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+                    onClick={() => setSidebarOpen(false)}
+                  />
+                )}
+                <motion.aside
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: isDesktop ? 288 : 288, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className={`overflow-hidden ${!isDesktop ? "fixed left-0 top-0 bottom-0 z-50" : "relative"}`}
+                  style={{ minWidth: 0 }}
+                >
+                  <Sidebar
+                    conversations={conversations}
+                    activeId={chat.conversationId}
+                    onSelect={handleSelectConversation}
+                    onNewChat={handleNewChat}
+                    onDelete={handleDelete}
+                  />
+                </motion.aside>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* Main chat area */}
+          <div className="flex flex-1 flex-col min-w-0">
+            <ChatWindow
+              messages={chat.messages}
+              isLoading={chat.isLoading}
+              onSend={chat.sendMessage}
+              onTradeAction={chat.handleTradeAction}
+              onNewChat={handleNewChat}
+              onDeepResearch={chat.streamDeepResearch}
+              onGeneralDeepResearch={chat.streamGeneralDeepResearch}
+              onToggleSidebar={toggleSidebar}
+            />
+          </div>
         </div>
-      </div>
-      <ToastContainer />
-    </ToastProvider>
+        <ToastContainer />
+      </ToastProvider>
+    </TooltipProvider>
   );
 }

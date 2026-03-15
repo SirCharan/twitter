@@ -528,11 +528,9 @@ async def _dispatch(
         text = args[0] if args else ""
         if not text:
             return {"type": "text", "content": "Paste the text you want summarised."}
-        prompt = (
-            f"Summarise the following in 3 bullet points + 1-line TL;DR. "
-            f"Be concise and specific:\n\n{text[:3000]}"
-        )
-        summary = await ai_client.chat(prompt)
+        from app.prompts import SUMMARISE_PROMPT
+        prompt = SUMMARISE_PROMPT.format(text=text[:3000])
+        summary = await ai_client.feature_analysis(prompt, max_tokens=512)
         return {"type": "text", "content": summary or "Could not summarise."}
 
     return {"type": "text", "content": f"Unknown command: {intent}"}

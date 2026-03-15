@@ -159,6 +159,7 @@ export interface PortfolioData {
     }[];
   };
   day_pnl: number;
+  ai_analysis?: string;
 }
 
 export interface PositionData {

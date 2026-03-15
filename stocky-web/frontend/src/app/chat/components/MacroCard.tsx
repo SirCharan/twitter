@@ -1,4 +1,5 @@
 "use client";
+import MarkdownRich from "./MarkdownRich";
 
 interface PricePoint {
   price: number;
@@ -184,6 +185,24 @@ export default function MacroCard({ data }: Props) {
             <MacroTile label="Ethereum" value={crypto.eth.price} changePct={crypto.eth.change_pct} icon="⟠" unit="$" />
           )}
         </Section>
+      )}
+
+      {/* Stocky's Macro Read */}
+      {(data.ai_analysis as string) && (
+        <div
+          className="rounded-xl border-l-2 px-4 py-3 mt-3"
+          style={{
+            borderColor: "var(--accent)",
+            background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)",
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent)" }}>
+            Stocky&apos;s Macro Read
+          </p>
+          <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+            <MarkdownRich text={data.ai_analysis as string} />
+          </div>
+        </div>
       )}
     </div>
   );

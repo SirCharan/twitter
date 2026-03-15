@@ -26,10 +26,42 @@ async def get_ipo_data() -> dict:
     try:
         result = await loop.run_in_executor(None, _fetch_from_nse)
         if result and (result.get("upcoming") or result.get("listed")):
-            return result
+            data = result
+        else:
+            data = await loop.run_in_executor(None, _get_fallback_data)
     except Exception as e:
         logger.warning(f"NSE IPO fetch failed: {e}")
-    return await loop.run_in_executor(None, _get_fallback_data)
+        data = await loop.run_in_executor(None, _get_fallback_data)
+
+    # AI analysis
+    try:
+        from app import ai_client
+        from app.prompts import IPO_ANALYSIS_PROMPT
+
+        ipo_text = ""
+        for ipo in data.get("listed", []):
+            gain_str = f"{ipo['current_gain']:+.1f}%" if ipo.get("current_gain") is not None else "N/A"
+            ipo_text += (
+                f"{ipo['company']} ({ipo.get('symbol', '?')}): "
+                f"Issue {ipo.get('issue_price', '?')} → Current {ipo.get('current_price', '?')} "
+                f"({gain_str}), Listed {ipo.get('listing_date', '?')}\n"
+            )
+        upcoming = data.get("upcoming", [])
+        if upcoming:
+            ipo_text += f"\nUpcoming IPOs: {len(upcoming)}\n"
+            for u in upcoming[:3]:
+                ipo_text += f"  {u.get('company', '?')} — Price band: {u.get('issue_price', '?')}\n"
+
+        if ipo_text.strip():
+            analysis = await ai_client.feature_analysis(
+                IPO_ANALYSIS_PROMPT.format(data=ipo_text), max_tokens=200
+            )
+            if analysis:
+                data["ai_analysis"] = analysis
+    except Exception:
+        pass
+
+    return data
 
 
 def _fetch_from_nse() -> dict:

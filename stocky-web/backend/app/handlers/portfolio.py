@@ -5,7 +5,7 @@ INVESTMENT_PRODUCTS = {"CNC"}
 TRADING_PRODUCTS = {"MIS", "NRML", "BO", "CO"}
 
 
-async def get_portfolio() -> dict:
+async def get_portfolio(with_ai: bool = True) -> dict:
     """Portfolio split into investments (holdings/CNC) and trading (MIS/NRML positions)."""
     positions = await kite.get_positions()
     holdings = await kite.get_holdings()
@@ -63,7 +63,7 @@ async def get_portfolio() -> dict:
     # overall P&L from net positions
     total_day_pnl = sum(p.get("pnl", 0) for p in net_positions if p.get("product", "") not in INVESTMENT_PRODUCTS)
 
-    return {
+    result = {
         "investments": {
             "invested": round(total_invested, 2),
             "current": round(total_current, 2),
@@ -81,6 +81,32 @@ async def get_portfolio() -> dict:
         },
         "day_pnl": round(total_day_pnl, 2),
     }
+
+    # AI portfolio analysis
+    if with_ai and holdings:
+        try:
+            from app import ai_client
+            from app.prompts import PORTFOLIO_ANALYSIS_PROMPT
+
+            # Build summary for AI
+            portfolio_text = f"Total invested: {total_invested:,.0f} | Current: {total_current:,.0f} | "
+            portfolio_text += f"P&L: {holdings_pnl:,.0f} ({(holdings_pnl / total_invested * 100) if total_invested else 0:.1f}%)\n"
+            portfolio_text += f"Holdings count: {len(holdings)}\n"
+            portfolio_text += "Top holdings:\n"
+            for h in top_holdings:
+                portfolio_text += f"  {h['symbol']}: {h['qty']} shares, avg {h['avg']}, LTP {h['ltp']}, P&L {h['pnl']:+,.0f} ({h['pct']:+.1f}%)\n"
+            if trading_positions:
+                portfolio_text += f"\nOpen trading positions: {len(trading_positions)}, Day P&L: {trading_pnl:+,.0f}\n"
+
+            analysis = await ai_client.feature_analysis(
+                PORTFOLIO_ANALYSIS_PROMPT.format(data=portfolio_text), max_tokens=256
+            )
+            if analysis:
+                result["ai_analysis"] = analysis
+        except Exception:
+            pass
+
+    return result
 
 
 async def get_positions() -> list[dict]:

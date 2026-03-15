@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ChatMessage } from "@/lib/types";
 import { track } from "@/lib/analytics";
 import MessageBubble from "./MessageBubble";
@@ -9,6 +10,7 @@ import SkeletonCard from "./SkeletonCard";
 import FeatureBar, { type FeatureId, CATEGORIES } from "./FeatureBar";
 import FeaturePanel from "./FeaturePanel";
 import FeedbackModal from "./FeedbackModal";
+import Header from "./Header";
 
 interface Props {
   messages: ChatMessage[];
@@ -18,6 +20,7 @@ interface Props {
   onNewChat: () => void;
   onDeepResearch?: (stock: string, mode: string) => void;
   onGeneralDeepResearch?: (query: string) => void;
+  onToggleSidebar?: () => void;
 }
 
 const ANALYSE_MODES = [
@@ -104,8 +107,10 @@ export default function ChatWindow({
   onNewChat,
   onDeepResearch,
   onGeneralDeepResearch,
+  onToggleSidebar,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const stockInputRef = useRef<HTMLInputElement>(null);
 
   // Chat mode toggle
@@ -121,6 +126,9 @@ export default function ChatWindow({
   const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
   const [featureBarVisible, setFeatureBarVisible] = useState(true);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  // Scroll-to-bottom FAB
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const lastMsg = messages[messages.length - 1];
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
@@ -142,6 +150,18 @@ export default function ChatWindow({
       setFeatureBarVisible(true);
     }
   }, [lastMsg?.role, isLoading]);
+
+  // Track scroll position for FAB
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollBtn(distFromBottom > 200);
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   const showEmpty = messages.length === 0 && !isLoading;
 
@@ -208,69 +228,18 @@ export default function ChatWindow({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div
-        className="glass flex items-center justify-between px-5 py-2 sm:py-3"
-        style={{ borderBottom: "1px solid var(--card-border)" }}
-      >
-        <div className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.png" alt="Stocky" width={22} height={22} style={{ objectFit: "contain" }} />
-          <span className="text-sm font-medium tracking-wide" style={{ color: "var(--foreground)" }}>
-            Stocky AI
-          </span>
-          <div className="h-2 w-2 rounded-full" style={{ background: "var(--positive)" }} />
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            href="https://terminal.stockyai.xyz/blog"
-            target="_blank"
-            rel="noopener"
-            className="bounce-tap hidden sm:inline-flex items-center rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
-            style={{ color: "var(--accent)", border: "1px solid rgba(201,169,110,0.3)" }}
-          >
-            Blog
-          </a>
-          <a
-            href="https://chat.whatsapp.com/E2iyS3SmHcj9zJq8tUyPxk"
-            target="_blank"
-            rel="noopener"
-            className="bounce-tap hidden sm:inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
-            style={{ color: "#25D366", border: "1px solid rgba(37,211,102,0.3)" }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            WhatsApp
-          </a>
-          <button
-            onClick={() => { setFeedbackOpen(true); track("click", "feedback_open"); }}
-            className="bounce-tap hidden sm:inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
-            style={{ color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", background: "none" }}
-          >
-            &#9993; Feedback
-          </button>
-          <a
-            href="https://terminal.stockyai.xyz"
-            target="_blank"
-            rel="noopener"
-            className="bounce-tap hidden sm:inline-flex items-center rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
-            style={{ color: "var(--foreground)", border: "1px solid rgba(245,240,235,0.2)" }}
-          >
-            Terminal
-          </a>
-          <button
-            onClick={onNewChat}
-            className="bounce-tap flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium tracking-wide transition-all hover:opacity-90"
-            style={{ background: "var(--accent)", color: "var(--background)" }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M6 1v10M1 6h10" />
-            </svg>
-            New
-          </button>
-        </div>
-      </div>
+      <Header
+        onNewChat={onNewChat}
+        onToggleSidebar={onToggleSidebar ?? (() => {})}
+        onFeedbackOpen={() => setFeedbackOpen(true)}
+      />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="relative flex-1 overflow-y-auto px-4 py-6"
+      >
         {showEmpty && (
           <div className="flex h-full flex-col items-center justify-center">
             <div
@@ -303,9 +272,11 @@ export default function ChatWindow({
               {!analyseOpen && activeFeature === null && (
                 <div className="mt-6 w-full space-y-3 text-left">
                   {CATEGORIES.map((cat, catIdx) => (
-                    <div
+                    <motion.div
                       key={cat.label}
-                      style={{ animation: `slideUp 0.3s ease-out ${catIdx * 0.06}s both` }}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: catIdx * 0.06, duration: 0.3 }}
                     >
                       <span
                         className="mb-1.5 block text-[9px] font-semibold uppercase tracking-widest"
@@ -315,124 +286,143 @@ export default function ChatWindow({
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {cat.features.map((f, i) => (
-                          <button
+                          <motion.button
                             key={f.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: catIdx * 0.06 + i * 0.04, duration: 0.25 }}
+                            whileHover={{ y: -2, boxShadow: "0 0 16px rgba(201,169,110,0.06)" }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => {
                               track("click", "empty_card", { feature: f.id, category: cat.label });
                               handleFeatureSelect(f.id);
                             }}
                             title={FEATURE_TOOLTIPS[f.id as FeatureId]}
-                            className="bounce-tap flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-left transition-all duration-200 hover:border-[var(--accent-dim)] hover:shadow-[0_0_16px_rgba(201,169,110,0.06)]"
+                            className="flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
                             style={{
                               borderColor: "var(--card-border)",
                               background: "var(--surface)",
-                              animation: `slideUp 0.25s ease-out ${catIdx * 0.06 + i * 0.04}s both`,
                             }}
                           >
                             <span className="text-sm">{f.icon}</span>
                             <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>
                               {f.label}
                             </span>
-                          </button>
+                          </motion.button>
                         ))}
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
 
               {/* Inline FeaturePanel on empty state (for panel-opening features) */}
-              {!analyseOpen && activeFeature !== null && (
-                <div className="slide-up mt-6 w-full max-w-sm mx-auto">
-                  <FeaturePanel
-                    feature={activeFeature}
-                    onClose={() => { setActiveFeature(null); }}
-                    onSend={handleSend}
-                    onFeatureSend={handleFeatureSend}
-                  />
-                </div>
-              )}
-
-              {analyseOpen && (
-                /* Grok-style stock picker */
-                <div
-                  className="slide-up mt-8 rounded-2xl border p-5 text-left"
-                  style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-                >
-                  <div className="mb-4 flex items-center gap-3">
-                    <button
-                      onClick={() => setAnalyseOpen(false)}
-                      className="bounce-tap flex items-center gap-1 text-xs hover:opacity-70"
-                      style={{ color: "var(--muted)" }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M9 2L4 7l5 5" />
-                      </svg>
-                      back
-                    </button>
-                    <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
-                      Analyse a stock
-                    </span>
-                  </div>
-
-                  <input
-                    ref={stockInputRef}
-                    type="text"
-                    value={stockQuery}
-                    onChange={(e) => setStockQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
-                    placeholder="e.g. Reliance, TCS, HDFC Bank..."
-                    className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
-                    style={{
-                      borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
-                      color: "var(--foreground)",
-                      boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
-                    }}
-                  />
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {ANALYSE_MODES.map((m) => {
-                      const sel = analyseMode === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          onClick={() => setAnalyseMode(m.id)}
-                          className="bounce-tap rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
-                          style={{
-                            borderColor: sel ? "var(--accent)" : "var(--card-border)",
-                            background: sel ? "rgba(201,169,110,0.08)" : "transparent",
-                            color: sel ? "var(--accent)" : "var(--muted)",
-                          }}
-                        >
-                          {m.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <textarea
-                    value={analyseNote}
-                    onChange={(e) => setAnalyseNote(e.target.value)}
-                    placeholder="Add a custom note… (optional)"
-                    rows={2}
-                    className="mt-4 w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-xs outline-none"
-                    style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}
-                  />
-
-                  <button
-                    onClick={handleAnalyseSubmit}
-                    disabled={!stockQuery.trim()}
-                    className="bounce-tap mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
-                    style={{
-                      background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
-                      color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",
-                      cursor: stockQuery.trim() ? "pointer" : "not-allowed",
-                    }}
+              <AnimatePresence>
+                {!analyseOpen && activeFeature !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: 12, height: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="mt-6 w-full max-w-sm mx-auto overflow-hidden"
                   >
-                    Analyse →
-                  </button>
-                </div>
-              )}
+                    <FeaturePanel
+                      feature={activeFeature}
+                      onClose={() => { setActiveFeature(null); }}
+                      onSend={handleSend}
+                      onFeatureSend={handleFeatureSend}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {analyseOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 12 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="mt-8 rounded-2xl border p-5 text-left"
+                    style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+                  >
+                    <div className="mb-4 flex items-center gap-3">
+                      <button
+                        onClick={() => setAnalyseOpen(false)}
+                        className="bounce-tap flex items-center gap-1 text-xs hover:opacity-70"
+                        style={{ color: "var(--muted)" }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M9 2L4 7l5 5" />
+                        </svg>
+                        back
+                      </button>
+                      <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
+                        Analyse a stock
+                      </span>
+                    </div>
+
+                    <input
+                      ref={stockInputRef}
+                      type="text"
+                      value={stockQuery}
+                      onChange={(e) => setStockQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
+                      placeholder="e.g. Reliance, TCS, HDFC Bank..."
+                      className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
+                      style={{
+                        borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
+                        color: "var(--foreground)",
+                        boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
+                      }}
+                    />
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {ANALYSE_MODES.map((m) => {
+                        const sel = analyseMode === m.id;
+                        return (
+                          <motion.button
+                            key={m.id}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setAnalyseMode(m.id)}
+                            className="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+                            style={{
+                              borderColor: sel ? "var(--accent)" : "var(--card-border)",
+                              background: sel ? "rgba(201,169,110,0.08)" : "transparent",
+                              color: sel ? "var(--accent)" : "var(--muted)",
+                            }}
+                          >
+                            {m.label}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    <textarea
+                      value={analyseNote}
+                      onChange={(e) => setAnalyseNote(e.target.value)}
+                      placeholder="Add a custom note… (optional)"
+                      rows={2}
+                      className="mt-4 w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-xs outline-none"
+                      style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}
+                    />
+
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleAnalyseSubmit}
+                      disabled={!stockQuery.trim()}
+                      className="mt-4 w-full rounded-xl py-3 text-sm font-medium transition-colors"
+                      style={{
+                        background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
+                        color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",
+                        cursor: stockQuery.trim() ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      Analyse →
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         )}
@@ -444,6 +434,29 @@ export default function ChatWindow({
           {isLoading && (showSkeleton ? <SkeletonCard /> : <TypingIndicator />)}
           <div ref={bottomRef} />
         </div>
+
+        {/* Scroll to bottom FAB */}
+        <AnimatePresence>
+          {showScrollBtn && messages.length > 0 && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              onClick={scrollToBottom}
+              className="fixed bottom-28 right-6 z-30 rounded-full border p-2.5 shadow-lg backdrop-blur-sm transition-colors hover:bg-white/5"
+              style={{
+                background: "var(--glass)",
+                borderColor: "var(--card-border)",
+              }}
+              aria-label="Scroll to bottom"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Input + Feature bar + Prompt helpers */}
@@ -458,86 +471,104 @@ export default function ChatWindow({
           />
 
           {/* Feature panel (expands when chip selected, only in message state) */}
-          {activeFeature && !showEmpty && (
-            <FeaturePanel
-              feature={activeFeature}
-              onClose={() => { setActiveFeature(null); setFeatureBarVisible(true); }}
-              onSend={handleSend}
-              onFeatureSend={handleFeatureSend}
-            />
-          )}
+          <AnimatePresence>
+            {activeFeature && !showEmpty && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="overflow-hidden"
+              >
+                <FeaturePanel
+                  feature={activeFeature}
+                  onClose={() => { setActiveFeature(null); setFeatureBarVisible(true); }}
+                  onSend={handleSend}
+                  onFeatureSend={handleFeatureSend}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Analyse stock picker (works in both empty and message states) */}
-          {analyseOpen && !showEmpty && (
-            <div
-              className="slide-up mb-3 rounded-2xl border p-5"
-              style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-            >
-              <div className="mb-4 flex items-center gap-3">
-                <button
-                  onClick={() => { setAnalyseOpen(false); setFeatureBarVisible(true); }}
-                  className="bounce-tap flex items-center gap-1 text-xs hover:opacity-70"
-                  style={{ color: "var(--muted)" }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M9 2L4 7l5 5" />
-                  </svg>
-                  back
-                </button>
-                <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
-                  🔍 Analyse a stock
-                </span>
-              </div>
-
-              <input
-                ref={stockInputRef}
-                type="text"
-                value={stockQuery}
-                onChange={(e) => setStockQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
-                placeholder="e.g. Reliance, TCS, HDFC Bank..."
-                className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
-                style={{
-                  borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
-                  color: "var(--foreground)",
-                  boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
-                }}
-              />
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {ANALYSE_MODES.map((m) => {
-                  const sel = analyseMode === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setAnalyseMode(m.id)}
-                      className="bounce-tap rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
-                      style={{
-                        borderColor: sel ? "var(--accent)" : "var(--card-border)",
-                        background: sel ? "rgba(201,169,110,0.08)" : "transparent",
-                        color: sel ? "var(--accent)" : "var(--muted)",
-                      }}
-                    >
-                      {m.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={handleAnalyseSubmit}
-                disabled={!stockQuery.trim()}
-                className="bounce-tap mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
-                style={{
-                  background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
-                  color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",
-                  cursor: stockQuery.trim() ? "pointer" : "not-allowed",
-                }}
+          <AnimatePresence>
+            {analyseOpen && !showEmpty && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="mb-3 rounded-2xl border p-5"
+                style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
               >
-                Analyse →
-              </button>
-            </div>
-          )}
+                <div className="mb-4 flex items-center gap-3">
+                  <button
+                    onClick={() => { setAnalyseOpen(false); setFeatureBarVisible(true); }}
+                    className="bounce-tap flex items-center gap-1 text-xs hover:opacity-70"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M9 2L4 7l5 5" />
+                    </svg>
+                    back
+                  </button>
+                  <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
+                    🔍 Analyse a stock
+                  </span>
+                </div>
+
+                <input
+                  ref={stockInputRef}
+                  type="text"
+                  value={stockQuery}
+                  onChange={(e) => setStockQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
+                  placeholder="e.g. Reliance, TCS, HDFC Bank..."
+                  className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
+                  style={{
+                    borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
+                    color: "var(--foreground)",
+                    boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
+                  }}
+                />
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {ANALYSE_MODES.map((m) => {
+                    const sel = analyseMode === m.id;
+                    return (
+                      <motion.button
+                        key={m.id}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setAnalyseMode(m.id)}
+                        className="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          borderColor: sel ? "var(--accent)" : "var(--card-border)",
+                          background: sel ? "rgba(201,169,110,0.08)" : "transparent",
+                          color: sel ? "var(--accent)" : "var(--muted)",
+                        }}
+                      >
+                        {m.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleAnalyseSubmit}
+                  disabled={!stockQuery.trim()}
+                  className="mt-4 w-full rounded-xl py-3 text-sm font-medium transition-colors"
+                  style={{
+                    background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
+                    color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",
+                    cursor: stockQuery.trim() ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Analyse →
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <ChatInput onSend={handleSend} disabled={isLoading} mode={chatMode} onModeChange={setChatMode} />
         </div>

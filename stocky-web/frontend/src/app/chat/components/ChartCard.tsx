@@ -1,39 +1,69 @@
 "use client";
 import { useEffect, useRef } from "react";
+import MarkdownRich from "./MarkdownRich";
 
 interface Props {
   data: Record<string, unknown>;
 }
 
+function AiAnalysisSection({ text }: { text: string | undefined }) {
+  if (!text) return null;
+  return (
+    <div
+      className="rounded-xl border-l-2 px-4 py-3 mt-3"
+      style={{
+        borderColor: "var(--accent)",
+        background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)",
+      }}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent)" }}>
+        Stocky&apos;s Chart Read
+      </p>
+      <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+        <MarkdownRich text={text} />
+      </div>
+    </div>
+  );
+}
+
 export default function ChartCard({ data }: Props) {
   const chartType = data.type as string;
   const stock = data.stock as string;
+  const aiAnalysis = data.ai_analysis as string | undefined;
 
   if (chartType === "tradingview") {
-    return <TradingViewChart symbol={data.symbol as string} stock={stock} />;
+    return (
+      <>
+        <TradingViewChart symbol={data.symbol as string} stock={stock} />
+        <AiAnalysisSection text={aiAnalysis} />
+      </>
+    );
   }
 
   if (chartType === "image" && data.image_b64) {
     return (
-      <div
-        className="rounded-2xl border overflow-hidden"
-        style={{ borderColor: "var(--card-border)", background: "#111111" }}
-      >
+      <>
         <div
-          className="flex items-center gap-2 px-4 py-2.5 text-xs"
-          style={{ borderBottom: "1px solid var(--card-border)", color: "var(--muted)" }}
+          className="rounded-2xl border overflow-hidden"
+          style={{ borderColor: "var(--card-border)", background: "#111111" }}
         >
-          <span>📈</span>
-          <span>{stock} — Analysis Chart</span>
+          <div
+            className="flex items-center gap-2 px-4 py-2.5 text-xs"
+            style={{ borderBottom: "1px solid var(--card-border)", color: "var(--muted)" }}
+          >
+            <span>📈</span>
+            <span>{stock} — Analysis Chart</span>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`data:image/png;base64,${data.image_b64}`}
+            alt={`${stock} chart`}
+            className="w-full"
+            style={{ display: "block" }}
+          />
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`data:image/png;base64,${data.image_b64}`}
-          alt={`${stock} chart`}
-          className="w-full"
-          style={{ display: "block" }}
-        />
-      </div>
+        <AiAnalysisSection text={aiAnalysis} />
+      </>
     );
   }
 

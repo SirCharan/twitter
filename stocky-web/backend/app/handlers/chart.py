@@ -19,18 +19,92 @@ async def generate_chart(stock: str, chart_type: str) -> dict:
         yf_symbol = valid
 
     if chart_type == "tradingview":
-        return {
+        result = {
             "type": "tradingview",
             "symbol": f"NSE:{nse_symbol}",
             "stock": nse_symbol,
         }
     else:
         image_b64 = await loop.run_in_executor(None, _make_analysis_chart, yf_symbol, nse_symbol)
-        return {
+        result = {
             "type": "image",
             "image_b64": image_b64,
             "stock": nse_symbol,
         }
+
+    # AI chart analysis
+    try:
+        from app import ai_client
+        from app.prompts import CHART_ANALYSIS_PROMPT
+
+        tech_summary = await loop.run_in_executor(None, _get_chart_technicals, yf_symbol)
+        if tech_summary:
+            analysis = await ai_client.feature_analysis(
+                CHART_ANALYSIS_PROMPT.format(stock=nse_symbol, data=tech_summary),
+                max_tokens=300,
+            )
+            if analysis:
+                result["ai_analysis"] = analysis
+    except Exception:
+        pass
+
+    return result
+
+
+def _get_chart_technicals(yf_symbol: str) -> str | None:
+    """Extract key technical data for AI chart analysis."""
+    try:
+        ticker = yf.Ticker(yf_symbol)
+        hist = ticker.history(period="6mo")
+        if hist.empty or len(hist) < 20:
+            return None
+
+        closes = hist["Close"]
+        volumes = hist["Volume"]
+        current = float(closes.iloc[-1])
+
+        # SMAs
+        sma20 = float(closes.rolling(20).mean().iloc[-1]) if len(closes) >= 20 else None
+        sma50 = float(closes.rolling(50).mean().iloc[-1]) if len(closes) >= 50 else None
+
+        # RSI
+        delta = closes.diff()
+        gain = delta.clip(lower=0).ewm(span=14, adjust=False).mean()
+        loss = (-delta.clip(upper=0)).ewm(span=14, adjust=False).mean()
+        rsi = float(100 - (100 / (1 + gain.iloc[-1] / max(loss.iloc[-1], 1e-9))))
+
+        # MACD
+        ema12 = closes.ewm(span=12, adjust=False).mean()
+        ema26 = closes.ewm(span=26, adjust=False).mean()
+        macd_val = float(ema12.iloc[-1] - ema26.iloc[-1])
+        signal_val = float((ema12 - ema26).ewm(span=9, adjust=False).mean().iloc[-1])
+
+        # Volume profile
+        vol_5d = float(volumes.tail(5).mean())
+        vol_20d = float(volumes.tail(20).mean())
+        vol_ratio = round(vol_5d / vol_20d, 2) if vol_20d > 0 else 1.0
+
+        # 52W range
+        high_52 = float(closes.max())
+        low_52 = float(closes.min())
+
+        # Recent price action
+        chg_1w = round((current - float(closes.iloc[-5])) / float(closes.iloc[-5]) * 100, 2) if len(closes) >= 5 else 0
+        chg_1m = round((current - float(closes.iloc[-22])) / float(closes.iloc[-22]) * 100, 2) if len(closes) >= 22 else 0
+
+        result = f"Price: {current:.2f} | 1W: {chg_1w:+.2f}% | 1M: {chg_1m:+.2f}%\n"
+        if sma20:
+            result += f"SMA20: {sma20:.2f} ({'above' if current > sma20 else 'below'})\n"
+        if sma50:
+            result += f"SMA50: {sma50:.2f} ({'above' if current > sma50 else 'below'})\n"
+        result += f"RSI(14): {rsi:.1f}\n"
+        result += f"MACD: {macd_val:.2f} | Signal: {signal_val:.2f} ({'bullish' if macd_val > signal_val else 'bearish'})\n"
+        result += f"Volume ratio (5d/20d): {vol_ratio}x\n"
+        result += f"52W Range: {low_52:.2f} - {high_52:.2f}\n"
+
+        return result
+    except Exception:
+        return None
 
 
 def _make_analysis_chart(yf_symbol: str, nse_symbol: str) -> str:

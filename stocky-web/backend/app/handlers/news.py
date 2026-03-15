@@ -99,24 +99,14 @@ async def _generate_news_summary(titles: list[str], symbol: str | None) -> str:
     if not titles:
         return ""
     try:
-        from app.config import GROQ_MODEL
-        client = ai_client._get_client()
-        if not client:
-            return ""
+        from app.prompts import NEWS_SUMMARY_PROMPT
         subject = f"for {symbol.upper()}" if symbol else "about the Indian market"
-        prompt = (
-            f"Given these recent headlines {subject}:\n"
-            + "\n".join(f"- {t}" for t in titles)
-            + "\n\nWrite exactly one sentence summarising the overall sentiment and key theme. "
-            "Be direct and specific. No fluff."
+        headlines_text = "\n".join(f"- {t}" for t in titles)
+        data_text = f"Subject: {subject}\n{headlines_text}"
+        result = await ai_client.feature_analysis(
+            NEWS_SUMMARY_PROMPT.format(data=data_text), max_tokens=200
         )
-        result = await client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=80,
-            temperature=0.3,
-        )
-        return result.choices[0].message.content.strip()
+        return result or ""
     except Exception:
         return ""
 

@@ -24,7 +24,31 @@ SECTORS = {
 
 async def get_rrg_data() -> dict:
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _compute_rrg)
+    data = await loop.run_in_executor(None, _compute_rrg)
+
+    # AI analysis of rotation
+    try:
+        from app import ai_client
+        from app.prompts import RRG_ANALYSIS_PROMPT
+        sectors = data.get("sectors", [])
+        if sectors:
+            rrg_text = ""
+            for q in ["Leading", "Weakening", "Lagging", "Improving"]:
+                in_q = [s for s in sectors if s["quadrant"] == q]
+                if in_q:
+                    rrg_text += f"{q}: " + ", ".join(
+                        f"{s['name']} (RS-Ratio: {s['rs_ratio']}, Momentum: {s['rs_momentum']})"
+                        for s in in_q
+                    ) + "\n"
+            analysis = await ai_client.feature_analysis(
+                RRG_ANALYSIS_PROMPT.format(data=rrg_text), max_tokens=256
+            )
+            if analysis:
+                data["ai_analysis"] = analysis
+    except Exception:
+        pass
+
+    return data
 
 
 def _ema(values: np.ndarray, period: int) -> np.ndarray:

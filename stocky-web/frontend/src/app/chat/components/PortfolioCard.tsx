@@ -1,4 +1,5 @@
 import type { PortfolioData } from "@/lib/types";
+import MarkdownRich from "./MarkdownRich";
 
 function formatINR(v: number) {
   return "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -272,6 +273,24 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
           </p>
         )}
       </div>
+
+      {/* Stocky's Take */}
+      {(data.ai_analysis as string) && (
+        <div
+          className="rounded-xl border-l-2 px-4 py-3 mt-3"
+          style={{
+            borderColor: "var(--accent)",
+            background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)",
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent)" }}>
+            Stocky&apos;s Take
+          </p>
+          <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+            <MarkdownRich text={data.ai_analysis as string} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

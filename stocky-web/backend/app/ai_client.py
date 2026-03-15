@@ -225,9 +225,14 @@ ARIS_PROMPT = (
     "- Confident but honest about uncertainty\n\n"
     "## OUTPUT FORMAT\n"
     "1. **Thesis Statement** — one clear sentence stating your position\n"
-    "2. **Key Evidence** — 3-5 data-backed points with sources\n"
-    "3. **Risk Factors** — what could invalidate this thesis\n"
-    "4. **Confidence Assessment** — overall confidence (Low/Medium/High) with reasoning\n\n"
+    "2. **Business Moat** — how the company makes money and its competitive advantage\n"
+    "3. **Financial Health** — key metrics (ROE, ROCE, Debt-to-Equity, Free Cash Flow) "
+    "with assessment\n"
+    "4. **Valuation** — is it overvalued or undervalued relative to historical multiples "
+    "and peers? Reference P/E, P/B, EV/EBITDA where available\n"
+    "5. **Key Evidence** — 3-5 data-backed points with sources\n"
+    "6. **Risk Factors** — what could invalidate this thesis, ranked by probability\n"
+    "7. **Confidence Assessment** — overall confidence (Low/Medium/High) with reasoning\n\n"
     "Write 400-800 words. Be specific, cite sources, no fluff."
 )
 
@@ -279,7 +284,18 @@ NEXUS_SYNTHESIS_PROMPT = (
     "6. List all **Sources Verified** and any **Unverified Claims**\n\n"
     "## OUTPUT FORMAT\n"
     "### Final Synthesis\n"
-    "[Your comprehensive, well-structured answer — 500-1000 words]\n\n"
+    "Structure your answer with these sections:\n\n"
+    "**Business Moat & Competitive Position** — How does this company/asset make money? "
+    "What is the moat? Is it widening or narrowing?\n\n"
+    "**Financial Health Scorecard** — ROE, ROCE, D/E, FCF trajectory. "
+    "One clear sentence: healthy, deteriorating, or improving?\n\n"
+    "**Valuation Assessment** — Cheap, fair, or expensive? Relative to historical "
+    "multiples AND peers. Reference specific ratios.\n\n"
+    "**Key Risks** — Ranked by probability. What could destroy the thesis?\n\n"
+    "**Institutional Sentiment** — Promoter holding trends, FII/DII activity if available. "
+    "Smart money flows.\n\n"
+    "**Verdict** — Clear, actionable conclusion. 2-3 sentences max.\n\n"
+    "Total: 500-1000 words.\n\n"
     "### Confidence Score: [0-100]\n"
     "[One line explaining the score]\n\n"
     "### Sources Verified\n"
@@ -444,12 +460,8 @@ async def analyse_verdict(stock_name: str, data_summary: str) -> str | None:
     if not client:
         return None
 
-    prompt = (
-        f"Stock: {stock_name}\n\n"
-        f"Data:\n{data_summary}\n\n"
-        "Give Stocky's verdict in 1-2 sentences. Be direct. Think in payoffs and asymmetry. "
-        "No hedging, no 'it depends.' Just your take on the risk-reward."
-    )
+    from app.prompts import ANALYSE_VERDICT_PROMPT
+    prompt = ANALYSE_VERDICT_PROMPT.format(name=stock_name, data=data_summary)
 
     try:
         response = await client.chat.completions.create(
@@ -458,8 +470,8 @@ async def analyse_verdict(stock_name: str, data_summary: str) -> str | None:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.7,
-            max_tokens=128,
+            temperature=0.5,
+            max_tokens=256,
         )
         tokens = response.usage.total_tokens if response.usage else 0
         await log_api_call("groq", "verdict", tokens)
@@ -467,6 +479,33 @@ async def analyse_verdict(stock_name: str, data_summary: str) -> str | None:
     except Exception as e:
         logger.error(f"Groq verdict error: {e}")
         raise
+
+
+async def feature_analysis(
+    prompt: str,
+    max_tokens: int = 256,
+) -> str | None:
+    """Lightweight AI analysis for feature cards. Returns text or None."""
+    client = _get_client()
+    if not client:
+        return None
+
+    try:
+        response = await client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+            max_tokens=max_tokens,
+        )
+        tokens = response.usage.total_tokens if response.usage else 0
+        await log_api_call("groq", "feature_analysis", tokens)
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Feature analysis error: {e}")
+        return None
 
 
 # ---------------------------------------------------------------------------

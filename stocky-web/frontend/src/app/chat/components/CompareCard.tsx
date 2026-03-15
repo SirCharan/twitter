@@ -1,4 +1,5 @@
 "use client";
+import MarkdownRich from "./MarkdownRich";
 
 interface StockCompare {
   name: string;
@@ -176,6 +177,24 @@ export default function CompareCard({ data }: Props) {
       </div>
       </div>{/* min-width wrapper */}
       </div>{/* overflow-x-auto */}
+
+      {/* Stocky's Verdict */}
+      {(data.ai_verdict as string) && (
+        <div
+          className="rounded-xl border-l-2 px-4 py-3 mt-3"
+          style={{
+            borderColor: "var(--accent)",
+            background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)",
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent)" }}>
+            Stocky&apos;s Verdict
+          </p>
+          <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+            <MarkdownRich text={data.ai_verdict as string} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

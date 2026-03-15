@@ -54,11 +54,36 @@ async def run_scan(scan_type: str) -> dict:
     else:
         results = []
 
-    return {
+    data = {
         "scan_type": scan_type,
         "results": results,
         "count": len(results),
     }
+
+    # AI scan analysis
+    if results:
+        try:
+            from app import ai_client
+            from app.prompts import SCAN_ANALYSIS_PROMPT
+
+            scan_label = scan_type.replace("_", " ").title()
+            scan_text = ""
+            for r in results[:8]:
+                scan_text += (
+                    f"{r['symbol']}: LTP {r['ltp']} ({r.get('change_pct', 0):+.2f}%) "
+                    f"— {r.get('trigger', '')}\n"
+                )
+
+            analysis = await ai_client.feature_analysis(
+                SCAN_ANALYSIS_PROMPT.format(scan_type=scan_label, data=scan_text),
+                max_tokens=200,
+            )
+            if analysis:
+                data["ai_analysis"] = analysis
+        except Exception:
+            pass
+
+    return data
 
 
 def _scan_stocks(scan_type: str) -> list[dict]:

@@ -68,4 +68,34 @@ async def compare_stocks(stocks_input: str) -> dict:
         raise ValueError("Could not fetch data for any of the stocks")
 
     winner = max(stocks, key=lambda s: s.get("overall_score", 0)) if len(stocks) > 1 else None
-    return {"stocks": stocks, "winner": winner["symbol"] if winner else None}
+    result = {"stocks": stocks, "winner": winner["symbol"] if winner else None}
+
+    # AI verdict
+    if len(stocks) >= 2:
+        try:
+            from app import ai_client
+            from app.prompts import COMPARE_VERDICT_PROMPT
+
+            compare_text = ""
+            for s in stocks:
+                compare_text += (
+                    f"{s['name']} ({s['symbol']}): "
+                    f"P/E {s.get('pe', '?')} | ROE {s.get('roe', '?')}% | "
+                    f"D/E {s.get('debt_to_equity', '?')} | "
+                    f"Earnings Growth {s.get('earnings_growth', '?')}% | "
+                    f"Revenue Growth {s.get('revenue_growth', '?')}% | "
+                    f"RSI {s.get('rsi', '?')} ({s.get('rsi_label', '')}) | "
+                    f"MACD {s.get('macd_signal', '?')} | "
+                    f"Profit Margin {s.get('profit_margin', '?')}% | "
+                    f"Overall Score {s.get('overall_score', '?')}/20\n"
+                )
+
+            verdict = await ai_client.feature_analysis(
+                COMPARE_VERDICT_PROMPT.format(data=compare_text), max_tokens=200
+            )
+            if verdict:
+                result["ai_verdict"] = verdict
+        except Exception:
+            pass
+
+    return result

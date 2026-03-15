@@ -1,4 +1,8 @@
+"use client";
+
+import { motion } from "framer-motion";
 import type { ChatMessage } from "@/lib/types";
+import ErrorBoundary from "./ErrorBoundary";
 import MarkdownRich from "./MarkdownRich";
 import AnalysisCard from "./AnalysisCard";
 import PriceCard from "./PriceCard";
@@ -40,14 +44,25 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
 
   if (!isUser && FULL_WIDTH_TYPES.has(message.type)) {
     return (
-      <div className="slide-up">
-        <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <ErrorBoundary>
+          <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
+        </ErrorBoundary>
+      </motion.div>
     );
   }
 
   return (
-    <div className={`flex ${isUser ? "slide-in-right justify-end" : "slide-in-left justify-start"}`}>
+    <motion.div
+      initial={{ opacity: 0, x: isUser ? 20 : -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+    >
       <div
         className={`bubble-hover max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-6 sm:ml-12" : "mr-6 sm:mr-12"}`}
         style={{
@@ -61,10 +76,12 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
             {message.content}
           </p>
         ) : (
-          <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
+          <ErrorBoundary>
+            <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
+          </ErrorBoundary>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -165,8 +182,11 @@ function RichContent({
       return (
         <div className="relative">
           {!err && <Confetti />}
-          <div
-            className="rounded-xl border px-4 py-3 bounce-in"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="rounded-xl border px-4 py-3"
             style={{
               borderColor: err ? "var(--negative)" : "var(--positive)",
               background: "var(--card-bg)",
@@ -178,7 +198,7 @@ function RichContent({
             <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
               {message.content}
             </p>
-          </div>
+          </motion.div>
         </div>
       );
     }

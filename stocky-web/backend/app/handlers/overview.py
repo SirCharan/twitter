@@ -162,17 +162,27 @@ async def get_overview() -> dict:
 
     # AI market mood
     try:
+        from app.prompts import OVERVIEW_MOOD_PROMPT
         indices = data.get("indices", [])
         ad = data.get("advances_declines")
-        mood_prompt = "Indian market today: "
-        for idx in indices[:3]:
-            mood_prompt += f"{idx['name']} {idx['pct_change']:+.2f}%, "
+        gainers = data.get("gainers", [])
+        losers = data.get("losers", [])
+
+        mood_data = ""
+        for idx in indices:
+            mood_data += f"{idx['name']}: {idx['value']:,.2f} ({idx['pct_change']:+.2f}%)\n"
         if ad:
-            mood_prompt += f"Breadth: {ad['advances']} up / {ad['declines']} down. "
+            mood_data += f"Breadth: {ad['advances']} advances / {ad['declines']} declines / {ad.get('unchanged', 0)} unchanged\n"
         if data.get("vix"):
-            mood_prompt += f"VIX: {data['vix']['value']}. "
-        mood_prompt += "Give a one-sentence market mood summary. Be specific and direct."
-        mood = await ai_client.quick_chat(mood_prompt)
+            mood_data += f"India VIX: {data['vix']['value']} ({data['vix'].get('change_pct', 0):+.2f}%)\n"
+        if gainers:
+            mood_data += "Top gainers: " + ", ".join(f"{g['symbol']} {g['pct_change']:+.2f}%" for g in gainers[:3]) + "\n"
+        if losers:
+            mood_data += "Top losers: " + ", ".join(f"{l['symbol']} {l['pct_change']:+.2f}%" for l in losers[:3]) + "\n"
+
+        mood = await ai_client.feature_analysis(
+            OVERVIEW_MOOD_PROMPT.format(data=mood_data), max_tokens=256
+        )
         if mood:
             data["ai_mood"] = mood
     except Exception:
