@@ -12,7 +12,10 @@ interface Props {
 
 export default function ChatInput({ onSend, disabled, mode, onModeChange }: Props) {
   const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const quickRef = useRef<HTMLButtonElement>(null);
+  const deepRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -25,8 +28,10 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
     track("query", "chat_message", { mode, length: trimmed.length });
+    setSending(true);
     onSend(trimmed);
     setText("");
+    setTimeout(() => setSending(false), 300);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -36,70 +41,85 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
     }
   }
 
+  // Calculate slider position based on active mode
+  const isDeep = mode === "deep";
+
   return (
     <div className="space-y-1.5">
-      {/* Mode toggle */}
-      <div className="flex items-center gap-1">
+      {/* Mode toggle with sliding indicator */}
+      <div className="flex items-center gap-2">
         <div
-          className="inline-flex rounded-lg p-0.5"
+          className="relative inline-flex rounded-lg p-0.5"
           style={{ background: "var(--surface)", border: "1px solid var(--card-border)" }}
         >
+          {/* Sliding background indicator */}
+          <div
+            className="mode-slider absolute top-0.5 bottom-0.5 rounded-md"
+            style={{
+              background: "rgba(201,169,110,0.12)",
+              width: isDeep
+                ? (deepRef.current?.offsetWidth ?? 110) + "px"
+                : (quickRef.current?.offsetWidth ?? 72) + "px",
+              transform: isDeep
+                ? `translateX(${(quickRef.current?.offsetWidth ?? 72)}px)`
+                : "translateX(0)",
+            }}
+          />
           <button
+            ref={quickRef}
             onClick={() => { track("click", "mode_toggle", { mode: "quick" }); onModeChange("quick"); }}
             disabled={disabled}
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all"
+            className="bounce-tap relative z-10 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors"
             style={{
-              background: mode === "quick" ? "rgba(201,169,110,0.12)" : "transparent",
-              color: mode === "quick" ? "var(--accent)" : "var(--muted)",
-              borderRight: "1px solid var(--card-border)",
+              color: !isDeep ? "var(--accent)" : "var(--muted)",
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
                 d="M6.5 1L2 7h3.5L5 11l5-6H6.5L7 1z"
-                fill={mode === "quick" ? "var(--accent)" : "var(--muted)"}
-                opacity={mode === "quick" ? 1 : 0.5}
+                fill={!isDeep ? "var(--accent)" : "var(--muted)"}
+                opacity={!isDeep ? 1 : 0.5}
               />
             </svg>
             Quick
           </button>
           <button
+            ref={deepRef}
             onClick={() => { track("click", "mode_toggle", { mode: "deep" }); onModeChange("deep"); }}
             disabled={disabled}
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all"
+            className="bounce-tap relative z-10 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors"
             style={{
-              background: mode === "deep" ? "rgba(201,169,110,0.12)" : "transparent",
-              color: mode === "deep" ? "var(--accent)" : "var(--muted)",
+              color: isDeep ? "var(--accent)" : "var(--muted)",
             }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <circle
                 cx="6" cy="5" r="3.5"
-                stroke={mode === "deep" ? "var(--accent)" : "var(--muted)"}
+                stroke={isDeep ? "var(--accent)" : "var(--muted)"}
                 strokeWidth="1.2"
                 fill="none"
-                opacity={mode === "deep" ? 1 : 0.5}
+                opacity={isDeep ? 1 : 0.5}
               />
               <path
                 d="M4.5 5C4.5 5 5 6.5 6 6.5S7.5 5 7.5 5"
-                stroke={mode === "deep" ? "var(--accent)" : "var(--muted)"}
+                stroke={isDeep ? "var(--accent)" : "var(--muted)"}
                 strokeWidth="0.8"
                 fill="none"
-                opacity={mode === "deep" ? 1 : 0.5}
+                opacity={isDeep ? 1 : 0.5}
               />
               <line
                 x1="6" y1="8.5" x2="6" y2="11"
-                stroke={mode === "deep" ? "var(--accent)" : "var(--muted)"}
+                stroke={isDeep ? "var(--accent)" : "var(--muted)"}
                 strokeWidth="1.2"
-                opacity={mode === "deep" ? 1 : 0.5}
+                opacity={isDeep ? 1 : 0.5}
               />
             </svg>
             Deep Research
           </button>
         </div>
-        {mode === "deep" && (
+        {isDeep && (
           <span
-            className="text-[10px] font-medium uppercase tracking-wider"
+            className="bounce-in text-[10px] font-medium uppercase tracking-wider"
             style={{ color: "var(--accent)", opacity: 0.7 }}
           >
             2 agents will debate
@@ -112,7 +132,8 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
         className="input-focus-ring flex items-end gap-3 rounded-2xl border px-4 py-3"
         style={{
           background: "var(--card-bg)",
-          borderColor: mode === "deep" ? "rgba(201,169,110,0.3)" : "var(--card-border)",
+          borderColor: isDeep ? "rgba(201,169,110,0.3)" : "var(--card-border)",
+          transition: "border-color 0.25s ease",
         }}
       >
         <textarea
@@ -120,19 +141,27 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={mode === "deep" ? "Ask anything — agents will debate this..." : "Ask Stocky anything..."}
+          placeholder={isDeep ? "Ask anything — agents will debate this..." : "Ask Stocky anything..."}
           disabled={disabled}
           rows={1}
           className="flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-[var(--muted)]"
-          style={{ color: "var(--foreground)" }}
+          style={{ color: "var(--foreground)", transition: "height 0.15s ease" }}
         />
         <button
           onClick={handleSubmit}
           disabled={disabled || !text.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20"
+          className={`bounce-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
+            text.trim() && !disabled ? "send-ready" : ""
+          }`}
           style={{ background: text.trim() ? "var(--accent)" : "var(--card-border)" }}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg
+            width="16" height="16" viewBox="0 0 16 16" fill="none"
+            style={{
+              transition: "transform 0.3s ease",
+              transform: sending ? "rotate(45deg) scale(0.9)" : "rotate(0deg) scale(1)",
+            }}
+          >
             <path
               d="M3 13L13 8L3 3v4l6 1-6 1v4z"
               fill={text.trim() ? "var(--background)" : "var(--muted)"}

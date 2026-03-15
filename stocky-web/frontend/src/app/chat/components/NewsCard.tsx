@@ -50,7 +50,7 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
         <div className="mb-3 flex flex-wrap gap-1.5">
           <button
             onClick={() => setActiveCategory(null)}
-            className="rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all"
+            className="bounce-tap rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all"
             style={{
               borderColor: !activeCategory ? "var(--accent)" : "var(--card-border)",
               background: !activeCategory ? "rgba(201,169,110,0.08)" : "transparent",
@@ -66,7 +66,7 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(isActive ? null : cat)}
-                className="rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all"
+                className="bounce-tap rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all"
                 style={{
                   borderColor: isActive ? color : "var(--card-border)",
                   background: isActive ? `${color}15` : "transparent",
@@ -89,8 +89,8 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
           return (
             <div
               key={i}
-              className="flex items-start gap-2 rounded-lg border p-2.5"
-              style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+              className="slide-up stagger flex items-start gap-2 rounded-lg border p-2.5"
+              style={{ ["--i" as string]: i, borderColor: "var(--card-border)", background: "var(--surface)" }}
             >
               <span className="mt-0.5 text-xs" style={{ color: sentimentColor }}>
                 {sentimentIcon}

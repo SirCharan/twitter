@@ -61,9 +61,9 @@ export default function FeatureBar({ active, onSelect, disabled, visible = true 
   if (!visible) return null;
 
   return (
-    <div className="mb-1.5 space-y-1.5" style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}>
-      {CATEGORIES.map((cat) => (
-        <div key={cat.label}>
+    <div className="slide-up mb-1.5 space-y-1.5" style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}>
+      {CATEGORIES.map((cat, catIdx) => (
+        <div key={cat.label} className="stagger slide-up" style={{ ["--i" as string]: catIdx }}>
           <span
             className="mb-1 block text-[9px] font-semibold uppercase tracking-widest sm:text-[10px]"
             style={{ color: "var(--muted)", opacity: 0.6 }}
@@ -81,11 +81,12 @@ export default function FeatureBar({ active, onSelect, disabled, visible = true 
                     onSelect(isActive ? null : f.id);
                   }}
                   disabled={disabled}
-                  className="flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-medium transition-all disabled:opacity-30"
+                  className="bounce-tap hover-lift flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-medium transition-all disabled:opacity-30"
                   style={{
                     borderColor: isActive ? "var(--accent)" : "var(--card-border)",
                     background: isActive ? "rgba(201,169,110,0.1)" : "transparent",
                     color: isActive ? "var(--accent)" : "var(--muted)",
+                    boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
                   }}
                 >
                   <span style={{ fontSize: 12 }}>{f.icon}</span>

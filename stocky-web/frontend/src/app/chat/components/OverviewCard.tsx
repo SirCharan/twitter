@@ -52,7 +52,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         </div>
         {sentiment && (
           <span
-            className="rounded-md px-2.5 py-1 text-[11px] font-semibold"
+            className="bounce-in rounded-md px-2.5 py-1 text-[11px] font-semibold"
             style={{ background: sentiment.bg, color: sentiment.color }}
           >
             {sentiment.label}
@@ -73,7 +73,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold tabular-nums" style={{ color: vixColor! }}>
+            <span className="count-flash text-sm font-semibold tabular-nums" style={{ color: vixColor! }}>
               {pct(vix.value)}
             </span>
             <span
@@ -98,8 +98,8 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
             return (
               <div
                 key={i}
-                className="rounded-xl border p-3"
-                style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+                className="slide-up stagger rounded-xl border p-3"
+                style={{ ["--i" as string]: i, borderColor: "var(--card-border)", background: "var(--surface)" }}
               >
                 <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>
                   {idx.name}
@@ -133,9 +133,9 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
             Market Breadth
           </p>
           <div className="flex h-2 overflow-hidden rounded-full">
-            <div style={{ width: `${advPct}%`, background: "var(--positive)" }} className="h-full" />
+            <div style={{ width: `${advPct}%`, background: "var(--positive)" }} className="bar-fill h-full" />
             <div style={{ width: `${100 - advPct - decPct}%`, background: "var(--muted)", opacity: 0.3 }} className="h-full" />
-            <div style={{ width: `${decPct}%`, background: "var(--negative)" }} className="h-full" />
+            <div style={{ width: `${decPct}%`, background: "var(--negative)" }} className="bar-fill h-full" />
           </div>
           <div className="mt-1.5 flex justify-between text-[10px]">
             <span style={{ color: "var(--positive)" }}>▲ {ad.advances} Up</span>

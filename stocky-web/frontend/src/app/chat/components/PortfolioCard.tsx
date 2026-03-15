@@ -19,7 +19,7 @@ function PctBadge({ value }: { value: number }) {
   const bg = value >= 0 ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)";
   return (
     <span
-      className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+      className="bounce-in inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium"
       style={{ color, background: bg }}
     >
       {value >= 0 ? "+" : ""}{value.toFixed(2)}%
@@ -125,8 +125,8 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
               Top Holdings
             </p>
             <div className="space-y-1.5">
-              {inv.top_holdings.map((h) => (
-                <div key={h.symbol} className="flex items-center justify-between text-xs">
+              {inv.top_holdings.map((h, i) => (
+                <div key={h.symbol} className="slide-up stagger flex items-center justify-between text-xs" style={{ ["--i" as string]: i }}>
                   <div className="flex items-center gap-2">
                     <span className="font-medium" style={{ color: "var(--foreground)" }}>{h.symbol}</span>
                     <span style={{ color: "var(--muted)" }}>{h.qty} qty</span>

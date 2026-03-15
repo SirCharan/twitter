@@ -5,6 +5,7 @@ import { track } from "@/lib/analytics";
 import MessageBubble from "./MessageBubble";
 import ChatInput, { type ChatMode } from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
+import SkeletonCard from "./SkeletonCard";
 import FeatureBar, { type FeatureId } from "./FeatureBar";
 import FeaturePanel from "./FeaturePanel";
 import FeedbackModal from "./FeedbackModal";
@@ -26,6 +27,15 @@ const ANALYSE_MODES = [
   { id: "technical",  label: "Technical",     msg: (s: string) => `${s} technical analysis` },
 ] as const;
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
+
+// Feature keywords that return card-type responses (show skeleton instead of typing indicator)
+const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's)\b/i;
+
+const SUGGESTIONS = [
+  { text: "How's the market today?", msg: "how's the market", icon: "📈" },
+  { text: "Analyse RELIANCE", msg: "how is reliance doing", icon: "🔍" },
+  { text: "Compare TCS vs INFY", msg: "compare stocks: TCS,INFY", icon: "⚖" },
+];
 
 /** Compose the chat message for each feature */
 function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
@@ -65,6 +75,23 @@ function composeFeatureMessage(feature: FeatureId, params: Record<string, string
   }
 }
 
+/** Typewriter hook */
+function useTypewriter(text: string, speed = 40) {
+  const [displayed, setDisplayed] = useState("");
+  useEffect(() => {
+    setDisplayed("");
+    if (!text) return;
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, speed]);
+  return displayed;
+}
+
 export default function ChatWindow({
   messages,
   isLoading,
@@ -92,6 +119,10 @@ export default function ChatWindow({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const lastMsg = messages[messages.length - 1];
+  const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+
+  // Should we show skeleton (card loading) vs typing indicator?
+  const showSkeleton = isLoading && lastUserMsg && CARD_KEYWORDS.test(lastUserMsg.content);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -109,6 +140,9 @@ export default function ChatWindow({
   }, [lastMsg?.role, isLoading]);
 
   const showEmpty = messages.length === 0 && !isLoading;
+
+  // Typewriter for subtitle
+  const subtitle = useTypewriter(showEmpty ? "Your AI trading assistant. Ask me anything." : "", 35);
 
   function handleAnalyseSubmit() {
     const stock = stockQuery.trim();
@@ -187,7 +221,7 @@ export default function ChatWindow({
             href="https://terminal.stockyai.xyz/blog"
             target="_blank"
             rel="noopener"
-            className="hidden sm:inline-flex items-center rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
+            className="bounce-tap hidden sm:inline-flex items-center rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
             style={{ color: "var(--accent)", border: "1px solid rgba(201,169,110,0.3)" }}
           >
             Blog
@@ -196,7 +230,7 @@ export default function ChatWindow({
             href="https://chat.whatsapp.com/E2iyS3SmHcj9zJq8tUyPxk"
             target="_blank"
             rel="noopener"
-            className="hidden sm:inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
+            className="bounce-tap hidden sm:inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
             style={{ color: "#25D366", border: "1px solid rgba(37,211,102,0.3)" }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -204,7 +238,7 @@ export default function ChatWindow({
           </a>
           <button
             onClick={() => { setFeedbackOpen(true); track("click", "feedback_open"); }}
-            className="hidden sm:inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
+            className="bounce-tap hidden sm:inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
             style={{ color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", background: "none" }}
           >
             &#9993; Feedback
@@ -213,14 +247,14 @@ export default function ChatWindow({
             href="https://terminal.stockyai.xyz"
             target="_blank"
             rel="noopener"
-            className="hidden sm:inline-flex items-center rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
+            className="bounce-tap hidden sm:inline-flex items-center rounded px-2.5 py-1 text-[11px] font-medium tracking-wide transition-opacity hover:opacity-80"
             style={{ color: "var(--foreground)", border: "1px solid rgba(245,240,235,0.2)" }}
           >
             Terminal
           </a>
           <button
             onClick={onNewChat}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium tracking-wide transition-all hover:opacity-90"
+            className="bounce-tap flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium tracking-wide transition-all hover:opacity-90"
             style={{ background: "var(--accent)", color: "var(--background)" }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -246,23 +280,58 @@ export default function ChatWindow({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-mark.png" alt="Stocky" width={56} height={56}
-                className="mx-auto mb-4" style={{ objectFit: "contain", opacity: 0.85 }}
+                className="breathe mx-auto mb-4" style={{ objectFit: "contain" }}
               />
-              <p className="gradient-text-shimmer text-3xl font-light tracking-widest">Stocky</p>
-              <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>
-                Your AI trading assistant. Ask me anything.
+              <p className="gradient-text-shimmer bounce-in text-3xl font-light tracking-widest">Stocky</p>
+              <p className="mt-3 text-sm" style={{ color: "var(--muted)", minHeight: "1.5em" }}>
+                {subtitle}
+                <span
+                  className="inline-block w-0.5 h-4 ml-0.5 align-middle"
+                  style={{
+                    background: "var(--accent)",
+                    animation: subtitle.length < 41 ? "pulse-dot 1s infinite" : "none",
+                    opacity: subtitle.length < 41 ? 1 : 0,
+                  }}
+                />
               </p>
+
+              {/* Suggestion cards — Perplexity-style */}
+              {!analyseOpen && (
+                <div className="mt-8 flex flex-wrap justify-center gap-3">
+                  {SUGGESTIONS.map((s, i) => (
+                    <button
+                      key={s.msg}
+                      onClick={() => {
+                        track("click", "suggestion_card", { suggestion: s.text });
+                        handleSend(s.msg);
+                      }}
+                      className="bounce-tap group flex w-36 flex-col items-center gap-2 rounded-2xl border px-4 py-5 text-center transition-all duration-200 hover:border-[var(--accent-dim)] hover:shadow-[0_0_20px_rgba(201,169,110,0.06)]"
+                      style={{
+                        borderColor: "var(--card-border)",
+                        background: "var(--surface)",
+                        color: "var(--foreground)",
+                        animation: `slideUp 0.3s ease-out ${i * 0.08}s both`,
+                      }}
+                    >
+                      <span className="text-xl">{s.icon}</span>
+                      <span className="text-xs font-medium leading-snug" style={{ color: "var(--muted)" }}>
+                        {s.text}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {analyseOpen && (
                 /* Grok-style stock picker */
                 <div
-                  className="mt-8 rounded-2xl border p-5 text-left"
+                  className="slide-up mt-8 rounded-2xl border p-5 text-left"
                   style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
                 >
                   <div className="mb-4 flex items-center gap-3">
                     <button
                       onClick={() => setAnalyseOpen(false)}
-                      className="flex items-center gap-1 text-xs hover:opacity-70"
+                      className="bounce-tap flex items-center gap-1 text-xs hover:opacity-70"
                       style={{ color: "var(--muted)" }}
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -282,8 +351,12 @@ export default function ChatWindow({
                     onChange={(e) => setStockQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
                     placeholder="e.g. Reliance, TCS, HDFC Bank..."
-                    className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none"
-                    style={{ borderColor: stockQuery ? "var(--accent)" : "var(--card-border)", color: "var(--foreground)" }}
+                    className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
+                    style={{
+                      borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
+                      color: "var(--foreground)",
+                      boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
+                    }}
                   />
 
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -293,7 +366,7 @@ export default function ChatWindow({
                         <button
                           key={m.id}
                           onClick={() => setAnalyseMode(m.id)}
-                          className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
+                          className="bounce-tap rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
                           style={{
                             borderColor: sel ? "var(--accent)" : "var(--card-border)",
                             background: sel ? "rgba(201,169,110,0.08)" : "transparent",
@@ -318,7 +391,7 @@ export default function ChatWindow({
                   <button
                     onClick={handleAnalyseSubmit}
                     disabled={!stockQuery.trim()}
-                    className="mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
+                    className="bounce-tap mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
                     style={{
                       background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
                       color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",
@@ -337,7 +410,7 @@ export default function ChatWindow({
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} onSend={handleSend} />
           ))}
-          {isLoading && <TypingIndicator />}
+          {isLoading && (showSkeleton ? <SkeletonCard /> : <TypingIndicator />)}
           <div ref={bottomRef} />
         </div>
       </div>
@@ -350,7 +423,7 @@ export default function ChatWindow({
             active={activeFeature}
             onSelect={handleFeatureSelect}
             disabled={isLoading}
-            visible={featureBarVisible && !analyseOpen}
+            visible={featureBarVisible && !analyseOpen && !showEmpty}
           />
 
           {/* Feature panel (expands when chip selected) */}
@@ -366,13 +439,13 @@ export default function ChatWindow({
           {/* Analyse stock picker (works in both empty and message states) */}
           {analyseOpen && !showEmpty && (
             <div
-              className="mb-3 rounded-2xl border p-5"
+              className="slide-up mb-3 rounded-2xl border p-5"
               style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
             >
               <div className="mb-4 flex items-center gap-3">
                 <button
                   onClick={() => { setAnalyseOpen(false); setFeatureBarVisible(true); }}
-                  className="flex items-center gap-1 text-xs hover:opacity-70"
+                  className="bounce-tap flex items-center gap-1 text-xs hover:opacity-70"
                   style={{ color: "var(--muted)" }}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -392,8 +465,12 @@ export default function ChatWindow({
                 onChange={(e) => setStockQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAnalyseSubmit()}
                 placeholder="e.g. Reliance, TCS, HDFC Bank..."
-                className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none"
-                style={{ borderColor: stockQuery ? "var(--accent)" : "var(--card-border)", color: "var(--foreground)" }}
+                className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
+                style={{
+                  borderColor: stockQuery ? "var(--accent)" : "var(--card-border)",
+                  color: "var(--foreground)",
+                  boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
+                }}
               />
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -403,7 +480,7 @@ export default function ChatWindow({
                     <button
                       key={m.id}
                       onClick={() => setAnalyseMode(m.id)}
-                      className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
+                      className="bounce-tap rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
                       style={{
                         borderColor: sel ? "var(--accent)" : "var(--card-border)",
                         background: sel ? "rgba(201,169,110,0.08)" : "transparent",
@@ -419,7 +496,7 @@ export default function ChatWindow({
               <button
                 onClick={handleAnalyseSubmit}
                 disabled={!stockQuery.trim()}
-                className="mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
+                className="bounce-tap mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
                 style={{
                   background: stockQuery.trim() ? "var(--accent)" : "var(--card-border)",
                   color: stockQuery.trim() ? "#0A0A0A" : "var(--muted)",

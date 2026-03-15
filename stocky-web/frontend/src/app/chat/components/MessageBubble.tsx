@@ -19,6 +19,7 @@ import RrgCard from "./RrgCard";
 import SuggestionCard from "./SuggestionCard";
 import AgentDebateCard from "./AgentDebateCard";
 import DebateProgressCard from "./DebateProgressCard";
+import Confetti from "./Confetti";
 
 interface Props {
   message: ChatMessage;
@@ -39,16 +40,16 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
 
   if (!isUser && FULL_WIDTH_TYPES.has(message.type)) {
     return (
-      <div className="animate-fade-in">
+      <div className="slide-up">
         <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
       </div>
     );
   }
 
   return (
-    <div className={`flex animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`flex ${isUser ? "slide-in-right justify-end" : "slide-in-left justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-6 sm:ml-12" : "mr-6 sm:mr-12"}`}
+        className={`bubble-hover max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-6 sm:ml-12" : "mr-6 sm:mr-12"}`}
         style={{
           background: isUser ? "var(--card-bg)" : "var(--surface)",
           border: "1px solid var(--card-border)",
@@ -161,19 +162,22 @@ function RichContent({
     case "order_result": {
       const err = data?.error as string | undefined;
       return (
-        <div
-          className="rounded-xl border px-4 py-3"
-          style={{
-            borderColor: err ? "var(--negative)" : "var(--positive)",
-            background: "var(--card-bg)",
-          }}
-        >
-          <p className="text-sm font-medium" style={{ color: err ? "var(--negative)" : "var(--positive)" }}>
-            {err ? "Order Failed" : "Order Placed"}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-            {message.content}
-          </p>
+        <div className="relative">
+          {!err && <Confetti />}
+          <div
+            className="rounded-xl border px-4 py-3 bounce-in"
+            style={{
+              borderColor: err ? "var(--negative)" : "var(--positive)",
+              background: "var(--card-bg)",
+            }}
+          >
+            <p className="text-sm font-medium" style={{ color: err ? "var(--negative)" : "var(--positive)" }}>
+              {err ? "Order Failed" : "Order Placed"}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+              {message.content}
+            </p>
+          </div>
         </div>
       );
     }

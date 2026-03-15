@@ -10,11 +10,11 @@ function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
     <div className="flex items-center gap-2.5">
       <div className="relative h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--card-border)" }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="bar-fill h-full rounded-full"
           style={{ width: `${Math.min(pct, 100)}%`, background: color }}
         />
       </div>
-      <span className="text-xs font-medium tabular-nums" style={{ color }}>
+      <span className="count-flash text-xs font-medium tabular-nums" style={{ color }}>
         {score.toFixed(1)}/{max}
       </span>
     </div>
@@ -24,7 +24,7 @@ function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
 function StatRow({ label, value }: { label: string; value: string | number | undefined }) {
   if (value === undefined || value === null) return null;
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="row-hover flex items-center justify-between py-1 px-1 -mx-1 rounded">
       <span className="text-xs" style={{ color: "var(--muted)" }}>{label}</span>
       <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
         {typeof value === "number" ? value.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : value}
@@ -61,7 +61,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
         </div>
         <div className="text-right">
           <p className="text-xs" style={{ color: "var(--muted)" }}>Overall Score</p>
-          <p className="text-lg font-semibold" style={{ color: "var(--accent)" }}>
+          <p className="count-flash text-lg font-semibold" style={{ color: "var(--accent)" }}>
             {d.overall_score.toFixed(1)}/30
           </p>
         </div>
@@ -181,7 +181,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
               {d.news.articles.length > 3 && (
                 <button
                   onClick={() => setShowAllNews((v) => !v)}
-                  className="mt-0.5 text-xs underline-offset-2 hover:underline"
+                  className="bounce-tap mt-0.5 text-xs underline-offset-2 hover:underline"
                   style={{ color: "var(--muted)" }}
                 >
                   {showAllNews ? "Show less ↑" : `Explore more news ↓ (${d.news.articles.length - 3} more)`}
@@ -273,7 +273,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
           </div>
           <button
             onClick={() => setShowDetailedResults((v) => !v)}
-            className="mt-1.5 text-xs underline-offset-2 hover:underline"
+            className="bounce-tap mt-1.5 text-xs underline-offset-2 hover:underline"
             style={{ color: "var(--muted)" }}
           >
             {showDetailedResults ? "Hide details ↑" : "See detailed results ↓"}
@@ -304,8 +304,8 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
       {/* Verdict */}
       {d.verdict && (
         <div
-          className="mt-3 rounded-lg border-l-2 px-3 py-2"
-          style={{ borderColor: "var(--accent)", background: "var(--surface)" }}
+          className="slide-up mt-3 rounded-lg border-l-2 px-3 py-2"
+          style={{ borderColor: "var(--accent)", background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)" }}
         >
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
             Stocky's Verdict

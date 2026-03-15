@@ -30,7 +30,7 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
+      className="bounce-tap rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
       style={{
         borderColor: selected ? "var(--accent)" : "var(--card-border)",
         background: selected ? "rgba(201,169,110,0.08)" : "transparent",
@@ -57,10 +57,11 @@ function StockInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? "e.g. Reliance, TCS, HDFC Bank..."}
-      className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-colors"
+      className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
       style={{
         borderColor: value ? "var(--accent)" : "var(--card-border)",
         color: "var(--foreground)",
+        boxShadow: value ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
       }}
     />
   );
@@ -73,7 +74,7 @@ function SubmitBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
+      className="bounce-tap mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all"
       style={{
         background: !disabled ? "var(--accent)" : "var(--card-border)",
         color: !disabled ? "#0A0A0A" : "var(--muted)",
@@ -186,15 +187,19 @@ function ComparePanel({ onSubmit }: { onSubmit: (p: Record<string, string>) => v
             value={s}
             onChange={(e) => setStock(i, e.target.value)}
             placeholder={`Stock ${i + 1} — e.g. ${["Reliance", "TCS", "HDFC"][i]}`}
-            className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-colors"
-            style={{ borderColor: s ? "var(--accent)" : "var(--card-border)", color: "var(--foreground)" }}
+            className="w-full rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
+            style={{
+              borderColor: s ? "var(--accent)" : "var(--card-border)",
+              color: "var(--foreground)",
+              boxShadow: s ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
+            }}
           />
         ))}
       </div>
       {stocks.length < 3 && (
         <button
           onClick={() => setStocks([...stocks, ""])}
-          className="mt-2 text-xs underline-offset-2 hover:underline"
+          className="bounce-tap mt-2 text-xs underline-offset-2 hover:underline"
           style={{ color: "var(--muted)" }}
         >
           + Add third stock
@@ -231,8 +236,12 @@ function SummarisePanel({ onSubmit }: { onSubmit: (p: Record<string, string>) =>
         onChange={(e) => setText(e.target.value)}
         placeholder="Paste article text, earnings report, or any content to summarise..."
         rows={5}
-        className="w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-colors"
-        style={{ borderColor: text ? "var(--accent)" : "var(--card-border)", color: "var(--foreground)" }}
+        className="w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-sm outline-none transition-all"
+        style={{
+          borderColor: text ? "var(--accent)" : "var(--card-border)",
+          color: "var(--foreground)",
+          boxShadow: text ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
+        }}
         autoFocus
       />
       <SubmitBtn
@@ -289,14 +298,14 @@ export default function FeaturePanel({ feature, onClose, onFeatureSend }: Props)
 
   return (
     <div
-      className="mb-3 rounded-2xl border p-5"
+      className="slide-up mb-3 rounded-2xl border p-5"
       style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
     >
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={onClose}
-          className="flex items-center gap-1 text-xs transition-opacity hover:opacity-70"
+          className="bounce-tap flex items-center gap-1 text-xs transition-opacity hover:opacity-70"
           style={{ color: "var(--muted)" }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
