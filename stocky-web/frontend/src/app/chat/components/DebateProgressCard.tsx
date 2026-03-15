@@ -17,12 +17,14 @@ interface Props {
 }
 
 const AGENT_META: Record<string, { icon: string; name: string; color: string }> = {
+  news:  { icon: "\uD83D\uDCE1", name: "News Intel", color: "#a78bfa" },
   nexus: { icon: "\u2726", name: "Nexus", color: "var(--accent)" },
   aris:  { icon: "\uD83D\uDD2C", name: "Dr. Aris Thorne", color: "#60a5fa" },
   silas: { icon: "\u2694\uFE0F", name: "Silas Vance", color: "#f87171" },
 };
 
 const THINKING_MESSAGES: Record<string, string[]> = {
+  news_scan:  ["Fetching live headlines...", "Scanning Indian markets...", "Checking global feeds...", "Reading geopolitical sources..."],
   briefing:   ["Analyzing the query...", "Defining research scope...", "Assigning focus areas..."],
   thesis:     ["Scanning market data...", "Building evidence base...", "Structuring thesis...", "Assessing confidence levels..."],
   cross_exam: ["Scrutinizing claims...", "Checking data sources...", "Finding weaknesses...", "Rating evidence quality..."],
@@ -30,7 +32,7 @@ const THINKING_MESSAGES: Record<string, string[]> = {
   synthesis:  ["Verifying all claims...", "Weighing both perspectives...", "Calculating confidence score...", "Building final report..."],
 };
 
-const PHASE_IDS = ["briefing", "thesis", "cross_exam", "rebuttal", "synthesis"];
+const PHASE_IDS = ["news_scan", "briefing", "thesis", "cross_exam", "rebuttal", "synthesis"];
 
 function useRotatingText(texts: string[], active: boolean, intervalMs = 3000) {
   const [index, setIndex] = useState(0);
@@ -57,7 +59,7 @@ function PhaseRow({ phase, index }: { phase: Phase; index: number }) {
   const isRunning = phase.status === "running";
   const isDone = phase.status === "done";
   const phaseId = PHASE_IDS[index] || "briefing";
-  const agentKey = phase.agent || (index === 0 || index === 4 ? "nexus" : index === 2 ? "silas" : "aris");
+  const agentKey = phase.agent || (index === 0 ? "news" : index === 1 || index === 5 ? "nexus" : index === 3 ? "silas" : "aris");
   const meta = AGENT_META[agentKey] || AGENT_META.nexus;
   const thinkingTexts = THINKING_MESSAGES[phaseId] || THINKING_MESSAGES.briefing;
   const rotatingThinking = useRotatingText(thinkingTexts, isRunning);

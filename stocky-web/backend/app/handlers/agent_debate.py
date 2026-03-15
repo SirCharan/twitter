@@ -143,6 +143,8 @@ async def stream_triad_debate(query: str, data_context: str | None = None):
     )
     if data_context:
         thesis_input += f"\n--- Market Data ---\n{data_context}\n"
+    if news_context:
+        thesis_input += f"\n{news_context}\n"
     thesis_input += "\nPresent your research thesis as instructed."
 
     try:
@@ -177,8 +179,10 @@ async def stream_triad_debate(query: str, data_context: str | None = None):
         f"User's research query: {query}\n\n"
         f"--- Nexus Briefing ---\n{briefing}\n\n"
         f"--- Dr. Aris Thorne's Thesis ---\n{thesis}\n\n"
-        "Cross-examine this thesis as instructed. Challenge every claim."
     )
+    if news_context:
+        cross_exam_input += f"{news_context}\n\n"
+    cross_exam_input += "Cross-examine this thesis as instructed. Challenge every claim."
 
     try:
         cross_exam = await ai_client.triad_call(

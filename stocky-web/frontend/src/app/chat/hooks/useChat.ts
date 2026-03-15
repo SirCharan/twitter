@@ -270,6 +270,7 @@ export function useChat() {
       // Add Triad progress placeholder
       const progressId = `debate-${Date.now()}`;
       const TRIAD_PHASES = [
+        { label: "Scanning 38 news sources...", agent: "news" },
         { label: "Setting research parameters...", agent: "nexus" },
         { label: "Building thesis...", agent: "aris" },
         { label: "Cross-examining claims...", agent: "silas" },
@@ -277,7 +278,7 @@ export function useChat() {
         { label: "Synthesizing final report...", agent: "nexus" },
       ];
       const PHASE_MAP: Record<string, number> = {
-        briefing: 0, thesis: 1, cross_exam: 2, rebuttal: 3, synthesis: 4,
+        briefing: 1, thesis: 2, cross_exam: 3, rebuttal: 4, synthesis: 5,
       };
 
       const makeDebateData = (
@@ -299,10 +300,10 @@ export function useChat() {
         })),
       });
 
-      const phaseStatuses: Array<"pending" | "running" | "done"> = ["running", "pending", "pending", "pending", "pending"];
-      const phaseContents: Array<string | undefined> = Array(5).fill(undefined);
-      const phaseThinkings: Array<string | undefined> = Array(5).fill(undefined);
-      const phaseElapseds: Array<number | undefined> = Array(5).fill(undefined);
+      const phaseStatuses: Array<"pending" | "running" | "done"> = ["running", "pending", "pending", "pending", "pending", "pending"];
+      const phaseContents: Array<string | undefined> = Array(6).fill(undefined);
+      const phaseThinkings: Array<string | undefined> = Array(6).fill(undefined);
+      const phaseElapseds: Array<number | undefined> = Array(6).fill(undefined);
 
       const progressMsg: ChatMessage = {
         id: progressId,
@@ -336,7 +337,20 @@ export function useChat() {
             try {
               const event = JSON.parse(line.slice(6));
 
-              if (event.type === "phase") {
+              if (event.type === "news_scan") {
+                if (event.status === "started") {
+                  phaseStatuses[0] = "running";
+                  phaseThinkings[0] = "Fetching live headlines from global sources...";
+                } else if (event.status === "done") {
+                  phaseStatuses[0] = "done";
+                  phaseElapseds[0] = event.elapsed;
+                  phaseContents[0] = `${event.headline_count || 0} headlines collected`;
+                  phaseStatuses[1] = "running";
+                }
+                updateMessage(progressId, {
+                  data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
+                });
+              } else if (event.type === "phase") {
                 const phaseIdx = PHASE_MAP[event.phase] ?? -1;
                 if (phaseIdx < 0) continue;
                 if (event.status === "started") {
@@ -353,7 +367,7 @@ export function useChat() {
                 });
               } else if (event.type === "thinking") {
                 const agentPhaseMap: Record<string, number[]> = {
-                  nexus: [0, 4], aris: [1, 3], silas: [2],
+                  nexus: [1, 5], aris: [2, 4], silas: [3],
                 };
                 const possibleIdxs = agentPhaseMap[event.agent] || [];
                 const runningIdx = possibleIdxs.find((i) => phaseStatuses[i] === "running");
