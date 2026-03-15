@@ -122,7 +122,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
             className="bounce-in text-[10px] font-medium uppercase tracking-wider"
             style={{ color: "var(--accent)", opacity: 0.7 }}
           >
-            2 agents will debate
+            3 agents — triad protocol
           </span>
         )}
       </div>
@@ -141,7 +141,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isDeep ? "Ask anything — agents will debate this..." : "Ask Stocky anything..."}
+          placeholder={isDeep ? "Ask anything — 3 agents will research this..." : "Ask Stocky anything..."}
           disabled={disabled}
           rows={1}
           className="flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-[var(--muted)]"
