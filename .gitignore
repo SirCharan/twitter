@@ -1,0 +1,10 @@
+# Build output
+.next/
+.vercel/
+
+# Dependencies
+node_modules/
+
+# Root-level npm artifacts (real packages are in subdirectories)
+/package.json
+/package-lock.json
