@@ -45,6 +45,8 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
   if (!isUser && FULL_WIDTH_TYPES.has(message.type)) {
     return (
       <motion.div
+        role="article"
+        aria-label={`${message.type} card`}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -58,6 +60,8 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
 
   return (
     <motion.div
+      role="article"
+      aria-label={isUser ? "Your message" : "Assistant message"}
       initial={{ opacity: 0, x: isUser ? 20 : -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}

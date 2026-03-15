@@ -1,4 +1,5 @@
 "use client";
+import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
 
 export type FeatureId =
@@ -58,45 +59,65 @@ interface Props {
 }
 
 export default function FeatureBar({ active, onSelect, disabled, visible = true }: Props) {
-  if (!visible) return null;
-
   return (
-    <div className="slide-up mb-1.5 space-y-1.5" style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}>
-      {CATEGORIES.map((cat, catIdx) => (
-        <div key={cat.label} className="stagger slide-up" style={{ ["--i" as string]: catIdx }}>
-          <span
-            className="mb-1 block text-[9px] font-semibold uppercase tracking-widest sm:text-[10px]"
-            style={{ color: "var(--muted)", opacity: 0.6 }}
-          >
-            {cat.label}
-          </span>
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-            {cat.features.map((f) => {
-              const isActive = active === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => {
-                    track("click", "feature_chip_click", { feature: f.id, category: cat.label });
-                    onSelect(isActive ? null : f.id);
-                  }}
-                  disabled={disabled}
-                  className="bounce-tap hover-lift flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-medium transition-all disabled:opacity-30"
-                  style={{
-                    borderColor: isActive ? "var(--accent)" : "var(--card-border)",
-                    background: isActive ? "rgba(201,169,110,0.1)" : "transparent",
-                    color: isActive ? "var(--accent)" : "var(--muted)",
-                    boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
-                  }}
-                >
-                  <span style={{ fontSize: 12 }}>{f.icon}</span>
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, y: 8, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: "auto" }}
+          exit={{ opacity: 0, y: 8, height: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          role="toolbar"
+          aria-label="Feature shortcuts"
+          className="mb-1.5 space-y-1.5 overflow-hidden"
+          style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}
+        >
+          {CATEGORIES.map((cat, catIdx) => (
+            <motion.div
+              key={cat.label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: catIdx * 0.05, duration: 0.25 }}
+            >
+              <span
+                className="mb-1 block text-[9px] font-semibold uppercase tracking-widest sm:text-[10px]"
+                style={{ color: "var(--muted)", opacity: 0.6 }}
+              >
+                {cat.label}
+              </span>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+                {cat.features.map((f) => {
+                  const isActive = active === f.id;
+                  return (
+                    <motion.button
+                      key={f.id}
+                      whileHover={{ y: -2, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        track("click", "feature_chip_click", { feature: f.id, category: cat.label });
+                        onSelect(isActive ? null : f.id);
+                      }}
+                      disabled={disabled}
+                      aria-label={f.label}
+                      aria-pressed={isActive}
+                      className="relative flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-medium transition-colors disabled:opacity-30"
+                      style={{
+                        borderColor: isActive ? "var(--accent)" : "var(--card-border)",
+                        background: isActive ? "rgba(201,169,110,0.1)" : "transparent",
+                        color: isActive ? "var(--accent)" : "var(--muted)",
+                        boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
+                      }}
+                    >
+                      <span style={{ fontSize: 12 }}>{f.icon}</span>
+                      {f.label}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

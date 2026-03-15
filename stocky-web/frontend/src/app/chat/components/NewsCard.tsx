@@ -2,6 +2,8 @@
 import { useState } from "react";
 import type { NewsArticle } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Indian: "#22c55e",
@@ -24,15 +26,15 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
 
   if (articles.length === 0) {
     return (
-      <div>
+      <CardWrapper icon="📰" title="Market News">
         <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{headline}</p>
         <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>No news articles found.</p>
-      </div>
+      </CardWrapper>
     );
   }
 
   return (
-    <div>
+    <CardWrapper icon="📰" title="Market News">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -166,6 +168,6 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
           </div>
         </div>
       )}
-    </div>
+    </CardWrapper>
   );
 }

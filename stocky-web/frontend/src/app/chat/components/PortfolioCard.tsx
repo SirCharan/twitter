@@ -1,5 +1,8 @@
+"use client";
 import type { PortfolioData } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 function formatINR(v: number) {
   return "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -57,6 +60,7 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
   const trd = d.trading;
 
   return (
+    <CardWrapper icon="💼" title="Portfolio">
     <div className="space-y-4">
       {/* ── Overall Day P&L ── */}
       <div className="flex items-center justify-between">
@@ -292,5 +296,6 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
         </div>
       )}
     </div>
+    </CardWrapper>
   );
 }

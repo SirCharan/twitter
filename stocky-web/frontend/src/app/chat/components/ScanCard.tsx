@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface ScanResult {
   symbol: string;
@@ -91,22 +93,16 @@ export default function ScanCard({ data }: Props) {
 
   if (!results.length) {
     return (
-      <div
-        className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
-        style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-      >
+      <CardWrapper icon="🔍" title="Market Scan">
         <p className="text-sm" style={{ color: "var(--muted)" }}>
           No results for {label} scan. Markets may be closed.
         </p>
-      </div>
+      </CardWrapper>
     );
   }
 
   return (
-    <div
-      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
-      style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-    >
+    <CardWrapper icon="🔍" title="Market Scan">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
         <span style={{ fontSize: 15 }}>{icon}</span>
@@ -207,6 +203,6 @@ export default function ScanCard({ data }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </CardWrapper>
   );
 }

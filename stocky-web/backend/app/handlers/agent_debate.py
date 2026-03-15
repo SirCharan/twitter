@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -5,6 +6,50 @@ import time
 from app import ai_client
 
 logger = logging.getLogger(__name__)
+
+
+async def _fetch_news_context() -> str:
+    """Fetch headlines from all RSS feeds and format as context for agents."""
+    from app.handlers.news import _fetch_all_headlines
+
+    loop = asyncio.get_event_loop()
+    articles = await loop.run_in_executor(None, lambda: _fetch_all_headlines(max_per_feed=5))
+    if not articles:
+        return ""
+
+    # Deduplicate by title
+    seen = set()
+    unique = []
+    for a in articles:
+        key = a["title"].lower().strip()
+        if key not in seen:
+            seen.add(key)
+            unique.append(a)
+
+    # Group by category for structured context
+    by_cat: dict[str, list[dict]] = {}
+    from app.handlers.news import FEED_CATEGORIES
+    for a in unique:
+        cat = FEED_CATEGORIES.get(a["source"], "Other")
+        by_cat.setdefault(cat, []).append(a)
+
+    lines = [f"=== LIVE NEWS INTELLIGENCE ({len(unique)} headlines from {len(set(a['source'] for a in unique))} sources) ===\n"]
+    for cat in ["Indian", "Global", "Asia-Pacific", "Energy", "Commodities", "Geopolitical", "Other"]:
+        items = by_cat.get(cat, [])
+        if not items:
+            continue
+        lines.append(f"\n## {cat}")
+        for a in items[:15]:
+            sentiment_tag = ""
+            s = a.get("sentiment", 0)
+            if s > 0.2:
+                sentiment_tag = " [+]"
+            elif s < -0.2:
+                sentiment_tag = " [-]"
+            date_str = f" ({a['date']})" if a.get("date") else ""
+            lines.append(f"- [{a['source']}]{date_str} {a['title']}{sentiment_tag}")
+
+    return "\n".join(lines)
 
 TRIAD_PHASES = [
     {"phase": "briefing",   "agent": "nexus", "label": "Nexus is setting research parameters..."},
@@ -30,6 +75,26 @@ async def stream_triad_debate(query: str, data_context: str | None = None):
     start_all = time.time()
     responses: dict[str, str] = {}
 
+    # ── Stage 0: Fetch live news from all sources ────────────────────
+    yield _sse({
+        "type": "news_scan", "status": "started",
+        "label": "Scanning 38 news sources...",
+    })
+
+    t0 = time.time()
+    try:
+        news_context = await _fetch_news_context()
+    except Exception as e:
+        logger.error(f"News fetch error: {e}")
+        news_context = ""
+    news_elapsed = round(time.time() - t0, 1)
+
+    yield _sse({
+        "type": "news_scan", "status": "done",
+        "elapsed": news_elapsed,
+        "headline_count": news_context.count("\n- [") if news_context else 0,
+    })
+
     # ── Stage 1: Nexus Briefing ──────────────────────────────────────
     yield _sse({
         "type": "phase", "phase": "briefing", "agent": "nexus",
@@ -41,6 +106,8 @@ async def stream_triad_debate(query: str, data_context: str | None = None):
     briefing_input = f"Research query: {query}"
     if data_context:
         briefing_input += f"\n\n--- Pre-fetched Market Data ---\n{data_context}"
+    if news_context:
+        briefing_input += f"\n\n{news_context}"
 
     try:
         briefing = await ai_client.triad_call(

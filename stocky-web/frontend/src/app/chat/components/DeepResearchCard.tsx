@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import AnalysisCard from "./AnalysisCard";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface Props {
   data: Record<string, unknown>;
@@ -13,7 +15,7 @@ export default function DeepResearchCard({ data }: Props) {
   const mode = data.mode as string | undefined;
 
   return (
-    <div>
+    <CardWrapper depth="elevated">
       {/* Header badge */}
       <div className="mb-3 flex items-center gap-2">
         <div
@@ -82,6 +84,6 @@ export default function DeepResearchCard({ data }: Props) {
           )}
         </div>
       )}
-    </div>
+    </CardWrapper>
   );
 }

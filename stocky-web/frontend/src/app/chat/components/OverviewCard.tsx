@@ -1,5 +1,8 @@
+"use client";
 import type { OverviewData } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 function fmt(v: number | null | undefined) {
   if (v == null) return "—";
@@ -33,6 +36,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
     : null;
 
   return (
+    <CardWrapper icon="📈" title="Market Overview">
     <div className="space-y-3">
       {/* Header with gradient */}
       <div
@@ -255,5 +259,6 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         </div>
       )}
     </div>
+    </CardWrapper>
   );
 }

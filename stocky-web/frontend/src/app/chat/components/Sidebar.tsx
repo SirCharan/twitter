@@ -53,7 +53,9 @@ export default function Sidebar({
   }
 
   return (
-    <div
+    <nav
+      role="navigation"
+      aria-label="Conversation history"
       className="flex h-full w-72 flex-col"
       style={{ background: "var(--surface)", borderRight: "1px solid var(--card-border)" }}
     >
@@ -102,6 +104,7 @@ export default function Sidebar({
                     exit={{ opacity: 0, x: -12, height: 0 }}
                     transition={{ delay: i * 0.04, type: "spring", stiffness: 300, damping: 30 }}
                     onClick={() => { track("navigation", "load_conversation", { conversation_id: c.conversation_id }); onSelect(c.conversation_id); }}
+                    aria-current={isActive ? "page" : undefined}
                     className="conv-item group mb-0.5 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm"
                     style={{
                       borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
@@ -158,6 +161,6 @@ export default function Sidebar({
           Analytics
         </a>
       </div>
-    </div>
+    </nav>
   );
 }

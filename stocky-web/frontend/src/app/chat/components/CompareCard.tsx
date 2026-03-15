@@ -1,5 +1,7 @@
 "use client";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface StockCompare {
   name: string;
@@ -95,10 +97,7 @@ export default function CompareCard({ data }: Props) {
   }
 
   return (
-    <div
-      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
-      style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-    >
+    <CardWrapper icon="⚖️" title="Stock Comparison">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
         <span style={{ fontSize: 15 }}>⚖</span>
@@ -195,6 +194,6 @@ export default function CompareCard({ data }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </CardWrapper>
   );
 }

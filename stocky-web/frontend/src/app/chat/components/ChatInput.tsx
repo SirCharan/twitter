@@ -1,4 +1,7 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
 
 export type ChatMode = "quick" | "deep";
@@ -49,12 +52,16 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
       {/* Mode toggle with sliding indicator */}
       <div className="flex items-center gap-2">
         <div
+          role="group"
+          aria-label="Chat mode"
           className="relative inline-flex rounded-lg p-0.5"
           style={{ background: "var(--surface)", border: "1px solid var(--card-border)" }}
         >
           {/* Sliding background indicator */}
-          <div
-            className="mode-slider absolute top-0.5 bottom-0.5 rounded-md"
+          <motion.div
+            className="absolute top-0.5 bottom-0.5 rounded-md"
+            layout
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
             style={{
               background: "rgba(201,169,110,0.12)",
               width: isDeep
@@ -117,14 +124,20 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
             Deep Research
           </button>
         </div>
-        {isDeep && (
-          <span
-            className="bounce-in text-[10px] font-medium uppercase tracking-wider"
-            style={{ color: "var(--accent)", opacity: 0.7 }}
-          >
-            3 agents — triad protocol
-          </span>
-        )}
+        <AnimatePresence>
+          {isDeep && (
+            <motion.span
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 0.7, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="text-[10px] font-medium uppercase tracking-wider"
+              style={{ color: "var(--accent)" }}
+            >
+              3 agents — triad protocol
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Input */}
@@ -144,13 +157,17 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           placeholder={isDeep ? "Ask anything — 3 agents will research this..." : "Ask Stocky anything..."}
           disabled={disabled}
           rows={1}
+          aria-label={isDeep ? "Deep research query" : "Chat message"}
           className="flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-[var(--muted)]"
           style={{ color: "var(--foreground)", transition: "height 0.15s ease" }}
         />
-        <button
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05 }}
           onClick={handleSubmit}
           disabled={disabled || !text.trim()}
-          className={`bounce-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
+          aria-label="Send message"
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
             text.trim() && !disabled ? "send-ready" : ""
           }`}
           style={{ background: text.trim() ? "var(--accent)" : "var(--card-border)" }}
@@ -167,7 +184,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
               fill={text.trim() ? "var(--background)" : "var(--muted)"}
             />
           </svg>
-        </button>
+        </motion.button>
       </div>
     </div>
   );

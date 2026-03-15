@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface AgentSection {
   agent: string;
@@ -111,7 +113,7 @@ export default function AgentDebateCard({ data }: Props) {
   const d = data as unknown as TriadData;
 
   return (
-    <div className="max-w-full">
+    <CardWrapper depth="elevated">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2.5">
         <div className="flex items-center gap-2">
@@ -264,6 +266,6 @@ export default function AgentDebateCard({ data }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </CardWrapper>
   );
 }

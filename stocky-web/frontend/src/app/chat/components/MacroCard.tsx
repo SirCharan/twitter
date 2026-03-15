@@ -1,5 +1,7 @@
 "use client";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface PricePoint {
   price: number;
@@ -78,10 +80,7 @@ export default function MacroCard({ data }: Props) {
   const rbi = data.rbi as { repo_rate: number; note: string } | undefined;
 
   return (
-    <div
-      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
-      style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-    >
+    <CardWrapper icon="🌐" title="Macro Dashboard">
       {/* Header */}
       <div
         className="mb-4 flex items-center gap-2 rounded-xl px-4 py-2.5"
@@ -204,6 +203,6 @@ export default function MacroCard({ data }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </CardWrapper>
   );
 }

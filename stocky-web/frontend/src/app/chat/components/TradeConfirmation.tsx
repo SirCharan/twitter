@@ -16,6 +16,8 @@ export default function TradeConfirmation({ data, actionId, onAction }: Props) {
 
   return (
     <div
+      role="alertdialog"
+      aria-label={`Confirm ${d.txn_type} order for ${d.symbol}`}
       className="rounded-xl border overflow-hidden"
       style={{ borderColor: accentColor, background: "var(--surface)" }}
     >

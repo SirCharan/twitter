@@ -1,4 +1,7 @@
+"use client";
 import type { PriceData } from "@/lib/types";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 export default function PriceCard({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as PriceData;
@@ -6,6 +9,7 @@ export default function PriceCard({ data }: { data: Record<string, unknown> }) {
   const changeColor = isPositive ? "var(--positive)" : "var(--negative)";
 
   return (
+    <CardWrapper icon="💰">
     <div className="space-y-3">
       {/* Symbol + LTP */}
       <div className="flex items-baseline justify-between">
@@ -63,5 +67,6 @@ export default function PriceCard({ data }: { data: Record<string, unknown> }) {
         </div>
       )}
     </div>
+    </CardWrapper>
   );
 }

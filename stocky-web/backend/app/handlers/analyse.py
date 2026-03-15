@@ -38,12 +38,27 @@ NEWS_FEEDS = [
     ("CNBC US", "https://www.cnbc.com/id/10000664/device/rss/rss.html"),
     ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories"),
     ("Yahoo Finance US", "https://finance.yahoo.com/rss/topstories"),
+    # Global / Premium (Tier 1)
+    ("Bloomberg", "https://feeds.bloomberg.com/markets/news.rss"),
+    ("AP Business", "https://rsshub.app/apnews/topics/business"),
+    ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+    ("CNBC Top News", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
     # Energy & Metals
     ("OilPrice", "https://oilprice.com/rss/main"),
     ("Kitco Gold", "https://www.kitco.com/rss/gold.xml"),
-    # Asia
+    ("Rigzone", "https://www.rigzone.com/news/rss/rigzone_latest.aspx"),
+    ("Mining.com", "https://www.mining.com/feed/"),
+    ("FT Commodities", "https://www.ft.com/rss/commodities"),
+    # Asia-Pacific
     ("Nikkei Asia", "https://asia.nikkei.com/rss"),
-    # Central Banks & Geopolitics
+    ("SCMP", "https://www.scmp.com/rss/91/feed"),
+    ("Straits Times", "https://www.straitstimes.com/news/business/rss.xml"),
+    # Geopolitical
+    ("TASS", "https://tass.com/rss/v2.xml"),
+    ("DefenseOne", "https://www.defenseone.com/rss/"),
+    ("War on the Rocks", "https://warontherocks.com/feed/"),
+    ("The Diplomat", "https://thediplomat.com/feed/"),
+    # Central Banks
     ("FED Press", "https://www.federalreserve.gov/feeds/press_all.xml"),
 ]
 FEED_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; StockyAI/1.0)"}

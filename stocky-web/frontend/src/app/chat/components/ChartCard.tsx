@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef } from "react";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface Props {
   data: Record<string, unknown>;
@@ -33,16 +35,16 @@ export default function ChartCard({ data }: Props) {
 
   if (chartType === "tradingview") {
     return (
-      <>
+      <CardWrapper icon="📊">
         <TradingViewChart symbol={data.symbol as string} stock={stock} />
         <AiAnalysisSection text={aiAnalysis} />
-      </>
+      </CardWrapper>
     );
   }
 
   if (chartType === "image" && data.image_b64) {
     return (
-      <>
+      <CardWrapper icon="📊">
         <div
           className="rounded-2xl border overflow-hidden"
           style={{ borderColor: "var(--card-border)", background: "#111111" }}
@@ -63,14 +65,16 @@ export default function ChartCard({ data }: Props) {
           />
         </div>
         <AiAnalysisSection text={aiAnalysis} />
-      </>
+      </CardWrapper>
     );
   }
 
   return (
-    <div className="text-sm" style={{ color: "var(--muted)" }}>
-      Chart data unavailable.
-    </div>
+    <CardWrapper icon="📊">
+      <div className="text-sm" style={{ color: "var(--muted)" }}>
+        Chart data unavailable.
+      </div>
+    </CardWrapper>
   );
 }
 

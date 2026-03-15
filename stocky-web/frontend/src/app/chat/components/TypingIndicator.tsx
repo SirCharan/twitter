@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const THINKING_PHRASES = [
   "Stocky AI is thinking",
@@ -23,7 +24,13 @@ export default function TypingIndicator() {
   }, []);
 
   return (
-    <div className="flex items-center gap-1 animate-fade-in">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="flex items-center gap-1"
+    >
       <div
         className="thinking-container flex items-center gap-3 rounded-2xl px-5 py-3"
         style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}
@@ -38,13 +45,19 @@ export default function TypingIndicator() {
         </div>
 
         {/* Rotating phrase */}
-        <span
-          className="thinking-text text-xs tracking-wide"
-          key={phraseIdx}
-          style={{ color: "var(--muted)" }}
-        >
-          {THINKING_PHRASES[phraseIdx]}
-        </span>
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={phraseIdx}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.3 }}
+            className="text-xs tracking-wide"
+            style={{ color: "var(--muted)" }}
+          >
+            {THINKING_PHRASES[phraseIdx]}
+          </motion.span>
+        </AnimatePresence>
 
         {/* Typing dots */}
         <div className="flex items-center gap-1">
@@ -61,6 +74,6 @@ export default function TypingIndicator() {
           {elapsed}s
         </span>
       </div>
-    </div>
+    </motion.div>
   );
 }

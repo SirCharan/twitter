@@ -20,16 +20,24 @@ logger = logging.getLogger(__name__)
 
 FEED_CATEGORIES = {
     "LiveMint Markets": "Indian", "LiveMint Companies": "Indian", "LiveMint Economy": "Indian",
-    "ET Markets": "Indian", "ET Industry": "Indian",
+    "Mint Money": "Indian",
+    "ET Markets": "Indian", "ET Stocks": "Indian", "ET Industry": "Indian",
     "Moneycontrol": "Indian", "CNBC-TV18": "Indian", "Business Standard": "Indian",
     "NDTV Profit": "Indian", "Hindu BusinessLine": "Indian",
-    "CNBC-TV18 Buzz": "Indian", "The Hindu Biz": "Indian",
+    "CNBC-TV18 Buzz": "Indian", "The Hindu Business": "Indian",
     "Indian Express Biz": "Indian", "Business Today": "Indian",
     "ET Commodities": "Commodities", "MC Commodities": "Commodities",
     "Reuters": "Global", "BBC World": "Global", "CNBC US": "Global",
     "MarketWatch": "Global", "Yahoo Finance US": "Global",
+    "Bloomberg": "Global", "AP Business": "Global", "Al Jazeera": "Global",
+    "CNBC Top News": "Global",
     "OilPrice": "Energy", "Kitco Gold": "Energy",
-    "Nikkei Asia": "Global", "FED Press": "Global",
+    "Rigzone": "Energy", "FT Commodities": "Commodities",
+    "Mining.com": "Commodities",
+    "Nikkei Asia": "Asia-Pacific", "SCMP": "Asia-Pacific", "Straits Times": "Asia-Pacific",
+    "TASS": "Geopolitical", "DefenseOne": "Geopolitical",
+    "War on the Rocks": "Geopolitical", "The Diplomat": "Geopolitical",
+    "FED Press": "Global",
 }
 
 

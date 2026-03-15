@@ -1,4 +1,7 @@
+"use client";
 import type { PositionData, HoldingData, OrderData } from "@/lib/types";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface Props {
   type: "positions" | "holdings" | "orders";
@@ -122,22 +125,21 @@ function OrdersTable({ items }: { items: OrderData[] }) {
 export default function DataTable({ type, data }: Props) {
   const items = (data as Record<string, unknown>).items as unknown[] || [];
   const title = type === "positions" ? "Open Positions" : type === "holdings" ? "Holdings" : "Today's Orders";
+  const icon = type === "positions" ? "📊" : type === "holdings" ? "📦" : "📋";
 
   if (items.length === 0) {
     return (
-      <div>
-        <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{title}</p>
+      <CardWrapper icon={icon} title={title}>
         <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>No {type} found.</p>
-      </div>
+      </CardWrapper>
     );
   }
 
   return (
-    <div>
-      <p className="mb-2 text-sm font-semibold" style={{ color: "var(--foreground)" }}>{title}</p>
+    <CardWrapper icon={icon} title={title}>
       {type === "positions" && <PositionsTable items={items as PositionData[]} />}
       {type === "holdings" && <HoldingsTable items={items as HoldingData[]} />}
       {type === "orders" && <OrdersTable items={items as OrderData[]} />}
-    </div>
+    </CardWrapper>
   );
 }

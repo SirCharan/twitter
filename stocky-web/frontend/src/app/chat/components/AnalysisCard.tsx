@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import type { AnalysisData } from "@/lib/types";
+import CardWrapper from "./ui/CardWrapper";
 
 function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
   const pct = (score / max) * 100;
@@ -9,9 +11,12 @@ function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="relative h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--card-border)" }}>
-        <div
-          className="bar-fill h-full rounded-full"
-          style={{ width: `${Math.min(pct, 100)}%`, background: color }}
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.min(pct, 100)}%` }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="h-full rounded-full"
+          style={{ background: color }}
         />
       </div>
       <span className="count-flash text-xs font-medium tabular-nums" style={{ color }}>
@@ -50,13 +55,11 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
   const [showDetailedResults, setShowDetailedResults] = useState(false);
 
   return (
+    <CardWrapper icon="📊" title={d.name || d.symbol} depth="elevated">
     <div className="space-y-1">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
-            {d.name}
-          </p>
           <p className="text-xs" style={{ color: "var(--muted)" }}>{d.symbol}</p>
         </div>
         <div className="text-right">
@@ -303,8 +306,11 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
 
       {/* Verdict */}
       {d.verdict && (
-        <div
-          className="slide-up mt-3 rounded-lg border-l-2 px-3 py-2"
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+          className="mt-3 rounded-lg border-l-2 px-3 py-2"
           style={{ borderColor: "var(--accent)", background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, var(--surface) 100%)" }}
         >
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
@@ -313,8 +319,9 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
           <p className="mt-1 text-sm" style={{ color: "var(--foreground)" }}>
             {d.verdict}
           </p>
-        </div>
+        </motion.div>
       )}
     </div>
+    </CardWrapper>
   );
 }

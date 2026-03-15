@@ -6,7 +6,7 @@ import { track } from "@/lib/analytics";
 import MessageBubble from "./MessageBubble";
 import ChatInput, { type ChatMode } from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
-import SkeletonCard from "./SkeletonCard";
+import { SkeletonFor } from "./SkeletonCard";
 import FeatureBar, { type FeatureId, CATEGORIES } from "./FeatureBar";
 import FeaturePanel from "./FeaturePanel";
 import FeedbackModal from "./FeedbackModal";
@@ -33,6 +33,19 @@ type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 
 // Feature keywords that return card-type responses (show skeleton instead of typing indicator)
 const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's)\b/i;
+
+/** Infer the skeleton type from user message content */
+function inferSkeletonType(text: string): string | undefined {
+  const t = text.toLowerCase();
+  if (/\b(analy[sz]|how is|how's)\b/.test(t)) return "analysis";
+  if (/\boverview\b|\bmarket\b/.test(t) && !/\bnews\b/.test(t)) return "overview";
+  if (/\bnews\b/.test(t)) return "news";
+  if (/\bscan\b/.test(t)) return "scan";
+  if (/\bchart\b/.test(t)) return "chart";
+  if (/\bmacro\b/.test(t)) return "macro";
+  if (/\bportfolio\b/.test(t)) return "portfolio";
+  return undefined;
+}
 
 /** Hover tooltips for quick-send feature cards */
 const FEATURE_TOOLTIPS: Partial<Record<FeatureId, string>> = {
@@ -239,6 +252,10 @@ export default function ChatWindow({
         ref={scrollRef}
         onScroll={handleScroll}
         className="relative flex-1 overflow-y-auto px-4 py-6"
+        role="log"
+        aria-live="polite"
+        aria-busy={isLoading}
+        aria-label="Chat messages"
       >
         {showEmpty && (
           <div className="flex h-full flex-col items-center justify-center">
@@ -431,7 +448,7 @@ export default function ChatWindow({
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} onSend={handleSend} />
           ))}
-          {isLoading && (showSkeleton ? <SkeletonCard /> : <TypingIndicator />)}
+          {isLoading && (showSkeleton ? <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} /> : <TypingIndicator />)}
           <div ref={bottomRef} />
         </div>
 

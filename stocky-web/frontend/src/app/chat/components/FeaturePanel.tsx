@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import type { FeatureId } from "./FeatureBar";
 
 interface Props {
@@ -297,8 +298,11 @@ export default function FeaturePanel({ feature, onClose, onFeatureSend }: Props)
   }
 
   return (
-    <div
-      className="slide-up mb-3 rounded-2xl border p-5"
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="mb-3 rounded-2xl border p-5"
       style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
     >
       {/* Header */}
@@ -319,6 +323,6 @@ export default function FeaturePanel({ feature, onClose, onFeatureSend }: Props)
       </div>
 
       {renderInner()}
-    </div>
+    </motion.div>
   );
 }

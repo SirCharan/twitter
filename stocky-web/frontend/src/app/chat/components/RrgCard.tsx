@@ -1,5 +1,7 @@
 "use client";
 import MarkdownRich from "./MarkdownRich";
+import CardWrapper from "./ui/CardWrapper";
+import { motion } from "framer-motion";
 
 interface TailPoint {
   rs_ratio: number;
@@ -56,10 +58,7 @@ export default function RrgCard({ data }: Props) {
 
   if (error || !sectors.length) {
     return (
-      <div
-        className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
-        style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-      >
+      <CardWrapper icon="🎯" title="Relative Rotation Graph">
         <div className="mb-2 flex items-center gap-2">
           <span style={{ fontSize: 15 }}>🔄</span>
           <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
@@ -69,7 +68,7 @@ export default function RrgCard({ data }: Props) {
         <p className="text-sm" style={{ color: "var(--muted)" }}>
           {error || "No RRG data available. Markets may be closed."}
         </p>
-      </div>
+      </CardWrapper>
     );
   }
 
@@ -102,10 +101,7 @@ export default function RrgCard({ data }: Props) {
   }
 
   return (
-    <div
-      className="rounded-2xl border px-3 py-3 sm:px-5 sm:py-4"
-      style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
-    >
+    <CardWrapper icon="🎯" title="Relative Rotation Graph">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
         <span style={{ fontSize: 15 }}>🔄</span>
@@ -265,6 +261,6 @@ export default function RrgCard({ data }: Props) {
           As of {asOf} | Benchmark: {benchmark}
         </p>
       )}
-    </div>
+    </CardWrapper>
   );
 }
