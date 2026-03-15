@@ -15,7 +15,7 @@ export type FeatureId =
   | "rrg"
   | "summarise";
 
-const CATEGORIES: { label: string; features: { id: FeatureId; icon: string; label: string }[] }[] = [
+export const CATEGORIES: { label: string; features: { id: FeatureId; icon: string; label: string }[] }[] = [
   {
     label: "Quick",
     features: [

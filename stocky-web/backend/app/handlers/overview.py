@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import yfinance as yf
 
@@ -8,43 +10,76 @@ from app.database import log_api_call
 
 logger = logging.getLogger(__name__)
 
+# ── yfinance symbol map for Indian indices ──────────────────────────
+YF_INDEX_MAP = {
+    "NIFTY": "^NSEI",
+    "BANKNIFTY": "^NSEBANK",
+    "NIFTY IT": "^CNXIT",
+    "FINNIFTY": "NIFTY_FIN_SERVICE.NS",
+    "MIDCAP 100": "^NSEMDCP100",
+    "SMALLCAP 100": "^CNXSC",
+}
+
+# ── 60-second in-memory cache ───────────────────────────────────────
+_overview_cache: dict = {"data": None, "ts": 0.0}
+
+_timeout_pool = ThreadPoolExecutor(max_workers=4)
+
+
+def _with_timeout(fn, timeout: int = 8):
+    """Run *fn* in a thread; return None if it exceeds *timeout* seconds."""
+    future = _timeout_pool.submit(fn)
+    try:
+        return future.result(timeout=timeout)
+    except Exception:
+        future.cancel()
+        return None
+
+
+def _fetch_indices_yfinance() -> list[dict]:
+    """Fetch all major indices via yfinance (no NSE dependency)."""
+    indices: list[dict] = []
+    for display_name, yf_symbol in YF_INDEX_MAP.items():
+        try:
+            ticker = yf.Ticker(yf_symbol)
+            info = ticker.info
+            price = info.get("regularMarketPrice") or info.get("currentPrice")
+            if not price:
+                continue
+            prev_close = info.get("regularMarketPreviousClose") or info.get("previousClose") or 0
+            change = round(float(price) - float(prev_close), 2) if prev_close else 0
+            pct = round((change / float(prev_close)) * 100, 2) if prev_close else 0
+            indices.append({
+                "name": display_name,
+                "value": round(float(price), 2),
+                "change": change,
+                "pct_change": pct,
+                "open": round(float(info.get("regularMarketOpen") or info.get("open") or 0), 2),
+                "high": round(float(info.get("regularMarketDayHigh") or info.get("dayHigh") or 0), 2),
+                "low": round(float(info.get("regularMarketDayLow") or info.get("dayLow") or 0), 2),
+            })
+        except Exception as exc:
+            logger.warning("yfinance index %s failed: %s", yf_symbol, exc)
+    return indices
+
 
 def _fetch_nse_overview() -> dict:
-    from nsetools import Nse
-    nse = Nse()
+    # ── cache check ─────────────────────────────────────────────────
+    if _overview_cache["data"] and (time.time() - _overview_cache["ts"]) < 60:
+        logger.debug("Returning cached overview (age %.1fs)", time.time() - _overview_cache["ts"])
+        return _overview_cache["data"]
 
-    result = {
+    result: dict = {
         "indices": [],
         "gainers": [],
         "losers": [],
         "advances_declines": None,
     }
 
-    INDEX_DISPLAY = {
-        "NIFTY 50": "NIFTY",
-        "NIFTY BANK": "BANKNIFTY",
-        "NIFTY IT": "NIFTY IT",
-        "NIFTY FIN SERVICE": "FINNIFTY",
-        "NIFTY MIDCAP 100": "MIDCAP 100",
-        "NIFTY SMLCAP 100": "SMALLCAP 100",
-    }
-    for idx_name, display_name in INDEX_DISPLAY.items():
-        try:
-            q = nse.get_index_quote(idx_name)
-            if q:
-                result["indices"].append({
-                    "name": display_name,
-                    "value": q.get("last", q.get("lastPrice", 0)),
-                    "change": q.get("variation", q.get("change", 0)),
-                    "pct_change": q.get("percentChange", q.get("pChange", 0)),
-                    "open": q.get("open", q.get("openingIndex", 0)),
-                    "high": q.get("high", q.get("highIndiaPe", 0)),
-                    "low": q.get("low", q.get("lowIndiaPe", 0)),
-                })
-        except Exception:
-            pass
+    # ── 1. Indices via yfinance (primary, reliable) ─────────────────
+    result["indices"] = _fetch_indices_yfinance()
 
-    # VIX
+    # ── 2. VIX via yfinance ─────────────────────────────────────────
     try:
         vix_ticker = yf.Ticker("^INDIAVIX")
         vix_info = vix_ticker.info
@@ -57,10 +92,14 @@ def _fetch_nse_overview() -> dict:
     except Exception:
         pass
 
+    # ── 3. Gainers / losers / breadth via nsetools (8s timeout) ─────
     try:
-        gainers = nse.get_top_gainers()
-        if gainers:
-            for g in gainers[:5]:
+        from nsetools import Nse
+        nse = Nse()
+
+        gainers_raw = _with_timeout(nse.get_top_gainers, timeout=8)
+        if gainers_raw:
+            for g in gainers_raw[:5]:
                 try:
                     result["gainers"].append({
                         "symbol": g.get("symbol", "?"),
@@ -69,13 +108,10 @@ def _fetch_nse_overview() -> dict:
                     })
                 except (ValueError, TypeError):
                     pass
-    except Exception:
-        pass
 
-    try:
-        losers = nse.get_top_losers()
-        if losers:
-            for l_item in losers[:5]:
+        losers_raw = _with_timeout(nse.get_top_losers, timeout=8)
+        if losers_raw:
+            for l_item in losers_raw[:5]:
                 try:
                     result["losers"].append({
                         "symbol": l_item.get("symbol", "?"),
@@ -84,24 +120,21 @@ def _fetch_nse_overview() -> dict:
                     })
                 except (ValueError, TypeError):
                     pass
-    except Exception:
-        pass
 
-    try:
-        ad = nse.get_advances_declines()
-        if ad:
-            total_adv = sum(int(x.get("advances", 0)) for x in ad)
-            total_dec = sum(int(x.get("declines", 0)) for x in ad)
-            total_unch = sum(int(x.get("unchanged", 0)) for x in ad)
+        ad_raw = _with_timeout(nse.get_advances_declines, timeout=8)
+        if ad_raw:
+            total_adv = sum(int(x.get("advances", 0)) for x in ad_raw)
+            total_dec = sum(int(x.get("declines", 0)) for x in ad_raw)
+            total_unch = sum(int(x.get("unchanged", 0)) for x in ad_raw)
             result["advances_declines"] = {
                 "advances": total_adv,
                 "declines": total_dec,
                 "unchanged": total_unch,
             }
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("nsetools gainers/losers/breadth failed: %s", exc)
 
-    # Derive a one-line market summary from index data
+    # ── 4. Derive one-line market summary ───────────────────────────
     indices = result["indices"]
     nifty = next((idx for idx in indices if idx["name"] == "NIFTY"), None)
     if nifty:
@@ -113,6 +146,10 @@ def _fetch_nse_overview() -> dict:
         if leading and lagging and leading["name"] != lagging["name"]:
             summary += f"  ·  {leading['name']} led  ·  {lagging['name']} lagged"
         result["summary"] = summary
+
+    # ── update cache ────────────────────────────────────────────────
+    _overview_cache["data"] = result
+    _overview_cache["ts"] = time.time()
 
     return result
 

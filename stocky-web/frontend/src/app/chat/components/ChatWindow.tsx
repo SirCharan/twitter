@@ -6,7 +6,7 @@ import MessageBubble from "./MessageBubble";
 import ChatInput, { type ChatMode } from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 import SkeletonCard from "./SkeletonCard";
-import FeatureBar, { type FeatureId } from "./FeatureBar";
+import FeatureBar, { type FeatureId, CATEGORIES } from "./FeatureBar";
 import FeaturePanel from "./FeaturePanel";
 import FeedbackModal from "./FeedbackModal";
 
@@ -31,11 +31,15 @@ type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 // Feature keywords that return card-type responses (show skeleton instead of typing indicator)
 const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's)\b/i;
 
-const SUGGESTIONS = [
-  { text: "How's the market today?", msg: "how's the market", icon: "📈" },
-  { text: "Analyse RELIANCE", msg: "how is reliance doing", icon: "🔍" },
-  { text: "Compare TCS vs INFY", msg: "compare stocks: TCS,INFY", icon: "⚖" },
-];
+/** Hover tooltips for quick-send feature cards */
+const FEATURE_TOOLTIPS: Partial<Record<FeatureId, string>> = {
+  market_overview: "Live indices, gainers, losers & market breadth",
+  market_news: "Latest market news with AI sentiment analysis",
+  portfolio: "Your Zerodha holdings & trading P&L",
+  ipo: "Upcoming IPOs, subscriptions & listing returns",
+  macro: "RBI rates, inflation, forex, crude & FII/DII flows",
+  rrg: "Sector rotation analysis relative to Nifty 50",
+};
 
 /** Compose the chat message for each feature */
 function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
@@ -158,7 +162,7 @@ export default function ChatWindow({
     setAnalyseNote("");
   }
 
-  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio"]);
+  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg"]);
 
   function handleFeatureSelect(id: FeatureId | null) {
     if (!id) {
@@ -276,7 +280,7 @@ export default function ChatWindow({
                 background: "radial-gradient(circle, rgba(201,169,110,0.03) 0%, transparent 70%)",
               }}
             />
-            <div className="relative w-full max-w-sm text-center">
+            <div className="relative w-full max-w-lg text-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-mark.png" alt="Stocky" width={56} height={56}
@@ -295,30 +299,57 @@ export default function ChatWindow({
                 />
               </p>
 
-              {/* Suggestion cards — Perplexity-style */}
-              {!analyseOpen && (
-                <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  {SUGGESTIONS.map((s, i) => (
-                    <button
-                      key={s.msg}
-                      onClick={() => {
-                        track("click", "suggestion_card", { suggestion: s.text });
-                        handleSend(s.msg);
-                      }}
-                      className="bounce-tap group flex w-36 flex-col items-center gap-2 rounded-2xl border px-4 py-5 text-center transition-all duration-200 hover:border-[var(--accent-dim)] hover:shadow-[0_0_20px_rgba(201,169,110,0.06)]"
-                      style={{
-                        borderColor: "var(--card-border)",
-                        background: "var(--surface)",
-                        color: "var(--foreground)",
-                        animation: `slideUp 0.3s ease-out ${i * 0.08}s both`,
-                      }}
+              {/* Feature card grid — all features organized by category */}
+              {!analyseOpen && activeFeature === null && (
+                <div className="mt-6 w-full space-y-3 text-left">
+                  {CATEGORIES.map((cat, catIdx) => (
+                    <div
+                      key={cat.label}
+                      style={{ animation: `slideUp 0.3s ease-out ${catIdx * 0.06}s both` }}
                     >
-                      <span className="text-xl">{s.icon}</span>
-                      <span className="text-xs font-medium leading-snug" style={{ color: "var(--muted)" }}>
-                        {s.text}
+                      <span
+                        className="mb-1.5 block text-[9px] font-semibold uppercase tracking-widest"
+                        style={{ color: "var(--muted)", opacity: 0.6 }}
+                      >
+                        {cat.label}
                       </span>
-                    </button>
+                      <div className="flex flex-wrap gap-2">
+                        {cat.features.map((f, i) => (
+                          <button
+                            key={f.id}
+                            onClick={() => {
+                              track("click", "empty_card", { feature: f.id, category: cat.label });
+                              handleFeatureSelect(f.id);
+                            }}
+                            title={FEATURE_TOOLTIPS[f.id as FeatureId]}
+                            className="bounce-tap flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-left transition-all duration-200 hover:border-[var(--accent-dim)] hover:shadow-[0_0_16px_rgba(201,169,110,0.06)]"
+                            style={{
+                              borderColor: "var(--card-border)",
+                              background: "var(--surface)",
+                              animation: `slideUp 0.25s ease-out ${catIdx * 0.06 + i * 0.04}s both`,
+                            }}
+                          >
+                            <span className="text-sm">{f.icon}</span>
+                            <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>
+                              {f.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
+                </div>
+              )}
+
+              {/* Inline FeaturePanel on empty state (for panel-opening features) */}
+              {!analyseOpen && activeFeature !== null && (
+                <div className="slide-up mt-6 w-full max-w-sm mx-auto">
+                  <FeaturePanel
+                    feature={activeFeature}
+                    onClose={() => { setActiveFeature(null); }}
+                    onSend={handleSend}
+                    onFeatureSend={handleFeatureSend}
+                  />
                 </div>
               )}
 
@@ -426,8 +457,8 @@ export default function ChatWindow({
             visible={featureBarVisible && !analyseOpen && !showEmpty}
           />
 
-          {/* Feature panel (expands when chip selected) */}
-          {activeFeature && (
+          {/* Feature panel (expands when chip selected, only in message state) */}
+          {activeFeature && !showEmpty && (
             <FeaturePanel
               feature={activeFeature}
               onClose={() => { setActiveFeature(null); setFeatureBarVisible(true); }}
