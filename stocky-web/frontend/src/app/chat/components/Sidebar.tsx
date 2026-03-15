@@ -20,6 +20,16 @@ function timeAgo(dateStr: string): string {
   return d.toLocaleDateString();
 }
 
+function getDateGroup(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = (now.getTime() - d.getTime()) / 1000;
+  if (diff < 86400) return "Today";
+  if (diff < 172800) return "Yesterday";
+  if (diff < 604800) return "This week";
+  return "Older";
+}
+
 export default function Sidebar({
   conversations,
   activeId,
@@ -27,29 +37,36 @@ export default function Sidebar({
   onNewChat,
   onDelete,
 }: Props) {
+  // Group conversations by date
+  const groups: { label: string; items: ConversationSummary[] }[] = [];
+  const seen = new Set<string>();
+  for (const c of conversations) {
+    const group = getDateGroup(c.last_active);
+    if (!seen.has(group)) {
+      seen.add(group);
+      groups.push({ label: group, items: [] });
+    }
+    groups.find((g) => g.label === group)!.items.push(c);
+  }
+
   return (
     <div
       className="flex h-full flex-col"
       style={{ background: "var(--surface)", borderRight: "1px solid var(--card-border)" }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-5">
-        <div className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.png" alt="Stocky" width={28} height={28} style={{ objectFit: "contain" }} />
-          <span className="gradient-text text-lg font-light tracking-widest">
-            Stocky
-          </span>
-        </div>
+      <div className="flex items-center justify-center px-5 py-6">
         <button
-          onClick={() => { track("click", "new_chat"); onNewChat(); }}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium tracking-wide transition-all hover:opacity-90"
-          style={{ background: "var(--accent)", color: "var(--background)" }}
+          onClick={() => { track("click", "new_chat_logo"); onNewChat(); }}
+          className="bounce-tap flex items-center gap-3 transition-opacity hover:opacity-80"
+          style={{ background: "none", border: "none", cursor: "pointer" }}
+          title="New conversation"
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M6 1v10M1 6h10" />
-          </svg>
-          New
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="Stocky" width={44} height={44} style={{ objectFit: "contain" }} />
+          <span className="gradient-text text-2xl font-light tracking-widest">
+            Stocky AI
+          </span>
         </button>
       </div>
 
@@ -58,50 +75,61 @@ export default function Sidebar({
       {/* Conversations */}
       <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-3">
         {conversations.length === 0 && (
-          <p className="px-2 py-8 text-center text-xs" style={{ color: "var(--muted)" }}>
+          <p className="breathe px-2 py-8 text-center text-xs" style={{ color: "var(--muted)" }}>
             No conversations yet
           </p>
         )}
-        {conversations.map((c) => {
-          const isActive = activeId === c.conversation_id;
-          return (
-            <div
-              key={c.conversation_id}
-              onClick={() => { track("navigation", "load_conversation", { conversation_id: c.conversation_id }); onSelect(c.conversation_id); }}
-              className={`conv-item group mb-0.5 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm ${
-                isActive ? "bg-[var(--card-bg)]" : ""
-              }`}
-              style={{
-                borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-              }}
+        {groups.map((group) => (
+          <div key={group.label} className="mb-2">
+            <span
+              className="mb-1 block px-3 text-[9px] font-semibold uppercase tracking-widest"
+              style={{ color: "var(--muted)", opacity: 0.5 }}
             >
-              <div className="min-w-0 flex-1">
-                <p
-                  className="truncate text-[13px]"
-                  style={{ color: "var(--foreground)", opacity: isActive ? 1 : 0.8 }}
+              {group.label}
+            </span>
+            {group.items.map((c, i) => {
+              const isActive = activeId === c.conversation_id;
+              return (
+                <div
+                  key={c.conversation_id}
+                  onClick={() => { track("navigation", "load_conversation", { conversation_id: c.conversation_id }); onSelect(c.conversation_id); }}
+                  className="slide-in-left stagger conv-item group mb-0.5 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm"
+                  style={{
+                    ["--i" as string]: i,
+                    borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+                    background: isActive ? "var(--card-bg)" : undefined,
+                    transition: "background 0.15s ease, border-color 0.2s ease",
+                  }}
                 >
-                  {c.preview || "New conversation"}
-                </p>
-                <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted)" }}>
-                  {timeAgo(c.last_active)}
-                </p>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  track("click", "delete_conversation", { conversation_id: c.conversation_id });
-                  onDelete(c.conversation_id);
-                }}
-                className="ml-2 hidden rounded p-1 text-xs opacity-40 transition-opacity hover:opacity-100 group-hover:block"
-                style={{ color: "var(--muted)" }}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M3 3l6 6M9 3l-6 6" />
-                </svg>
-              </button>
-            </div>
-          );
-        })}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-[13px]"
+                      style={{ color: "var(--foreground)", opacity: isActive ? 1 : 0.8 }}
+                    >
+                      {c.preview || "New conversation"}
+                    </p>
+                    <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted)" }}>
+                      {timeAgo(c.last_active)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      track("click", "delete_conversation", { conversation_id: c.conversation_id });
+                      onDelete(c.conversation_id);
+                    }}
+                    className="ml-2 rounded p-1 text-xs opacity-0 transition-all duration-200 group-hover:opacity-60 hover:!opacity-100"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 3l6 6M9 3l-6 6" />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <div className="divider-gradient mx-4" />
@@ -113,7 +141,7 @@ export default function Sidebar({
         </p>
         <a
           href="/analytics"
-          className="text-[10px] tracking-wide transition-opacity hover:opacity-80"
+          className="bounce-tap text-[10px] tracking-wide transition-opacity hover:opacity-80"
           style={{ color: "var(--accent)" }}
         >
           Analytics
