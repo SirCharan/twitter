@@ -108,11 +108,46 @@ async def stream_deep_research(stock: str, mode: str):
 
     yield _emit(5, round(time.time() - t0, 1))
 
-    # Step 6: Build full report
+    # Step 6: Triad Deep Research debate on collected data
     t0 = time.time()
-    full_report = await _generate_full_report(
-        name, mode, fundamental, technical, news_articles, overall, verdict
+
+    # Build data context for the Triad briefing
+    news_titles = [a["title"] for a in news_articles[:5]]
+    data_context = (
+        f"Stock: {name} ({nse_symbol})\n"
+        f"Scores — Overall: {overall}/30 | Technical: {technical_score}/10 | "
+        f"Fundamental: {fundamental_score}/10 | News: {news_score}/10\n"
+        f"RSI: {technical.get('rsi', '?')} ({technical.get('rsi_label', '')})\n"
+        f"MACD: {technical.get('macd_signal', '?')} | SMA: {technical.get('sma_signal', '?')}\n"
+        f"P/E: {fundamental.get('pe', '?')} | ROE: {fundamental.get('roe', '?')}% | "
+        f"D/E: {fundamental.get('debt_to_equity', '?')}\n"
+        f"Verdict: {verdict}\n"
+        f"Recent headlines:\n" + "\n".join(f"- {t}" for t in news_titles)
     )
+
+    triad_query = f"Deep research analysis of {name} ({nse_symbol})"
+
+    from app.handlers.agent_debate import stream_triad_debate
+
+    triad_responses = {}
+    async for sse_chunk in stream_triad_debate(triad_query, data_context=data_context):
+        # Parse SSE to capture triad result, and forward phase events
+        if sse_chunk.startswith("data: "):
+            try:
+                event = json.loads(sse_chunk[6:].strip())
+                if event.get("type") == "phase":
+                    # Re-emit as triad_phase so frontend can distinguish
+                    event["type"] = "triad_phase"
+                    yield f"data: {json.dumps(event)}\n\n"
+                elif event.get("type") == "agent_response":
+                    event["type"] = "triad_agent_response"
+                    yield f"data: {json.dumps(event)}\n\n"
+                elif event.get("type") == "result":
+                    triad_responses = event.get("data", {})
+                # Skip "done" — we emit our own
+            except (json.JSONDecodeError, KeyError):
+                pass
+
     yield _emit(6, round(time.time() - t0, 1))
 
     result = {
@@ -125,47 +160,11 @@ async def stream_deep_research(stock: str, mode: str):
         "quarterly": quarterly,
         "shareholding": shareholding,
         "verdict": verdict,
-        "full_report": full_report,
+        "full_report": triad_responses.get("synthesis", f"## {name}\n\n**Verdict:** {verdict}"),
+        "triad": triad_responses,
         "mode": mode,
         "total_elapsed": round(time.time() - start_all, 1),
     }
 
     yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"
     yield 'data: {"type":"done"}\n\n'
-
-
-async def _generate_full_report(
-    name: str,
-    mode: str,
-    fundamental: dict,
-    technical: dict,
-    news_articles: list,
-    overall: float,
-    verdict: str,
-) -> str:
-    """Generate markdown prose report via AI."""
-    news_titles = [a["title"] for a in news_articles[:5]]
-    mode_focus = {
-        "full": "a comprehensive analysis covering technicals, fundamentals, news sentiment, and investment thesis",
-        "news": "news sentiment analysis and key events driving the stock",
-        "broker": "broker recommendations, analyst consensus, and price targets",
-        "technical": "technical analysis — price action, momentum, trend strength, and key levels",
-    }.get(mode, "a comprehensive analysis")
-
-    prompt = (
-        f"Write {mode_focus} for {name}.\n\n"
-        f"Scores — Overall: {overall}/30 | Technical: {technical.get('score', '?')}/10 | "
-        f"Fundamental: {fundamental.get('score', '?')}/10\n"
-        f"RSI: {technical.get('rsi', '?')} ({technical.get('rsi_label', '')})\n"
-        f"MACD: {technical.get('macd_signal', '?')} | SMA: {technical.get('sma_signal', '?')}\n"
-        f"P/E: {fundamental.get('pe', '?')} | ROE: {fundamental.get('roe', '?')}% | "
-        f"D/E: {fundamental.get('debt_to_equity', '?')}\n"
-        f"Recent headlines:\n" + "\n".join(f"- {t}" for t in news_titles) + "\n\n"
-        f"Write 3-4 focused paragraphs with markdown headers. Direct, specific, no fluff. "
-        f"End with this verdict: '{verdict}'"
-    )
-
-    try:
-        return await ai_client.chat(prompt)
-    except Exception:
-        return f"## {name}\n\n**Verdict:** {verdict}"

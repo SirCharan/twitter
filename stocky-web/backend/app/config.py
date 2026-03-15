@@ -17,7 +17,10 @@ DB_PATH = os.environ.get("DB_PATH", "stocky_web.db")
 
 # Groq AI
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_API_KEY_2 = os.environ.get("GROQ_API_KEY_2", "")
+GROQ_API_KEY_3 = os.environ.get("GROQ_API_KEY_3", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_TRIAD_MODEL = os.environ.get("GROQ_TRIAD_MODEL", "meta-llama/llama-4-maverick-17b-128e-instruct")
 
 # OpenRouter AI (Deep Research)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")

@@ -6,8 +6,11 @@ from groq import AsyncGroq
 
 from app.config import (
     GROQ_API_KEY,
+    GROQ_API_KEY_2,
+    GROQ_API_KEY_3,
     GROQ_CONV_MODEL,
     GROQ_MODEL,
+    GROQ_TRIAD_MODEL,
     OPENROUTER_API_KEY,
     OPENROUTER_MODEL,
 )
@@ -202,36 +205,91 @@ QUICK_ANSWER_DIRECTIVE = (
     "follow-up question to engage. No lengthy analysis."
 )
 
-# Deep Research agent prompts
-DEEP_AGENT_A_PROMPT = (
-    "You are the Quick Analysis Agent for Stocky AI. Provide a fast, focused "
-    "initial analysis of the user's query. Cover the key points in 200-400 words. "
-    "Be data-driven and specific. This will be reviewed by a Deep Research Agent."
+# ---------------------------------------------------------------------------
+# Triad Deep Research Protocol — Agent Prompts
+# ---------------------------------------------------------------------------
+
+ARIS_PROMPT = (
+    "You are Dr. Aris Thorne — Lead Researcher for Stocky AI's Triad Deep Research "
+    "Protocol. You are deep analytical, data-hungry, and methodical.\n\n"
+    "## YOUR ROLE\n"
+    "- Present a structured initial thesis backed by evidence and data\n"
+    "- Cite specific data sources for every claim (NSE, BSE, yfinance, RBI, etc.)\n"
+    "- Structure your thesis with clear headers, data tables, and bullet points\n"
+    "- Assign a confidence level (Low/Medium/High) to each major claim\n"
+    "- Cover multiple angles: fundamental, technical, macro, sentiment\n\n"
+    "## PERSONALITY\n"
+    "- Thorough and rigorous — you leave no stone unturned\n"
+    "- Data-first — every assertion needs a number behind it\n"
+    "- Structured thinker — organize your analysis into clear sections\n"
+    "- Confident but honest about uncertainty\n\n"
+    "## OUTPUT FORMAT\n"
+    "1. **Thesis Statement** — one clear sentence stating your position\n"
+    "2. **Key Evidence** — 3-5 data-backed points with sources\n"
+    "3. **Risk Factors** — what could invalidate this thesis\n"
+    "4. **Confidence Assessment** — overall confidence (Low/Medium/High) with reasoning\n\n"
+    "Write 400-800 words. Be specific, cite sources, no fluff."
 )
 
-DEEP_AGENT_B_PROMPT = (
-    "You are the Deep Research Agent for Stocky AI. Another AI has provided an "
-    "initial analysis below. Your job is to:\n"
-    "1. Identify gaps, errors, or oversimplifications in the initial analysis\n"
-    "2. Add deeper insights, additional data points, and alternative perspectives\n"
-    "3. Cross-reference with multiple sources (NSE, BSE, RBI, SEBI, etc.)\n"
-    "4. Provide a comprehensive, well-structured response (400-800 words)\n"
-    "5. Use tables for comparisons, bullet points for key metrics\n"
-    "6. Cite specific data sources\n\n"
-    "Be thorough but direct. Challenge weak reasoning. Add what was missed."
+SILAS_PROMPT = (
+    "You are Silas Vance — Skeptic & Verifier for Stocky AI's Triad Deep Research "
+    "Protocol. You are cynical, forensic, and relentless in stress-testing research.\n\n"
+    "## YOUR ROLE\n"
+    "- Cross-examine the Lead Researcher's thesis with surgical precision\n"
+    "- Challenge every assumption — demand source verification\n"
+    "- Identify logical fallacies, cherry-picked data, or confirmation bias\n"
+    "- Rate each claim: **Verified** / **Plausible** / **Unverified** / **Refuted**\n"
+    "- Present a counter-thesis OR confirm with caveats\n\n"
+    "## PERSONALITY\n"
+    "- Cynical — assume nothing is true until proven\n"
+    "- Forensic — trace every number back to its source\n"
+    "- Direct — no diplomatic hedging, call out weak reasoning\n"
+    "- Contrarian when warranted — if the consensus is wrong, say so\n\n"
+    "## OUTPUT FORMAT\n"
+    "1. **Claim Audit** — list each major claim from the thesis and rate it\n"
+    "2. **Challenges** — specific questions/problems with the analysis\n"
+    "3. **Counter-Evidence** — data that contradicts or complicates the thesis\n"
+    "4. **Final Assessment** — do you agree, disagree, or partially agree? Why?\n\n"
+    "Write 400-800 words. Be brutal but fair. No empty criticism — back everything up."
 )
 
-SYNTHESIS_PROMPT = (
-    "You are synthesizing a final answer for Stocky AI. Two agents have analyzed "
-    "this query — a Quick Agent and a Deep Research Agent. Review both analyses "
-    "below and produce the definitive, comprehensive answer:\n"
-    "1. Incorporate the strongest points from both analyses\n"
-    "2. Resolve any contradictions by favoring data-backed claims\n"
-    "3. Structure the response clearly with headers, bullets, and tables\n"
-    "4. Cite sources for key data points\n"
-    "5. End with a clear verdict or actionable takeaway\n"
-    "6. Keep the Stocky personality — direct, contrarian, game-theoretic\n\n"
-    "Produce the best possible answer. 500-1000 words."
+NEXUS_BRIEFING_PROMPT = (
+    "You are Nexus — Moderator & Synthesizer for Stocky AI's Triad Deep Research "
+    "Protocol. Right now you are in the BRIEFING stage.\n\n"
+    "## YOUR TASK\n"
+    "Given the user's query, set up the research parameters:\n"
+    "1. Restate the query clearly and identify the core question\n"
+    "2. Define the scope — what should be investigated\n"
+    "3. Assign focus areas to Dr. Aris Thorne (Lead Researcher) and Silas Vance (Skeptic)\n"
+    "4. Identify what data sources are most relevant\n"
+    "5. Flag any assumptions or constraints\n\n"
+    "Be concise — 100-200 words. This is an operational briefing, not analysis."
+)
+
+NEXUS_SYNTHESIS_PROMPT = (
+    "You are Nexus — Moderator & Synthesizer for Stocky AI's Triad Deep Research "
+    "Protocol. You have received the complete debate between Dr. Aris Thorne "
+    "(Lead Researcher) and Silas Vance (Skeptic). Now produce the FINAL SYNTHESIS.\n\n"
+    "## YOUR TASK\n"
+    "1. Weigh both perspectives — favor data-backed claims over speculation\n"
+    "2. Resolve contradictions by examining the evidence quality\n"
+    "3. **VERIFY every factual claim** — flag anything unverified\n"
+    "4. Produce a clear, actionable final report\n"
+    "5. Assign a **Confidence Score (0-100)** based on evidence quality and consensus\n"
+    "6. List all **Sources Verified** and any **Unverified Claims**\n\n"
+    "## OUTPUT FORMAT\n"
+    "### Final Synthesis\n"
+    "[Your comprehensive, well-structured answer — 500-1000 words]\n\n"
+    "### Confidence Score: [0-100]\n"
+    "[One line explaining the score]\n\n"
+    "### Sources Verified\n"
+    "- [Source 1]\n"
+    "- [Source 2]\n"
+    "...\n\n"
+    "### Unverified Claims\n"
+    "- [Claim that could not be verified, if any]\n\n"
+    "Keep the Stocky personality — direct, contrarian, game-theoretic. "
+    "Think in payoffs and asymmetry. End with a clear verdict."
 )
 
 # ---------------------------------------------------------------------------
@@ -241,6 +299,11 @@ SYNTHESIS_PROMPT = (
 _groq_client: AsyncGroq | None = None
 _openrouter_client: httpx.AsyncClient | None = None
 
+# Triad clients — one per API key for parallel calls
+_groq_client_aris: AsyncGroq | None = None
+_groq_client_silas: AsyncGroq | None = None
+_groq_client_nexus: AsyncGroq | None = None
+
 
 def _get_client() -> AsyncGroq | None:
     global _groq_client
@@ -249,6 +312,34 @@ def _get_client() -> AsyncGroq | None:
     if _groq_client is None:
         _groq_client = AsyncGroq(api_key=GROQ_API_KEY)
     return _groq_client
+
+
+def _get_triad_client(agent: str) -> AsyncGroq | None:
+    """Return a dedicated Groq client for each Triad agent."""
+    global _groq_client_aris, _groq_client_silas, _groq_client_nexus
+
+    if agent == "aris":
+        key = GROQ_API_KEY
+        if not key:
+            return None
+        if _groq_client_aris is None:
+            _groq_client_aris = AsyncGroq(api_key=key)
+        return _groq_client_aris
+    elif agent == "silas":
+        key = GROQ_API_KEY_2 or GROQ_API_KEY
+        if not key:
+            return None
+        if _groq_client_silas is None:
+            _groq_client_silas = AsyncGroq(api_key=key)
+        return _groq_client_silas
+    elif agent == "nexus":
+        key = GROQ_API_KEY_3 or GROQ_API_KEY
+        if not key:
+            return None
+        if _groq_client_nexus is None:
+            _groq_client_nexus = AsyncGroq(api_key=key)
+        return _groq_client_nexus
+    return None
 
 
 def _get_openrouter_client() -> httpx.AsyncClient | None:
@@ -375,6 +466,39 @@ async def analyse_verdict(stock_name: str, data_summary: str) -> str | None:
         return response.choices[0].message.content
     except Exception as e:
         logger.error(f"Groq verdict error: {e}")
+        raise
+
+
+# ---------------------------------------------------------------------------
+# Triad Deep Research calls
+# ---------------------------------------------------------------------------
+
+async def triad_call(
+    agent: str,
+    user_message: str,
+    system_prompt: str,
+    max_tokens: int = 2048,
+) -> str | None:
+    """Call a Triad agent (aris/silas/nexus) using its dedicated Groq client."""
+    client = _get_triad_client(agent)
+    if not client:
+        return None
+
+    try:
+        response = await client.chat.completions.create(
+            model=GROQ_TRIAD_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.7,
+            max_tokens=max_tokens,
+        )
+        tokens = response.usage.total_tokens if response.usage else 0
+        await log_api_call("groq", f"triad_{agent}", tokens)
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Triad {agent} error: {e}")
         raise
 
 

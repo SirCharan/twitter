@@ -4,20 +4,32 @@ import { useState, useEffect } from "react";
 interface Phase {
   label: string;
   status: string;
+  agent?: string;
   content?: string;
   thinking?: string;
   elapsed?: number;
+  silas_final?: string;
 }
 
 interface Props {
   phases: Phase[];
 }
 
-const THINKING_MESSAGES = [
-  ["Scanning market data...", "Analyzing fundamentals...", "Reviewing technicals...", "Processing news sentiment..."],
-  ["Cross-referencing findings...", "Deep-diving into data...", "Evaluating macro trends...", "Critiquing initial analysis..."],
-  ["Merging perspectives...", "Weighing both analyses...", "Building final verdict..."],
-];
+const AGENT_META: Record<string, { icon: string; name: string; color: string }> = {
+  nexus: { icon: "\u2726", name: "Nexus", color: "var(--accent)" },
+  aris:  { icon: "\uD83D\uDD2C", name: "Dr. Aris Thorne", color: "#60a5fa" },
+  silas: { icon: "\u2694\uFE0F", name: "Silas Vance", color: "#f87171" },
+};
+
+const THINKING_MESSAGES: Record<string, string[]> = {
+  briefing:   ["Analyzing the query...", "Defining research scope...", "Assigning focus areas..."],
+  thesis:     ["Scanning market data...", "Building evidence base...", "Structuring thesis...", "Assessing confidence levels..."],
+  cross_exam: ["Scrutinizing claims...", "Checking data sources...", "Finding weaknesses...", "Rating evidence quality..."],
+  rebuttal:   ["Defending key points...", "Conceding valid challenges...", "Updating confidence...", "Preparing final assessment..."],
+  synthesis:  ["Verifying all claims...", "Weighing both perspectives...", "Calculating confidence score...", "Building final report..."],
+};
+
+const PHASE_IDS = ["briefing", "thesis", "cross_exam", "rebuttal", "synthesis"];
 
 function useRotatingText(texts: string[], active: boolean, intervalMs = 3000) {
   const [index, setIndex] = useState(0);
@@ -43,10 +55,13 @@ function useElapsedTimer(active: boolean) {
 function PhaseRow({ phase, index }: { phase: Phase; index: number }) {
   const isRunning = phase.status === "running";
   const isDone = phase.status === "done";
-  const rotatingThinking = useRotatingText(THINKING_MESSAGES[index] || THINKING_MESSAGES[0], isRunning);
+  const phaseId = PHASE_IDS[index] || "briefing";
+  const agentKey = phase.agent || (index === 0 || index === 4 ? "nexus" : index === 2 ? "silas" : "aris");
+  const meta = AGENT_META[agentKey] || AGENT_META.nexus;
+  const thinkingTexts = THINKING_MESSAGES[phaseId] || THINKING_MESSAGES.briefing;
+  const rotatingThinking = useRotatingText(thinkingTexts, isRunning);
   const liveElapsed = useElapsedTimer(isRunning);
 
-  // Preview: first meaningful line of agent response
   const preview = phase.content
     ? phase.content
         .split("\n")
@@ -70,9 +85,9 @@ function PhaseRow({ phase, index }: { phase: Phase; index: number }) {
             <div className="relative flex h-4 w-4 items-center justify-center">
               <div
                 className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                style={{ borderTopColor: "var(--accent)", borderRightColor: "var(--accent)" }}
+                style={{ borderTopColor: meta.color, borderRightColor: meta.color }}
               />
-              <div className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+              <div className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
             </div>
           )}
           {phase.status === "pending" && (
@@ -80,40 +95,49 @@ function PhaseRow({ phase, index }: { phase: Phase; index: number }) {
           )}
         </div>
 
-        {/* Label */}
-        <span
-          className="flex-1 text-[13px] font-medium"
-          style={{
-            color: phase.status === "pending" ? "var(--muted)" : "var(--foreground)",
-            opacity: phase.status === "pending" ? 0.4 : 1,
-          }}
-        >
-          {phase.label}
-        </span>
+        {/* Agent icon + name + label */}
+        <div className="flex flex-1 items-center gap-2 min-w-0">
+          <span className="text-xs shrink-0">{meta.icon}</span>
+          <span
+            className="text-[11px] font-semibold shrink-0"
+            style={{ color: meta.color, opacity: phase.status === "pending" ? 0.4 : 1 }}
+          >
+            {meta.name}
+          </span>
+          <span
+            className="text-[12px] font-medium truncate"
+            style={{
+              color: phase.status === "pending" ? "var(--muted)" : "var(--foreground)",
+              opacity: phase.status === "pending" ? 0.4 : 0.7,
+            }}
+          >
+            {phase.label}
+          </span>
+        </div>
 
         {/* Elapsed time */}
         {isDone && phase.elapsed != null && (
-          <span className="text-[11px] tabular-nums font-medium" style={{ color: "var(--positive)" }}>
+          <span className="text-[11px] tabular-nums font-medium shrink-0" style={{ color: "var(--positive)" }}>
             {phase.elapsed.toFixed(1)}s
           </span>
         )}
         {isRunning && (
-          <span className="text-[11px] tabular-nums animate-pulse" style={{ color: "var(--accent)" }}>
+          <span className="text-[11px] tabular-nums animate-pulse shrink-0" style={{ color: meta.color }}>
             {liveElapsed}s
           </span>
         )}
       </div>
 
-      {/* Thinking text (while running) */}
+      {/* Live thinking text (while running) */}
       {isRunning && (
         <div className="mt-1.5 ml-8 flex items-center gap-2">
           <div className="flex gap-0.5">
-            <div className="typing-dot h-1 w-1 rounded-full" style={{ background: "var(--accent)" }} />
-            <div className="typing-dot h-1 w-1 rounded-full" style={{ background: "var(--accent)" }} />
-            <div className="typing-dot h-1 w-1 rounded-full" style={{ background: "var(--accent)" }} />
+            <div className="typing-dot h-1 w-1 rounded-full" style={{ background: meta.color }} />
+            <div className="typing-dot h-1 w-1 rounded-full" style={{ background: meta.color }} />
+            <div className="typing-dot h-1 w-1 rounded-full" style={{ background: meta.color }} />
           </div>
           <span
-            className="text-[11px] italic transition-opacity duration-500"
+            className="text-[11px] italic thinking-text"
             style={{ color: "var(--muted)" }}
           >
             {phase.thinking || rotatingThinking}
@@ -125,7 +149,7 @@ function PhaseRow({ phase, index }: { phase: Phase; index: number }) {
       {isDone && preview && (
         <div
           className="mt-1.5 ml-8 rounded-lg px-3 py-1.5 text-[11px] leading-relaxed"
-          style={{ background: "rgba(201,169,110,0.04)", color: "var(--muted)" }}
+          style={{ background: `${meta.color}08`, color: "var(--muted)" }}
         >
           &quot;{preview}{preview.length >= 120 ? "..." : ""}&quot;
         </div>
@@ -152,7 +176,7 @@ export default function DebateProgressCard({ phases }: Props) {
             <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="var(--accent)" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
           <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-            Stocky AI Debate
+            Triad Deep Research
           </span>
         </div>
         {anyRunning && (

@@ -267,13 +267,18 @@ export function useChat() {
       };
       setMessages((prev) => [...prev, userMsg]);
 
-      // Add debate progress placeholder
+      // Add Triad progress placeholder
       const progressId = `debate-${Date.now()}`;
-      const DEBATE_PHASES = [
-        "Stocky AI is analyzing...",
-        "Stocky AI is deep-diving...",
-        "Stocky AI is synthesizing...",
+      const TRIAD_PHASES = [
+        { label: "Setting research parameters...", agent: "nexus" },
+        { label: "Building thesis...", agent: "aris" },
+        { label: "Cross-examining claims...", agent: "silas" },
+        { label: "Rebuttal round...", agent: "aris" },
+        { label: "Synthesizing final report...", agent: "nexus" },
       ];
+      const PHASE_MAP: Record<string, number> = {
+        briefing: 0, thesis: 1, cross_exam: 2, rebuttal: 3, synthesis: 4,
+      };
 
       const makeDebateData = (
         statuses: Array<"pending" | "running" | "done">,
@@ -282,10 +287,11 @@ export function useChat() {
         elapseds: Array<number | undefined>,
       ) => ({
         query,
-        title: "Agent Debate",
+        title: "Triad Deep Research",
         startTime: Date.now(),
-        phases: DEBATE_PHASES.map((label, i) => ({
-          label,
+        phases: TRIAD_PHASES.map((p, i) => ({
+          label: p.label,
+          agent: p.agent,
           status: statuses[i],
           content: contents[i],
           thinking: thinkings[i],
@@ -293,15 +299,15 @@ export function useChat() {
         })),
       });
 
-      const phaseStatuses: Array<"pending" | "running" | "done"> = ["running", "pending", "pending"];
-      const phaseContents: Array<string | undefined> = [undefined, undefined, undefined];
-      const phaseThinkings: Array<string | undefined> = [undefined, undefined, undefined];
-      const phaseElapseds: Array<number | undefined> = [undefined, undefined, undefined];
+      const phaseStatuses: Array<"pending" | "running" | "done"> = ["running", "pending", "pending", "pending", "pending"];
+      const phaseContents: Array<string | undefined> = Array(5).fill(undefined);
+      const phaseThinkings: Array<string | undefined> = Array(5).fill(undefined);
+      const phaseElapseds: Array<number | undefined> = Array(5).fill(undefined);
 
       const progressMsg: ChatMessage = {
         id: progressId,
         role: "assistant",
-        content: "Agent Debate",
+        content: "Triad Deep Research",
         type: "debate_progress",
         data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
         timestamp: new Date().toISOString(),
@@ -331,28 +337,39 @@ export function useChat() {
               const event = JSON.parse(line.slice(6));
 
               if (event.type === "phase") {
-                const phaseIdx =
-                  event.phase === "agent_a" ? 0
-                    : event.phase === "agent_b" ? 1
-                      : 2;
+                const phaseIdx = PHASE_MAP[event.phase] ?? -1;
+                if (phaseIdx < 0) continue;
                 if (event.status === "started") {
                   phaseStatuses[phaseIdx] = "running";
                   if (event.thinking) phaseThinkings[phaseIdx] = event.thinking;
                 } else if (event.status === "error" || event.status === "skipped") {
                   phaseStatuses[phaseIdx] = "done";
-                  if (phaseIdx + 1 < DEBATE_PHASES.length) {
+                  if (phaseIdx + 1 < TRIAD_PHASES.length) {
                     phaseStatuses[phaseIdx + 1] = "running";
                   }
                 }
                 updateMessage(progressId, {
                   data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
                 });
+              } else if (event.type === "thinking") {
+                const agentPhaseMap: Record<string, number[]> = {
+                  nexus: [0, 4], aris: [1, 3], silas: [2],
+                };
+                const possibleIdxs = agentPhaseMap[event.agent] || [];
+                const runningIdx = possibleIdxs.find((i) => phaseStatuses[i] === "running");
+                if (runningIdx !== undefined) {
+                  phaseThinkings[runningIdx] = event.text;
+                  updateMessage(progressId, {
+                    data: makeDebateData(phaseStatuses, phaseContents, phaseThinkings, phaseElapseds),
+                  });
+                }
               } else if (event.type === "agent_response") {
-                const phaseIdx = event.agent === "quick" ? 0 : 1;
+                const phaseIdx = PHASE_MAP[event.phase] ?? -1;
+                if (phaseIdx < 0) continue;
                 phaseStatuses[phaseIdx] = "done";
                 phaseContents[phaseIdx] = event.content;
                 phaseElapseds[phaseIdx] = event.elapsed;
-                if (phaseIdx + 1 < DEBATE_PHASES.length) {
+                if (phaseIdx + 1 < TRIAD_PHASES.length) {
                   phaseStatuses[phaseIdx + 1] = "running";
                 }
                 updateMessage(progressId, {
@@ -363,7 +380,7 @@ export function useChat() {
               } else if (event.type === "result") {
                 updateMessage(progressId, {
                   type: "agent_debate",
-                  content: "Agent Debate",
+                  content: "Triad Deep Research",
                   data: event.data as Record<string, unknown>,
                 });
               }

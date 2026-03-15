@@ -140,6 +140,7 @@ function RichContent({
       const phases = (dp?.phases as Array<{
         label: string;
         status: string;
+        agent?: string;
         content?: string;
         thinking?: string;
         elapsed?: number;
