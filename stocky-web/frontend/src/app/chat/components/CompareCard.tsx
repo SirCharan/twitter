@@ -115,7 +115,7 @@ export default function CompareCard({ data }: Props) {
       </div>
 
       {/* Scores + rows — horizontally scrollable on mobile */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scrollbar-none">
       <div style={{ minWidth: Math.max(320, stocks.length * 140) }}>
 
       {/* Scores */}

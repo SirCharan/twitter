@@ -251,7 +251,7 @@ export default function ChatWindow({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="relative flex-1 overflow-y-auto px-4 py-6"
+        className="relative flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6"
         role="log"
         aria-live="polite"
         aria-busy={isLoading}
@@ -444,7 +444,7 @@ export default function ChatWindow({
           </div>
         )}
 
-        <div className="mx-auto max-w-3xl space-y-5">
+        <div className="mx-auto max-w-3xl space-y-3 sm:space-y-5">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} onSend={handleSend} />
           ))}
@@ -461,7 +461,7 @@ export default function ChatWindow({
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               onClick={scrollToBottom}
-              className="fixed bottom-28 right-6 z-30 rounded-full border p-2.5 shadow-lg backdrop-blur-sm transition-colors hover:bg-white/5"
+              className="fixed bottom-28 right-3 sm:right-6 z-30 rounded-full border p-2.5 shadow-lg backdrop-blur-sm transition-colors hover:bg-white/5"
               style={{
                 background: "var(--glass)",
                 borderColor: "var(--card-border)",
@@ -484,7 +484,7 @@ export default function ChatWindow({
             active={activeFeature}
             onSelect={handleFeatureSelect}
             disabled={isLoading}
-            visible={featureBarVisible && !analyseOpen && !showEmpty}
+            visible={featureBarVisible && !analyseOpen && !showEmpty && !isLoading}
           />
 
           {/* Feature panel (expands when chip selected, only in message state) */}

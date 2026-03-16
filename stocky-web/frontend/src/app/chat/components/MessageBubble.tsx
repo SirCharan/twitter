@@ -68,7 +68,7 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
       className={`flex ${isUser ? "justify-end" : "justify-start"}`}
     >
       <div
-        className={`bubble-hover max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-6 sm:ml-12" : "mr-6 sm:mr-12"}`}
+        className={`bubble-hover max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-3 sm:ml-8" : "mr-3 sm:mr-8"}`}
         style={{
           background: isUser ? "var(--card-bg)" : "var(--surface)",
           border: "1px solid var(--card-border)",

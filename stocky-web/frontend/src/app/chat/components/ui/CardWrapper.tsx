@@ -36,7 +36,7 @@ export default function CardWrapper({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={cn(
-        "rounded-2xl border px-4 py-4 sm:px-5",
+        "rounded-2xl border px-3 py-3 sm:px-5 sm:py-4",
         DEPTH[depth],
         glow && "card-glow",
         className,

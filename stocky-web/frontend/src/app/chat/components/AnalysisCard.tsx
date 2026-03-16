@@ -202,17 +202,17 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
             <table className="w-full text-xs">
               <thead>
                 <tr style={{ background: "var(--surface)" }}>
-                  <th className="px-2 py-1.5 text-left font-medium" style={{ color: "var(--muted)" }}>Period</th>
-                  <th className="px-2 py-1.5 text-right font-medium" style={{ color: "var(--muted)" }}>Revenue</th>
-                  <th className="px-2 py-1.5 text-right font-medium" style={{ color: "var(--muted)" }}>Net Income</th>
-                  <th className="px-2 py-1.5 text-right font-medium" style={{ color: "var(--muted)" }}>EPS</th>
+                  <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium" style={{ color: "var(--muted)" }}>Period</th>
+                  <th className="whitespace-nowrap px-2 py-1.5 text-right font-medium" style={{ color: "var(--muted)" }}>Revenue</th>
+                  <th className="whitespace-nowrap px-2 py-1.5 text-right font-medium" style={{ color: "var(--muted)" }}>Net Income</th>
+                  <th className="whitespace-nowrap px-2 py-1.5 text-right font-medium" style={{ color: "var(--muted)" }}>EPS</th>
                 </tr>
               </thead>
               <tbody>
                 {d.quarterly.map((q, i) => (
                   <tr key={i} style={{ borderTop: "1px solid var(--card-border)" }}>
-                    <td className="px-2 py-1.5" style={{ color: "var(--foreground)" }}>{q.period}</td>
-                    <td className="px-2 py-1.5 text-right">
+                    <td className="whitespace-nowrap px-2 py-1.5" style={{ color: "var(--foreground)" }}>{q.period}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right">
                       <span style={{ color: "var(--foreground)" }}>
                         {q.revenue != null ? `₹${(q.revenue / 1e7).toFixed(0)}Cr` : "—"}
                       </span>

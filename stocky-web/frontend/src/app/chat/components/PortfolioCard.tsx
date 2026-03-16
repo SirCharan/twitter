@@ -195,7 +195,7 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
                 return (
                   <div
                     key={underlying}
-                    className="rounded-lg border overflow-hidden"
+                    className="rounded-lg border overflow-hidden overflow-x-auto"
                     style={{ borderColor: "var(--card-border)", background: "var(--card-bg)" }}
                   >
                     {/* Group header */}
@@ -218,6 +218,7 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
                         gridTemplateColumns: "1fr auto auto auto auto",
                         color: "var(--muted)",
                         borderBottom: "1px solid var(--card-border)",
+                        minWidth: 340,
                       }}
                     >
                       <span>Contract</span>
@@ -235,6 +236,7 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
                         style={{
                           gridTemplateColumns: "1fr auto auto auto auto",
                           borderBottom: "1px solid var(--card-border)",
+                          minWidth: 340,
                         }}
                       >
                         <div className="flex items-center gap-1.5">
