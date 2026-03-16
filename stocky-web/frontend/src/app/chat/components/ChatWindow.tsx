@@ -287,7 +287,7 @@ export default function ChatWindow({
 
               {/* Feature card grid — all features organized by category */}
               {!analyseOpen && activeFeature === null && (
-                <div className="mt-6 w-full space-y-3 text-left">
+                <div className="mt-6 w-full space-y-2 sm:space-y-3 text-left">
                   {CATEGORIES.map((cat, catIdx) => (
                     <motion.div
                       key={cat.label}
@@ -296,12 +296,12 @@ export default function ChatWindow({
                       transition={{ delay: catIdx * 0.06, duration: 0.3 }}
                     >
                       <span
-                        className="mb-1.5 block text-[9px] font-semibold uppercase tracking-widest"
+                        className="mb-1 sm:mb-1.5 block text-[9px] font-semibold uppercase tracking-widest hidden sm:block"
                         style={{ color: "var(--muted)", opacity: 0.6 }}
                       >
                         {cat.label}
                       </span>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {cat.features.map((f, i) => (
                           <motion.button
                             key={f.id}
@@ -315,7 +315,7 @@ export default function ChatWindow({
                               handleFeatureSelect(f.id);
                             }}
                             title={FEATURE_TOOLTIPS[f.id as FeatureId]}
-                            className="flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
+                            className="flex items-center gap-1.5 rounded-xl border px-2.5 py-2 sm:px-3 sm:py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
                             style={{
                               borderColor: "var(--card-border)",
                               background: "var(--surface)",
