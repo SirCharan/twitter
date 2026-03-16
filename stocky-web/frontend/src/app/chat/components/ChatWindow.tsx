@@ -260,7 +260,7 @@ export default function ChatWindow({
         aria-label="Chat messages"
       >
         {showEmpty && (
-          <div className="flex h-full flex-col items-center pt-[12vh] sm:pt-0 sm:justify-center">
+          <div className="flex h-full flex-col items-center pt-[4vh] sm:pt-0 sm:justify-center">
             <div
               className="pointer-events-none absolute"
               style={{
