@@ -147,7 +147,9 @@ export default function ChatWindow({
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
 
   // Should we show skeleton (card loading) vs typing indicator?
-  const showSkeleton = isLoading && lastUserMsg && CARD_KEYWORDS.test(lastUserMsg.content);
+  // Don't show any loading indicator when debate_progress or progress cards are already rendering
+  const hasActiveProgress = lastMsg?.type === "debate_progress" || lastMsg?.type === "progress";
+  const showSkeleton = isLoading && !hasActiveProgress && lastUserMsg && CARD_KEYWORDS.test(lastUserMsg.content);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -448,7 +450,7 @@ export default function ChatWindow({
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} onSend={handleSend} />
           ))}
-          {isLoading && (showSkeleton ? <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} /> : <TypingIndicator />)}
+          {isLoading && !hasActiveProgress && (showSkeleton ? <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} /> : <TypingIndicator />)}
           <div ref={bottomRef} />
         </div>
 
