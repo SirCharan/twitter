@@ -46,6 +46,17 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
 
   // Calculate slider position based on active mode
   const isDeep = mode === "deep";
+  const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 72 });
+
+  useEffect(() => {
+    const activeRef = isDeep ? deepRef.current : quickRef.current;
+    if (activeRef) {
+      setSliderStyle({
+        left: activeRef.offsetLeft,
+        width: activeRef.offsetWidth,
+      });
+    }
+  }, [isDeep]);
 
   return (
     <div className="space-y-1.5">
@@ -60,16 +71,10 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           {/* Sliding background indicator */}
           <motion.div
             className="absolute top-0.5 bottom-0.5 rounded-md"
-            layout
+            animate={{ left: sliderStyle.left, width: sliderStyle.width }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             style={{
               background: "rgba(201,169,110,0.12)",
-              width: isDeep
-                ? (deepRef.current?.offsetWidth ?? 110) + "px"
-                : (quickRef.current?.offsetWidth ?? 72) + "px",
-              transform: isDeep
-                ? `translateX(${(quickRef.current?.offsetWidth ?? 72)}px)`
-                : "translateX(0)",
             }}
           />
           <button
