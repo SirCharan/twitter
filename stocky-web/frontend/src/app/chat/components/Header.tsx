@@ -57,12 +57,18 @@ export default function Header({ onNewChat, onToggleSidebar, onFeedbackOpen }: P
           </svg>
         </button>
 
-        {/* Logo */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-mark.png" alt="Stocky" width={22} height={22} style={{ objectFit: "contain" }} />
-        <span className="text-sm font-medium tracking-wide" style={{ color: "var(--foreground)" }}>
-          Stocky AI
-        </span>
+        {/* Logo — clickable to start new chat */}
+        <button
+          onClick={onNewChat}
+          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          aria-label="New chat"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="Stocky" width={22} height={22} style={{ objectFit: "contain" }} />
+          <span className="text-sm font-medium tracking-wide" style={{ color: "var(--foreground)" }}>
+            Stocky AI
+          </span>
+        </button>
         <Tooltip content="Connected">
           <div className="h-2 w-2 rounded-full" style={{ background: "var(--positive)" }} />
         </Tooltip>

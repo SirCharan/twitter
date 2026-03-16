@@ -260,7 +260,7 @@ export default function ChatWindow({
         aria-label="Chat messages"
       >
         {showEmpty && (
-          <div className="flex h-full flex-col items-center justify-center">
+          <div className="flex h-full flex-col items-center justify-center sm:justify-center">
             <div
               className="pointer-events-none absolute"
               style={{
@@ -272,10 +272,10 @@ export default function ChatWindow({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-mark.png" alt="Stocky" width={56} height={56}
-                className="breathe mx-auto mb-4" style={{ objectFit: "contain" }}
+                className="breathe mx-auto mb-2 sm:mb-4 w-10 h-10 sm:w-14 sm:h-14" style={{ objectFit: "contain" }}
               />
-              <p className="gradient-text-shimmer bounce-in text-3xl font-light tracking-widest">Stocky</p>
-              <p className="mt-3 text-sm" style={{ color: "var(--muted)", minHeight: "1.5em" }}>
+              <p className="gradient-text-shimmer bounce-in text-2xl sm:text-3xl font-light tracking-widest">Stocky</p>
+              <p className="mt-1.5 sm:mt-3 text-xs sm:text-sm" style={{ color: "var(--muted)", minHeight: "1.5em" }}>
                 {subtitle}
                 <span
                   className="inline-block w-0.5 h-4 ml-0.5 align-middle"
@@ -289,7 +289,7 @@ export default function ChatWindow({
 
               {/* Feature card grid — all features organized by category */}
               {!analyseOpen && activeFeature === null && (
-                <div className="mt-6 w-full space-y-2 sm:space-y-3 text-left">
+                <div className="mt-3 sm:mt-6 w-full space-y-1 sm:space-y-3 text-left">
                   {CATEGORIES.map((cat, catIdx) => (
                     <motion.div
                       key={cat.label}
@@ -317,14 +317,14 @@ export default function ChatWindow({
                               handleFeatureSelect(f.id);
                             }}
                             title={FEATURE_TOOLTIPS[f.id as FeatureId]}
-                            className="flex items-center gap-1.5 rounded-xl border px-2.5 py-2 sm:px-3 sm:py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
+                            className="flex items-center gap-1.5 rounded-xl border px-2 py-1.5 sm:px-3 sm:py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
                             style={{
                               borderColor: "var(--card-border)",
                               background: "var(--surface)",
                             }}
                           >
-                            <span className="text-sm">{f.icon}</span>
-                            <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>
+                            <span className="text-xs sm:text-sm">{f.icon}</span>
+                            <span className="text-[11px] sm:text-xs font-medium" style={{ color: "var(--muted)" }}>
                               {f.label}
                             </span>
                           </motion.button>
