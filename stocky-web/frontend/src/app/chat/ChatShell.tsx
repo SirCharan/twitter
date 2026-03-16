@@ -50,7 +50,7 @@ export default function ChatShell() {
   return (
     <TooltipProvider>
       <ToastProvider>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-dvh overflow-hidden" style={{ height: "100dvh" }}>
           {/* Sidebar */}
           <AnimatePresence>
             {showSidebar && (
