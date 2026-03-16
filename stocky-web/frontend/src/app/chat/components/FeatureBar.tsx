@@ -51,11 +51,46 @@ export const CATEGORIES: { label: string; features: { id: FeatureId; icon: strin
   },
 ];
 
+// Flat list of all features for mobile single-row view
+const ALL_FEATURES = CATEGORIES.flatMap((c) => c.features);
+
 interface Props {
   active: FeatureId | null;
   onSelect: (id: FeatureId | null) => void;
   disabled?: boolean;
   visible?: boolean;
+}
+
+function FeatureChip({
+  f, isActive, disabled, onSelect,
+}: {
+  f: { id: FeatureId; icon: string; label: string };
+  isActive: boolean;
+  disabled?: boolean;
+  onSelect: (id: FeatureId | null) => void;
+}) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={() => {
+        track("click", "feature_chip_click", { feature: f.id });
+        onSelect(isActive ? null : f.id);
+      }}
+      disabled={disabled}
+      aria-label={f.label}
+      aria-pressed={isActive}
+      className="relative flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 sm:py-1 text-[11px] font-medium transition-colors disabled:opacity-30"
+      style={{
+        borderColor: isActive ? "var(--accent)" : "var(--card-border)",
+        background: isActive ? "rgba(201,169,110,0.1)" : "transparent",
+        color: isActive ? "var(--accent)" : "var(--muted)",
+        boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
+      }}
+    >
+      <span style={{ fontSize: 12 }}>{f.icon}</span>
+      {f.label}
+    </motion.button>
+  );
 }
 
 export default function FeatureBar({ active, onSelect, disabled, visible = true }: Props) {
@@ -69,53 +104,51 @@ export default function FeatureBar({ active, onSelect, disabled, visible = true 
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           role="toolbar"
           aria-label="Feature shortcuts"
-          className="mb-1.5 space-y-1.5 overflow-hidden"
+          className="mb-1.5 overflow-hidden"
           style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}
         >
-          {CATEGORIES.map((cat, catIdx) => (
-            <motion.div
-              key={cat.label}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: catIdx * 0.05, duration: 0.25 }}
-            >
-              <span
-                className="mb-1 block text-[9px] font-semibold uppercase tracking-widest sm:text-[10px]"
-                style={{ color: "var(--muted)", opacity: 0.6 }}
+          {/* Mobile: single scrollable row, no category labels */}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-none sm:hidden">
+            {ALL_FEATURES.map((f) => (
+              <FeatureChip
+                key={f.id}
+                f={f}
+                isActive={active === f.id}
+                disabled={disabled}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
+
+          {/* Desktop: categorized rows */}
+          <div className="hidden sm:block space-y-1.5">
+            {CATEGORIES.map((cat, catIdx) => (
+              <motion.div
+                key={cat.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: catIdx * 0.05, duration: 0.25 }}
               >
-                {cat.label}
-              </span>
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-                {cat.features.map((f) => {
-                  const isActive = active === f.id;
-                  return (
-                    <motion.button
+                <span
+                  className="mb-1 block text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--muted)", opacity: 0.6 }}
+                >
+                  {cat.label}
+                </span>
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+                  {cat.features.map((f) => (
+                    <FeatureChip
                       key={f.id}
-                      whileHover={{ y: -2, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        track("click", "feature_chip_click", { feature: f.id, category: cat.label });
-                        onSelect(isActive ? null : f.id);
-                      }}
+                      f={f}
+                      isActive={active === f.id}
                       disabled={disabled}
-                      aria-label={f.label}
-                      aria-pressed={isActive}
-                      className="relative flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 sm:py-1 text-[11px] font-medium transition-colors disabled:opacity-30"
-                      style={{
-                        borderColor: isActive ? "var(--accent)" : "var(--card-border)",
-                        background: isActive ? "rgba(201,169,110,0.1)" : "transparent",
-                        color: isActive ? "var(--accent)" : "var(--muted)",
-                        boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
-                      }}
-                    >
-                      <span style={{ fontSize: 12 }}>{f.icon}</span>
-                      {f.label}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          ))}
+                      onSelect={onSelect}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
