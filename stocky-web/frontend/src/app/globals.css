@@ -35,8 +35,12 @@ body {
   --card-bg: #141414;
   --card-border: #1F1F1F;
   --surface: #111111;
-  --positive: #22C55E;
-  --negative: #EF4444;
+  --positive: #00FFAA;
+  --negative: #FF3B5C;
+  --positive-glow: rgba(0, 255, 170, 0.12);
+  --negative-glow: rgba(255, 59, 92, 0.12);
+  --positive-dim: rgba(0, 255, 170, 0.6);
+  --negative-dim: rgba(255, 59, 92, 0.6);
   --glass: rgba(20, 20, 20, 0.7);
   --glass-border: rgba(255, 255, 255, 0.06);
 
@@ -330,6 +334,57 @@ body {
 .scrollbar-none::-webkit-scrollbar { width: 0; height: 0; }
 .scrollbar-none { scrollbar-width: none; }
 
+/* ─── Confirm button pulse (trade UX) ─── */
+@keyframes confirmPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-color, rgba(0,255,170,0.35)); }
+  50% { box-shadow: 0 0 0 7px rgba(0,0,0,0); }
+}
+.confirm-pulse { animation: confirmPulse 2s ease-in-out infinite; }
+
+/* ─── Button press ripple ─── */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.35; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* ─── Top-bar loading progress strip ─── */
+.progress-strip {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--accent), var(--positive));
+  z-index: 10;
+}
+
+/* ─── Keyboard shortcut badge ─── */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-family: inherit;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  color: var(--muted);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Risk gauge track ─── */
+.risk-gauge-track {
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--positive) 0%, var(--accent) 50%, var(--negative) 100%);
+}
+
+/* ─── Avatar ring ─── */
+.avatar-ring {
+  box-shadow: 0 0 0 1px var(--card-border), 0 0 8px rgba(201,169,110,0.08);
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -340,4 +395,6 @@ body {
   /* Keep essential loading indicators */
   .skeleton { animation-duration: 1.5s !important; animation-iteration-count: infinite !important; }
   .typing-dot { animation-duration: 1.4s !important; animation-iteration-count: infinite !important; }
+  .confirm-pulse { animation: none !important; }
+  .progress-strip { transition: none !important; }
 }

@@ -6,10 +6,9 @@ import { useConversations } from "./hooks/useConversations";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 import ChatWindow from "./components/ChatWindow";
 import Sidebar from "./components/Sidebar";
-import ToastContainer from "./components/Toast";
 import InstallPrompt from "./components/InstallPrompt";
-import { ToastProvider } from "./hooks/useToast";
 import { TooltipProvider } from "./components/ui/Tooltip";
+import { Toaster } from "sonner";
 
 export default function ChatShell() {
   const chat = useChat();
@@ -50,7 +49,6 @@ export default function ChatShell() {
 
   return (
     <TooltipProvider>
-      <ToastProvider>
         <div className="flex h-dvh overflow-hidden" style={{ height: "100dvh" }}>
           {/* Sidebar */}
           <AnimatePresence>
@@ -102,9 +100,20 @@ export default function ChatShell() {
             />
           </div>
         </div>
-        <ToastContainer />
         <InstallPrompt />
-      </ToastProvider>
+        <Toaster
+          theme="dark"
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "var(--card-bg)",
+              border: "1px solid var(--card-border)",
+              color: "var(--foreground)",
+              borderRadius: "12px",
+            },
+          }}
+          richColors
+        />
     </TooltipProvider>
   );
 }
