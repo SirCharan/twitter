@@ -243,10 +243,52 @@ body {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--card-bg) 25%, var(--card-border) 50%, var(--card-bg) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.025) 25%,
+    rgba(201,169,110,0.1) 50%,
+    rgba(255,255,255,0.025) 75%
+  );
   background-size: 200% 100%;
   animation: skeletonShimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
+}
+
+/* ─── Terminal scanlines overlay ─── */
+.terminal-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+.terminal-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.04) 3px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* ─── Terminal cursor blink ─── */
+@keyframes termCursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.term-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 12px;
+  background: var(--accent);
+  animation: termCursorBlink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+  border-radius: 1px;
 }
 
 /* ─── Breathe (logo pulse) ─── */

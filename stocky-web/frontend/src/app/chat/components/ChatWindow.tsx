@@ -13,6 +13,7 @@ import FeedbackModal from "./FeedbackModal";
 import Header from "./Header";
 import SuggestionChips from "./SuggestionChips";
 import CommandPalette from "./CommandPalette";
+import ThinkingScreen from "./ThinkingScreen";
 
 interface Props {
   messages: ChatMessage[];
@@ -507,7 +508,16 @@ export default function ChatWindow({
           {!isLoading && lastMsg?.role === "assistant" && (
             <SuggestionChips message={lastMsg} onSend={handleSend} />
           )}
-          {isLoading && !hasActiveProgress && (showSkeleton ? <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} /> : <TypingIndicator mode={chatMode} />)}
+          {isLoading && !hasActiveProgress && (
+            showSkeleton ? (
+              <>
+                <ThinkingScreen mode={chatMode} intent={lastUserMsg?.content ?? ""} />
+                <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} />
+              </>
+            ) : (
+              <ThinkingScreen mode={chatMode} intent={lastUserMsg?.content ?? ""} />
+            )
+          )}
           <div ref={bottomRef} />
         </div>
 

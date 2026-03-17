@@ -169,7 +169,12 @@ export default function MessageActions({ message, onContextAction, onRegenerate,
       </div>
 
       {/* Contextual action pills */}
-      {contextual.map((item) => (
+      {contextual
+        .filter((item) => {
+          const needsSymbol = ["trade", "compare", "deep_research", "full_analysis", "trade_winner"].includes(item.action);
+          return !needsSymbol || symbol !== "";
+        })
+        .map((item) => (
         <motion.button
           key={item.action}
           initial={{ opacity: 0, scale: 0.9 }}
