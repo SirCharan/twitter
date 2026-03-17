@@ -76,7 +76,7 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
         }}
       >
         {isUser ? (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--foreground)" }}>
+          <p className="selectable text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--foreground)" }}>
             {message.content}
           </p>
         ) : (

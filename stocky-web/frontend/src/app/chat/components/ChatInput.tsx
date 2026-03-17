@@ -172,7 +172,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           onClick={handleSubmit}
           disabled={disabled || !text.trim()}
           aria-label="Send message"
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
             text.trim() && !disabled ? "send-ready" : ""
           }`}
           style={{ background: text.trim() ? "var(--accent)" : "var(--card-border)" }}

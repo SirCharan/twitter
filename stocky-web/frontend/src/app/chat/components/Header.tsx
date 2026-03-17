@@ -49,7 +49,7 @@ export default function Header({ onNewChat, onToggleSidebar, onFeedbackOpen }: P
         {/* Hamburger — mobile only */}
         <button
           onClick={onToggleSidebar}
-          className="bounce-tap -ml-1 rounded-lg p-1.5 transition-colors hover:bg-white/5 sm:hidden"
+          className="bounce-tap -ml-1 flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-white/5 sm:hidden"
           aria-label="Toggle sidebar"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -103,7 +103,7 @@ export default function Header({ onNewChat, onToggleSidebar, onFeedbackOpen }: P
         <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenu.Trigger asChild>
             <button
-              className="bounce-tap rounded-lg p-1.5 transition-colors hover:bg-white/5 sm:hidden"
+              className="bounce-tap flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-white/5 sm:hidden"
               aria-label="More options"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: "var(--muted)" }}>

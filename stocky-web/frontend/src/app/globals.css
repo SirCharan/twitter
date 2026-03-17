@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+/* PWA native iOS feel */
+html {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+body {
+  overscroll-behavior: none;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+@media (display-mode: standalone) {
+  body {
+    /* Prevent text selection on long-press in standalone mode (feels more native) */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* Re-enable selection for actual content areas */
+  .selectable, textarea, input, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
 :root {
   --background: #0A0A0A;
   --foreground: #F5F0EB;

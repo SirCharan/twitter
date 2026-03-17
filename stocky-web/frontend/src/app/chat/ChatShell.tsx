@@ -7,6 +7,7 @@ import { useMediaQuery } from "./hooks/useMediaQuery";
 import ChatWindow from "./components/ChatWindow";
 import Sidebar from "./components/Sidebar";
 import ToastContainer from "./components/Toast";
+import InstallPrompt from "./components/InstallPrompt";
 import { ToastProvider } from "./hooks/useToast";
 import { TooltipProvider } from "./components/ui/Tooltip";
 
@@ -102,6 +103,7 @@ export default function ChatShell() {
           </div>
         </div>
         <ToastContainer />
+        <InstallPrompt />
       </ToastProvider>
     </TooltipProvider>
   );
