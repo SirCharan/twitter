@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface Props {
   data: Record<string, unknown>;
@@ -38,6 +40,8 @@ export default function ChartCard({ data }: Props) {
       <CardWrapper icon="📊">
         <TradingViewChart symbol={data.symbol as string} stock={stock} />
         <AiAnalysisSection text={aiAnalysis} />
+        <CardActions cardType="chart" cardData={data} />
+        <Disclaimer />
       </CardWrapper>
     );
   }
@@ -65,6 +69,8 @@ export default function ChartCard({ data }: Props) {
           />
         </div>
         <AiAnalysisSection text={aiAnalysis} />
+        <CardActions cardType="chart" cardData={data} />
+        <Disclaimer />
       </CardWrapper>
     );
   }
@@ -74,6 +80,8 @@ export default function ChartCard({ data }: Props) {
       <div className="text-sm" style={{ color: "var(--muted)" }}>
         Chart data unavailable.
       </div>
+      <CardActions cardType="chart" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

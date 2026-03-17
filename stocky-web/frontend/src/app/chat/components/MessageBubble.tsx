@@ -24,6 +24,11 @@ import RrgCard from "./RrgCard";
 import SuggestionCard from "./SuggestionCard";
 import AgentDebateCard from "./AgentDebateCard";
 import DebateProgressCard from "./DebateProgressCard";
+import EarningsCard from "./EarningsCard";
+import DividendsCard from "./DividendsCard";
+import SectorsCard from "./SectorsCard";
+import ValuationCard from "./ValuationCard";
+import AnnouncementsCard from "./AnnouncementsCard";
 import Confetti from "./Confetti";
 import MessageActions from "./MessageActions";
 import Avatar from "./ui/Avatar";
@@ -80,6 +85,7 @@ const FULL_WIDTH_TYPES = new Set([
   "compare", "ipo", "macro", "rrg", "portfolio", "positions",
   "holdings", "orders", "overview", "news", "suggestion",
   "agent_debate", "debate_progress",
+  "earnings", "dividends", "sectors", "valuation", "announcements",
 ]);
 
 // Types that should NOT show MessageActions
@@ -250,6 +256,21 @@ function RichContent({
       }>) || [];
       return <DebateProgressCard phases={phases} />;
     }
+
+    case "earnings":
+      return <EarningsCard data={data as Record<string, unknown>} />;
+
+    case "dividends":
+      return <DividendsCard data={data as Record<string, unknown>} />;
+
+    case "sectors":
+      return <SectorsCard data={data as Record<string, unknown>} onSend={onSend} />;
+
+    case "valuation":
+      return <ValuationCard data={data as Record<string, unknown>} />;
+
+    case "announcements":
+      return <AnnouncementsCard data={data as Record<string, unknown>} />;
 
     case "suggestion":
       return <SuggestionCard data={data as Record<string, unknown>} onSend={onSend} />;

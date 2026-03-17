@@ -24,7 +24,12 @@ export type MessageType =
   | "rrg"
   | "suggestion"
   | "agent_debate"
-  | "debate_progress";
+  | "debate_progress"
+  | "earnings"
+  | "dividends"
+  | "sectors"
+  | "valuation"
+  | "announcements";
 
 export interface ChatMessage {
   id: string;

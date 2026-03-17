@@ -13,7 +13,7 @@ const DEPTH = {
 interface CardWrapperProps extends Omit<HTMLMotionProps<"div">, "title"> {
   children: ReactNode;
   depth?: keyof typeof DEPTH;
-  icon?: string;
+  icon?: ReactNode;
   title?: string;
   badge?: ReactNode;
   glow?: boolean;

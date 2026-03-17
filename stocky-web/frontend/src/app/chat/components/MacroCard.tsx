@@ -3,6 +3,8 @@ import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
 import AnimatedNumber from "./ui/AnimatedNumber";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface PricePoint {
   price: number;
@@ -206,6 +208,8 @@ export default function MacroCard({ data }: Props) {
           </div>
         </div>
       )}
+      <CardActions cardType="macro" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

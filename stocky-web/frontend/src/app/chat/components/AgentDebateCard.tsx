@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface AgentSection {
   agent: string;
@@ -291,6 +293,8 @@ export default function AgentDebateCard({ data }: Props) {
           </div>
         )}
       </div>
+      <CardActions cardType="agent_debate" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

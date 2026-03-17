@@ -36,7 +36,7 @@ const ANALYSE_MODES = [
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 
 // Feature keywords that return card-type responses (show skeleton instead of typing indicator)
-const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's)\b/i;
+const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's|earnings?|dividends?|sectors?|valuation|announcements?)\b/i;
 
 /** Infer the skeleton type from user message content */
 function inferSkeletonType(text: string): string | undefined {
@@ -48,6 +48,11 @@ function inferSkeletonType(text: string): string | undefined {
   if (/\bchart\b/.test(t)) return "chart";
   if (/\bmacro\b/.test(t)) return "macro";
   if (/\bportfolio\b/.test(t)) return "portfolio";
+  if (/\bearnings?\b/.test(t)) return "earnings";
+  if (/\bdividends?\b/.test(t)) return "dividends";
+  if (/\bsectors?\b/.test(t)) return "sectors";
+  if (/\bvaluation\b/.test(t)) return "valuation";
+  if (/\bannouncements?\b/.test(t)) return "announcements";
   return undefined;
 }
 
@@ -59,6 +64,11 @@ const FEATURE_TOOLTIPS: Partial<Record<FeatureId, string>> = {
   ipo: "Upcoming IPOs, subscriptions & listing returns",
   macro: "RBI rates, inflation, forex, crude & FII/DII flows",
   rrg: "Sector rotation analysis relative to Nifty 50",
+  sectors: "Sector-wise performance across 1D, 1W, 1M timeframes",
+  valuation: "Market PE/PB and most/least expensive Nifty stocks",
+  earnings: "Upcoming earnings dates and EPS surprise history",
+  dividends: "Dividend history, yields, and sustainability scores",
+  announcements: "Latest corporate actions and announcements",
 };
 
 /** Compose the chat message for each feature */
@@ -96,6 +106,16 @@ function composeFeatureMessage(feature: FeatureId, params: Record<string, string
       return "rrg";
     case "summarise":
       return `summarise this:\n\n${params.text}`;
+    case "earnings":
+      return params.stock ? `earnings for ${params.stock}` : "earnings calendar";
+    case "dividends":
+      return params.stock ? `dividends for ${params.stock}` : "dividends";
+    case "sectors":
+      return "sector performance";
+    case "valuation":
+      return "market valuation";
+    case "announcements":
+      return "corporate announcements";
   }
 }
 
@@ -227,7 +247,7 @@ export default function ChatWindow({
     setAnalyseNote("");
   }
 
-  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg"]);
+  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg", "sectors", "valuation", "announcements"]);
 
   function handleFeatureSelect(id: FeatureId | null) {
     if (!id) {

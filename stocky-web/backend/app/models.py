@@ -78,3 +78,17 @@ class AnalyticsEvent(BaseModel):
 
 class AnalyticsBatchRequest(BaseModel):
     events: list[AnalyticsEvent]
+
+
+class WatchlistAddRequest(BaseModel):
+    symbol: str
+
+
+class ExportPdfRequest(BaseModel):
+    card_type: str
+    data: dict
+
+
+class ShareRequest(BaseModel):
+    card_type: str
+    data: dict

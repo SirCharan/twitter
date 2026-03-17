@@ -4,6 +4,8 @@ import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
 import AnimatedNumber from "./ui/AnimatedNumber";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 function fmt(v: number | null | undefined) {
   if (v == null) return "—";
@@ -260,6 +262,8 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         </div>
       )}
     </div>
+      <CardActions cardType="overview" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

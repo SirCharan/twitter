@@ -222,6 +222,36 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if re.search(r"\b(rrg|relative rotation|sector rotation)\b", lower):
         return "rrg", []
 
+    # Earnings
+    if re.match(r"^(earnings?|earnings calendar|upcoming earnings)\s*$", lower):
+        return "earnings", []
+    m = re.match(r"(?:earnings?|earnings calendar)\s+(?:of\s+|for\s+)?(.+)\s*$", lower)
+    if m:
+        return "earnings", [m.group(1).strip().upper()]
+
+    # Dividends
+    if re.match(r"^(dividends?|dividend history|high yield|dividend stocks?)\s*$", lower):
+        return "dividends", []
+    m = re.match(r"(?:dividends?|dividend history)\s+(?:of\s+|for\s+)?(.+)\s*$", lower)
+    if m:
+        return "dividends", [m.group(1).strip().upper()]
+
+    # Sectors
+    if re.match(r"^(sectors?|sector performance|sectoral|sector analysis)\s*$", lower):
+        return "sectors", []
+
+    # Valuation
+    if re.match(r"^(valuation|market valuation|nifty valuation|pe ratio|nifty pe)\s*$", lower):
+        return "valuation", []
+
+    # Announcements
+    if re.match(r"^(announcements?|corporate announcements?|filings?|corporate actions?)\s*$", lower):
+        return "announcements", []
+
+    # Watchlist
+    if re.match(r"^(watchlist|my watchlist|show watchlist)\s*$", lower):
+        return "watchlist", []
+
     return None
 
 
@@ -532,5 +562,39 @@ async def _dispatch(
         prompt = SUMMARISE_PROMPT.format(text=text[:3000])
         summary = await ai_client.feature_analysis(prompt, max_tokens=512)
         return {"type": "text", "content": summary or "Could not summarise."}
+
+    if intent == "earnings":
+        from app.handlers.earnings import get_earnings
+        symbol = args[0] if args else None
+        data = await get_earnings(symbol)
+        return {"type": "earnings", "content": "Earnings Calendar", "data": data}
+
+    if intent == "dividends":
+        from app.handlers.dividends import get_dividends
+        symbol = args[0] if args else None
+        data = await get_dividends(symbol)
+        return {"type": "dividends", "content": "Dividend Tracker", "data": data}
+
+    if intent == "sectors":
+        from app.handlers.sectors import get_sectors
+        data = await get_sectors()
+        return {"type": "sectors", "content": "Sector Performance", "data": data}
+
+    if intent == "valuation":
+        from app.handlers.valuation import get_valuation
+        data = await get_valuation()
+        return {"type": "valuation", "content": "Market Valuation", "data": data}
+
+    if intent == "announcements":
+        from app.handlers.announcements import get_announcements
+        data = await get_announcements()
+        return {"type": "announcements", "content": "Corporate Announcements", "data": data}
+
+    if intent == "watchlist":
+        from app.handlers.watchlist import list_watchlist
+        data = await list_watchlist()
+        count = data.get("count", 0)
+        content = f"{count} stock(s) in watchlist" if count else "Watchlist is empty."
+        return {"type": "text", "content": content, "data": data}
 
     return {"type": "text", "content": f"Unknown command: {intent}"}

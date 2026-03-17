@@ -3,6 +3,8 @@ import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
 import AnimatedNumber from "./ui/AnimatedNumber";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface StockCompare {
   name: string;
@@ -195,6 +197,8 @@ export default function CompareCard({ data }: Props) {
           </div>
         </div>
       )}
+      <CardActions cardType="compare" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

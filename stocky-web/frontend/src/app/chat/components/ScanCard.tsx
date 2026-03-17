@@ -3,6 +3,8 @@ import { useState } from "react";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface ScanResult {
   symbol: string;
@@ -203,6 +205,8 @@ export default function ScanCard({ data }: Props) {
           </div>
         </div>
       )}
+      <CardActions cardType="scan" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

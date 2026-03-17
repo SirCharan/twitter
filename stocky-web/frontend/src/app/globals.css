@@ -291,6 +291,19 @@ body {
   border-radius: 1px;
 }
 
+/* ─── Terminal glitch (TerminalLoadingScreen) ─── */
+@keyframes termGlitch {
+  0%   { transform: translateX(0) skewX(0deg); }
+  20%  { transform: translateX(2px) skewX(0.5deg); }
+  40%  { transform: translateX(-2px) skewX(-0.5deg); }
+  60%  { transform: translateX(1px) skewX(0.3deg); }
+  80%  { transform: translateX(0) skewX(0deg); }
+  100% { transform: translateX(0) skewX(0deg); }
+}
+.glitch {
+  animation: termGlitch 90ms linear;
+}
+
 /* ─── Breathe (logo pulse) ─── */
 @keyframes breathe {
   0%, 100% { transform: scale(1); opacity: 0.85; }

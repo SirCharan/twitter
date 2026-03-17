@@ -3,6 +3,8 @@ import { useState } from "react";
 import AnalysisCard from "./AnalysisCard";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface Props {
   data: Record<string, unknown>;
@@ -84,6 +86,8 @@ export default function DeepResearchCard({ data }: Props) {
           )}
         </div>
       )}
+      <CardActions cardType="deep_research" cardData={data} ticker={data.symbol as string | undefined} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

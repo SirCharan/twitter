@@ -3,6 +3,8 @@ import type { PortfolioData } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 function formatINR(v: number) {
   return "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -298,6 +300,8 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
         </div>
       )}
     </div>
+      <CardActions cardType="portfolio" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

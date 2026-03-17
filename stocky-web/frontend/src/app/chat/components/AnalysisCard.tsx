@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import type { AnalysisData } from "@/lib/types";
 import CardWrapper from "./ui/CardWrapper";
 import AnimatedNumber from "./ui/AnimatedNumber";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
   const pct = (score / max) * 100;
@@ -323,6 +325,8 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
         </motion.div>
       )}
     </div>
+      <CardActions cardType="analysis" cardData={data} ticker={d.symbol as string} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

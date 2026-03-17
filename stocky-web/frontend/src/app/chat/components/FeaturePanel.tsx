@@ -23,6 +23,11 @@ const FEATURE_META: Record<FeatureId, { icon: string; label: string }> = {
   macro:           { icon: "🌐", label: "Macro View" },
   rrg:             { icon: "🔄", label: "Sector Rotation (RRG)" },
   summarise:       { icon: "✦",  label: "Summarise" },
+  earnings:        { icon: "📅", label: "Earnings Calendar" },
+  dividends:       { icon: "💰", label: "Dividend Tracker" },
+  sectors:         { icon: "🏭", label: "Sector Performance" },
+  valuation:       { icon: "📊", label: "Market Valuation" },
+  announcements:   { icon: "📢", label: "Corporate Announcements" },
 };
 
 function Chip({
@@ -254,6 +259,28 @@ function SummarisePanel({ onSubmit }: { onSubmit: (p: Record<string, string>) =>
   );
 }
 
+function OptionalStockPanel({
+  description, placeholder, btnLabel, onSubmit,
+}: {
+  description: string;
+  placeholder: string;
+  btnLabel: string;
+  onSubmit: (stock: string) => void;
+}) {
+  const [stock, setStock] = useState("");
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { ref.current?.focus(); }, []);
+  return (
+    <>
+      <p className="mb-3 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+        {description}
+      </p>
+      <StockInput value={stock} onChange={setStock} placeholder={placeholder} inputRef={ref} />
+      <SubmitBtn label={btnLabel} disabled={false} onClick={() => onSubmit(stock.trim())} />
+    </>
+  );
+}
+
 /* ────────────────────────────────────────────────── */
 /* Main FeaturePanel component                        */
 /* ────────────────────────────────────────────────── */
@@ -294,6 +321,29 @@ export default function FeaturePanel({ feature, onClose, onFeatureSend }: Props)
         />
       );
       case "summarise":     return <SummarisePanel onSubmit={submit} />;
+      case "earnings":      return <OptionalStockPanel description="View upcoming earnings dates and EPS surprise history for Nifty-50 stocks." placeholder="Leave empty for Nifty-50 upcoming..." btnLabel="Load Earnings →" onSubmit={(stock) => submit(stock ? { stock } : {})} />;
+      case "dividends":     return <OptionalStockPanel description="View dividend history, yields, and sustainability scores." placeholder="Leave empty for top dividend yielders..." btnLabel="Load Dividends →" onSubmit={(stock) => submit(stock ? { stock } : {})} />;
+      case "sectors":       return (
+        <SimplePanel
+          description="View sector-wise performance across 1-day, 1-week, and 1-month timeframes for all NSE sectors."
+          btnLabel="Load Sectors →"
+          onSubmit={() => submit({})}
+        />
+      );
+      case "valuation":     return (
+        <SimplePanel
+          description="View market-wide valuation metrics — PE, PB, and the most/least expensive Nifty-50 stocks."
+          btnLabel="Load Valuation →"
+          onSubmit={() => submit({})}
+        />
+      );
+      case "announcements": return (
+        <SimplePanel
+          description="Latest corporate announcements — earnings results, dividends, bonuses, splits, board meetings."
+          btnLabel="Load Announcements →"
+          onSubmit={() => submit({})}
+        />
+      );
     }
   }
 

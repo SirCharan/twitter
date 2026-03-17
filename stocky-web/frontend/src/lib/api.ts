@@ -194,6 +194,71 @@ export async function getAnalyticsDashboard(days: number = 30): Promise<Analytic
   return apiFetch<AnalyticsDashboard>(`/api/analytics/dashboard?days=${days}`);
 }
 
+// --- New Feature APIs ---
+
+export async function getEarnings(stock?: string) {
+  const params = stock ? `?stock=${encodeURIComponent(stock)}` : "";
+  return apiFetch<{ type: string; data: Record<string, unknown> }>(`/api/earnings${params}`);
+}
+
+export async function getDividends(stock?: string) {
+  const params = stock ? `?stock=${encodeURIComponent(stock)}` : "";
+  return apiFetch<{ type: string; data: Record<string, unknown> }>(`/api/dividends${params}`);
+}
+
+export async function getSectors() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/sectors");
+}
+
+export async function getValuation() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/valuation");
+}
+
+export async function getAnnouncements() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/announcements");
+}
+
+// --- Watchlist ---
+
+export async function saveToWatchlist(symbol: string) {
+  return apiFetch("/api/watchlist", {
+    method: "POST",
+    body: JSON.stringify({ symbol }),
+  });
+}
+
+export async function getWatchlist() {
+  return apiFetch<{ watchlist: { symbol: string; price?: number; change_pct?: number; added_at: string }[]; count: number }>("/api/watchlist");
+}
+
+export async function removeFromWatchlist(symbol: string) {
+  return apiFetch(`/api/watchlist/${encodeURIComponent(symbol)}`, { method: "DELETE" });
+}
+
+// --- Export PDF ---
+
+export async function exportPdf(cardType: string, data: Record<string, unknown>): Promise<Blob> {
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_URL}/api/export/pdf`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ card_type: cardType, data }),
+  });
+  if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+  return res.blob();
+}
+
+// --- Share ---
+
+export async function shareCard(cardType: string, data: Record<string, unknown>): Promise<{ id: string; url: string }> {
+  return apiFetch("/api/share", {
+    method: "POST",
+    body: JSON.stringify({ card_type: cardType, data }),
+  });
+}
+
 /** Stream general deep research (agent debate) via SSE. */
 export async function streamDeepResearchGeneral(query: string): Promise<Response> {
   const token = getToken();

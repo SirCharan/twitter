@@ -193,6 +193,44 @@ function SkeletonPortfolio() {
 
 /* ─── Type-aware skeleton selector ─── */
 
+function SkeletonTable() {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="skeleton h-6 w-6 rounded-full" />
+        <SkeletonLine width="140px" />
+      </div>
+      <div className="space-y-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex gap-4 px-2">
+            {["35%", "15%", "15%", "15%"].map((w, j) => <SkeletonLine key={j} width={w} />)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonTimeline() {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="skeleton h-6 w-6 rounded-full" />
+        <SkeletonLine width="180px" />
+      </div>
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex gap-3 rounded-lg border p-3" style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}>
+          <div className="skeleton h-3 w-3 rounded-full mt-0.5 shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <SkeletonLine width="70%" />
+            <SkeletonLine width="40%" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const SKELETON_MAP: Record<string, () => React.JSX.Element> = {
   analysis: SkeletonAnalysis,
   overview: SkeletonOverview,
@@ -201,6 +239,11 @@ const SKELETON_MAP: Record<string, () => React.JSX.Element> = {
   chart: SkeletonChart,
   macro: SkeletonMacro,
   portfolio: SkeletonPortfolio,
+  earnings: SkeletonTable,
+  dividends: SkeletonTable,
+  sectors: SkeletonTable,
+  valuation: SkeletonTable,
+  announcements: SkeletonTimeline,
 };
 
 export function SkeletonFor({ type }: { type?: string }) {

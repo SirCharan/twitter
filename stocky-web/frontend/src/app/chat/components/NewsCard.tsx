@@ -4,6 +4,8 @@ import type { NewsArticle } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Indian: "#22c55e",
@@ -168,6 +170,8 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
           </div>
         </div>
       )}
+      <CardActions cardType="news" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

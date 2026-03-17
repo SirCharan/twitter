@@ -182,6 +182,12 @@ INTENT_PROMPT = (
     "- overview: args=[] (market overview — indices, gainers, losers, breadth)\n"
     "- alerts: args=[]\n"
     "- sl: args=[symbol, qty, trigger, limit?]\n"
+    "- earnings: args=[symbol?] (upcoming earnings, earnings calendar)\n"
+    "- dividends: args=[symbol?] (dividend history, high yield stocks)\n"
+    "- sectors: args=[] (sector performance, sectoral analysis)\n"
+    "- valuation: args=[] (market PE, PB, valuation metrics)\n"
+    "- announcements: args=[] (corporate announcements, filings)\n"
+    "- watchlist: args=[] (show my watchlist)\n"
     "- login, status, help, usage: args=[]\n"
     "- chat: for EVERYTHING else — greetings, general knowledge questions, opinions, "
     "advice, coding help, math, science, current affairs, or any non-trading question. "
@@ -538,6 +544,50 @@ async def triad_call(
         return response.choices[0].message.content
     except Exception as e:
         logger.error(f"Triad {agent} error: {e}")
+        raise
+
+
+# ---------------------------------------------------------------------------
+# Crew Deep Research calls — cycle through 3 API keys
+# ---------------------------------------------------------------------------
+
+_CREW_KEY_CYCLE = {
+    "planner": "aris",
+    "fundamental": "aris",
+    "sector_macro": "silas",
+    "news_sentiment": "nexus",
+    "critic": "aris",
+    "synthesizer": "silas",
+}
+
+
+async def crew_call(
+    agent: str,
+    user_message: str,
+    system_prompt: str,
+    max_tokens: int = 2048,
+) -> str | None:
+    """Call a Crew agent using a dedicated Groq client (cycled by role)."""
+    triad_agent = _CREW_KEY_CYCLE.get(agent, "aris")
+    client = _get_triad_client(triad_agent)
+    if not client:
+        return None
+
+    try:
+        response = await client.chat.completions.create(
+            model=GROQ_TRIAD_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.7,
+            max_tokens=max_tokens,
+        )
+        tokens = response.usage.total_tokens if response.usage else 0
+        await log_api_call("groq", f"crew_{agent}", tokens)
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Crew {agent} error: {e}")
         raise
 
 

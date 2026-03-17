@@ -1,6 +1,13 @@
 "use client";
+import { type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
+import {
+  TrendingUp, Newspaper, Briefcase, Search,
+  Microscope, BarChart3, LineChart, Scale,
+  Rocket, Globe, RefreshCw, Sparkles,
+  Calendar, Coins, Factory, Gauge, Megaphone,
+} from "lucide-react";
 
 export type FeatureId =
   | "market_overview"
@@ -14,39 +21,54 @@ export type FeatureId =
   | "ipo"
   | "macro"
   | "rrg"
-  | "summarise";
+  | "summarise"
+  | "earnings"
+  | "dividends"
+  | "sectors"
+  | "valuation"
+  | "announcements";
 
-export const CATEGORIES: { label: string; features: { id: FeatureId; icon: string; label: string }[] }[] = [
+export const CATEGORIES: { label: string; features: { id: FeatureId; icon: ReactNode; label: string }[] }[] = [
   {
     label: "Quick",
     features: [
-      { id: "market_overview", icon: "📈", label: "Market Overview" },
-      { id: "market_news",     icon: "📰", label: "News" },
-      { id: "portfolio",       icon: "💼", label: "Portfolio" },
-      { id: "analyse",         icon: "🔍", label: "Analyse" },
+      { id: "market_overview", icon: <TrendingUp size={12} />, label: "Market Overview" },
+      { id: "market_news",     icon: <Newspaper size={12} />,  label: "News" },
+      { id: "portfolio",       icon: <Briefcase size={12} />,  label: "Portfolio" },
+      { id: "analyse",         icon: <Search size={12} />,     label: "Analyse" },
     ],
   },
   {
     label: "Research",
     features: [
-      { id: "deep_research", icon: "🔬", label: "Deep Research" },
-      { id: "scan",          icon: "📊", label: "Scan" },
-      { id: "chart",         icon: "📈", label: "Chart" },
-      { id: "compare",       icon: "⚖",  label: "Compare" },
+      { id: "deep_research", icon: <Microscope size={12} />, label: "Deep Research" },
+      { id: "scan",          icon: <BarChart3 size={12} />,  label: "Scan" },
+      { id: "chart",         icon: <LineChart size={12} />,  label: "Chart" },
+      { id: "compare",       icon: <Scale size={12} />,      label: "Compare" },
     ],
   },
   {
     label: "Markets",
     features: [
-      { id: "ipo",   icon: "🚀", label: "IPO" },
-      { id: "macro", icon: "🌐", label: "Macro" },
-      { id: "rrg",   icon: "🔄", label: "RRG" },
+      { id: "ipo",       icon: <Rocket size={12} />,    label: "IPO" },
+      { id: "macro",     icon: <Globe size={12} />,     label: "Macro" },
+      { id: "rrg",       icon: <RefreshCw size={12} />, label: "RRG" },
+      { id: "sectors",   icon: <Factory size={12} />,   label: "Sectors" },
+      { id: "valuation", icon: <Gauge size={12} />,     label: "Valuation" },
+    ],
+  },
+  {
+    label: "Data",
+    features: [
+      { id: "earnings",      icon: <Calendar size={12} />,  label: "Earnings" },
+      { id: "dividends",     icon: <Coins size={12} />,     label: "Dividends" },
+      { id: "announcements", icon: <Megaphone size={12} />, label: "Announcements" },
     ],
   },
   {
     label: "Tools",
     features: [
-      { id: "summarise", icon: "✦", label: "Summarise" },
+      { id: "summarise", icon: <Sparkles size={12} />, label: "Summarise" },
     ],
   },
 ];
@@ -64,7 +86,7 @@ interface Props {
 function FeatureChip({
   f, isActive, disabled, onSelect,
 }: {
-  f: { id: FeatureId; icon: string; label: string };
+  f: { id: FeatureId; icon: ReactNode; label: string };
   isActive: boolean;
   disabled?: boolean;
   onSelect: (id: FeatureId | null) => void;
@@ -87,7 +109,7 @@ function FeatureChip({
         boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
       }}
     >
-      <span style={{ fontSize: 12 }}>{f.icon}</span>
+      <span className="flex items-center" style={{ fontSize: 12 }}>{f.icon}</span>
       {f.label}
     </motion.button>
   );

@@ -2,6 +2,8 @@
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import Disclaimer from "./ui/Disclaimer";
+import CardActions from "./ui/CardActions";
 
 interface TailPoint {
   rs_ratio: number;
@@ -261,6 +263,8 @@ export default function RrgCard({ data }: Props) {
           As of {asOf} | Benchmark: {benchmark}
         </p>
       )}
+      <CardActions cardType="rrg" cardData={data} />
+      <Disclaimer />
     </CardWrapper>
   );
 }

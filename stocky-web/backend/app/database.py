@@ -101,6 +101,20 @@ async def init_db():
 
             CREATE INDEX IF NOT EXISTS idx_analytics_ts ON analytics_events(ts);
             CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics_events(event_type);
+
+            CREATE TABLE IF NOT EXISTS watchlist (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL UNIQUE,
+                added_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_watchlist_symbol ON watchlist(symbol);
+
+            CREATE TABLE IF NOT EXISTS shared_snapshots (
+                id TEXT PRIMARY KEY,
+                card_type TEXT NOT NULL,
+                card_data TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
         """)
         await db.commit()
 
@@ -393,6 +407,58 @@ async def get_api_totals() -> tuple[int, int]:
         cursor = await db.execute("SELECT COUNT(*) FROM api_call_log")
         alltime = (await cursor.fetchone())[0]
         return today, alltime
+
+
+# --- Watchlist ---
+
+async def add_to_watchlist(symbol: str) -> int:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "INSERT OR IGNORE INTO watchlist (symbol) VALUES (?)", (symbol.upper(),)
+        )
+        await db.commit()
+        return cursor.lastrowid
+
+
+async def get_watchlist() -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT * FROM watchlist ORDER BY added_at DESC")
+        return [dict(r) for r in await cursor.fetchall()]
+
+
+async def remove_from_watchlist(symbol: str) -> bool:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "DELETE FROM watchlist WHERE symbol = ?", (symbol.upper(),)
+        )
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+# --- Shared Snapshots ---
+
+async def save_snapshot(snapshot_id: str, card_type: str, card_data: dict):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO shared_snapshots (id, card_type, card_data) VALUES (?, ?, ?)",
+            (snapshot_id, card_type, json.dumps(card_data)),
+        )
+        await db.commit()
+
+
+async def get_snapshot(snapshot_id: str) -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM shared_snapshots WHERE id = ?", (snapshot_id,)
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        d["card_data"] = json.loads(d["card_data"])
+        return d
 
 
 async def get_ai_token_totals() -> tuple[int, int]:

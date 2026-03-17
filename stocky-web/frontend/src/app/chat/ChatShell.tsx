@@ -6,7 +6,8 @@ import { useConversations } from "./hooks/useConversations";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 import ChatWindow from "./components/ChatWindow";
 import Sidebar from "./components/Sidebar";
-import InstallPrompt from "./components/InstallPrompt";
+import { PWAProvider } from "./components/PWAProvider";
+import TerminalLoadingScreen from "./components/TerminalLoadingScreen";
 import { TooltipProvider } from "./components/ui/Tooltip";
 import { Toaster } from "sonner";
 
@@ -15,6 +16,7 @@ export default function ChatShell() {
   const { conversations, refresh, deleteConversation } = useConversations();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [booting, setBooting] = useState(true);
 
   // On desktop, sidebar is always visible when open
   // On mobile, sidebar is an overlay
@@ -48,7 +50,15 @@ export default function ChatShell() {
   }, [sidebarOpen, refresh]);
 
   return (
+    <PWAProvider>
     <TooltipProvider>
+      <AnimatePresence>
+        {booting && (
+          <TerminalLoadingScreen
+            onComplete={() => setBooting(false)}
+          />
+        )}
+      </AnimatePresence>
         <div className="flex h-dvh overflow-hidden" style={{ height: "100dvh" }}>
           {/* Sidebar */}
           <AnimatePresence>
@@ -101,7 +111,6 @@ export default function ChatShell() {
             />
           </div>
         </div>
-        <InstallPrompt />
         <Toaster
           theme="dark"
           position="top-right"
@@ -116,5 +125,6 @@ export default function ChatShell() {
           richColors
         />
     </TooltipProvider>
+    </PWAProvider>
   );
 }
