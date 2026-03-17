@@ -15,5 +15,5 @@ nsetools==2.0.1
 numpy==2.2.0
 matplotlib==3.10.0
 httpx==0.28.1
-fpdf2==2.8.0
+fpdf2==2.8.1
 beautifulsoup4==4.12.3
