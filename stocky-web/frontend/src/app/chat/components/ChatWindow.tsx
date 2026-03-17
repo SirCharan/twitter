@@ -11,6 +11,8 @@ import FeatureBar, { type FeatureId, CATEGORIES } from "./FeatureBar";
 import FeaturePanel from "./FeaturePanel";
 import FeedbackModal from "./FeedbackModal";
 import Header from "./Header";
+import SuggestionChips from "./SuggestionChips";
+import CommandPalette from "./CommandPalette";
 
 interface Props {
   messages: ChatMessage[];
@@ -21,6 +23,7 @@ interface Props {
   onDeepResearch?: (stock: string, mode: string) => void;
   onGeneralDeepResearch?: (query: string) => void;
   onToggleSidebar?: () => void;
+  onRemoveLastAssistant?: () => void;
 }
 
 const ANALYSE_MODES = [
@@ -121,6 +124,7 @@ export default function ChatWindow({
   onDeepResearch,
   onGeneralDeepResearch,
   onToggleSidebar,
+  onRemoveLastAssistant,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -139,12 +143,23 @@ export default function ChatWindow({
   const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
   const [featureBarVisible, setFeatureBarVisible] = useState(true);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
 
   // Scroll-to-bottom FAB
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const lastMsg = messages[messages.length - 1];
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+  const lastAssistantIdx = messages.map((m) => m.role).lastIndexOf("assistant");
+
+  const handleRegenerate = useCallback(() => {
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUser && onRemoveLastAssistant) {
+      onRemoveLastAssistant();
+      handleSend(lastUser.content);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, onRemoveLastAssistant]);
 
   // Should we show skeleton (card loading) vs typing indicator?
   // Don't show any loading indicator when debate_progress or progress cards are already rendering
@@ -165,6 +180,20 @@ export default function ChatWindow({
       setFeatureBarVisible(true);
     }
   }, [lastMsg?.role, isLoading]);
+
+  // Cmd+K to open command palette
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setCmdOpen((prev) => !prev); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  function handleCmdAction(id: string) {
+    if (id === "new_chat") { onNewChat(); return; }
+    handleFeatureSelect(id as FeatureId);
+  }
 
   // Track scroll position for FAB
   const handleScroll = useCallback(() => {
@@ -249,6 +278,20 @@ export default function ChatWindow({
         onFeedbackOpen={() => setFeedbackOpen(true)}
       />
 
+      {/* Top-bar progress strip */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            className="progress-strip h-[2px] w-full"
+            initial={{ scaleX: 0, transformOrigin: "left" }}
+            animate={{ scaleX: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: chatMode === "deep" ? 18 : 6, ease: "easeInOut" }}
+            style={{ background: "linear-gradient(90deg, var(--accent), var(--positive))" }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Messages */}
       <div
         ref={scrollRef}
@@ -261,11 +304,14 @@ export default function ChatWindow({
       >
         {showEmpty && (
           <div className="flex h-full flex-col items-center pt-[4vh] sm:pt-0 sm:justify-center">
-            <div
+            <motion.div
+              animate={{ scale: [1, 1.15, 1], opacity: [0.03, 0.06, 0.03] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               className="pointer-events-none absolute"
               style={{
                 width: 500, height: 500,
-                background: "radial-gradient(circle, rgba(201,169,110,0.03) 0%, transparent 70%)",
+                background: "radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 70%)",
+                filter: "blur(40px)",
               }}
             />
             <div className="relative w-full max-w-lg text-center">
@@ -447,10 +493,21 @@ export default function ChatWindow({
         )}
 
         <div className="mx-auto max-w-3xl space-y-3 sm:space-y-5">
-          {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} onTradeAction={onTradeAction} onSend={handleSend} />
+          {messages.map((msg, idx) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              onTradeAction={onTradeAction}
+              onSend={handleSend}
+              onRegenerate={handleRegenerate}
+              isLastAssistant={idx === lastAssistantIdx}
+              isLoading={isLoading}
+            />
           ))}
-          {isLoading && !hasActiveProgress && (showSkeleton ? <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} /> : <TypingIndicator />)}
+          {!isLoading && lastMsg?.role === "assistant" && (
+            <SuggestionChips message={lastMsg} onSend={handleSend} />
+          )}
+          {isLoading && !hasActiveProgress && (showSkeleton ? <SkeletonFor type={lastUserMsg ? inferSkeletonType(lastUserMsg.content) : undefined} /> : <TypingIndicator mode={chatMode} />)}
           <div ref={bottomRef} />
         </div>
 
@@ -594,6 +651,7 @@ export default function ChatWindow({
       </div>
 
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} onAction={handleCmdAction} />
     </div>
   );
 }

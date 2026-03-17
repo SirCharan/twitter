@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import type { AnalysisData } from "@/lib/types";
 import CardWrapper from "./ui/CardWrapper";
+import AnimatedNumber from "./ui/AnimatedNumber";
 
 function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
   const pct = (score / max) * 100;
@@ -64,8 +65,8 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
         </div>
         <div className="text-right">
           <p className="text-xs" style={{ color: "var(--muted)" }}>Overall Score</p>
-          <p className="count-flash text-lg font-semibold" style={{ color: "var(--accent)" }}>
-            {d.overall_score.toFixed(1)}/30
+          <p className="text-lg font-semibold" style={{ color: "var(--accent)" }}>
+            <AnimatedNumber value={d.overall_score} decimals={1} suffix="/30" />
           </p>
         </div>
       </div>

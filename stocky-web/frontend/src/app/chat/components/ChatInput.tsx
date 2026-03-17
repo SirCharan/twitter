@@ -16,6 +16,8 @@ interface Props {
 export default function ChatInput({ onSend, disabled, mode, onModeChange }: Props) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [showCheck, setShowCheck] = useState(false);
+  const [rippleKey, setRippleKey] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const quickRef = useRef<HTMLButtonElement>(null);
   const deepRef = useRef<HTMLButtonElement>(null);
@@ -32,13 +34,20 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
     if (!trimmed || disabled) return;
     track("query", "chat_message", { mode, length: trimmed.length });
     setSending(true);
+    setShowCheck(true);
+    setRippleKey((k) => k + 1);
     onSend(trimmed);
     setText("");
     setTimeout(() => setSending(false), 300);
+    setTimeout(() => setShowCheck(false), 800);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSubmit();
     }
@@ -172,23 +181,54 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           onClick={handleSubmit}
           disabled={disabled || !text.trim()}
           aria-label="Send message"
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
+          className={`relative overflow-hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
             text.trim() && !disabled ? "send-ready" : ""
           }`}
           style={{ background: text.trim() ? "var(--accent)" : "var(--card-border)" }}
         >
-          <svg
-            width="16" height="16" viewBox="0 0 16 16" fill="none"
-            style={{
-              transition: "transform 0.3s ease",
-              transform: sending ? "rotate(45deg) scale(0.9)" : "rotate(0deg) scale(1)",
-            }}
-          >
-            <path
-              d="M3 13L13 8L3 3v4l6 1-6 1v4z"
-              fill={text.trim() ? "var(--background)" : "var(--muted)"}
-            />
-          </svg>
+          {/* Ripple burst on send */}
+          <AnimatePresence>
+            {rippleKey > 0 && (
+              <motion.span
+                key={rippleKey}
+                initial={{ scale: 0, opacity: 0.3 }}
+                animate={{ scale: 2.5, opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="absolute inset-0 rounded-xl"
+                style={{ background: "rgba(255,255,255,0.4)" }}
+              />
+            )}
+          </AnimatePresence>
+          {/* Icon: arrow or checkmark */}
+          <AnimatePresence mode="wait">
+            {showCheck ? (
+              <motion.svg
+                key="check"
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 45 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                width="16" height="16" viewBox="0 0 16 16" fill="none"
+              >
+                <path d="M3 8l4 4 6-7" stroke="var(--background)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </motion.svg>
+            ) : (
+              <motion.svg
+                key="arrow"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                width="16" height="16" viewBox="0 0 16 16" fill="none"
+                style={{
+                  transform: sending ? "rotate(45deg) scale(0.9)" : "rotate(0deg) scale(1)",
+                  transition: "transform 0.3s ease",
+                }}
+              >
+                <path d="M3 13L13 8L3 3v4l6 1-6 1v4z" fill={text.trim() ? "var(--background)" : "var(--muted)"} />
+              </motion.svg>
+            )}
+          </AnimatePresence>
         </motion.button>
       </div>
     </div>

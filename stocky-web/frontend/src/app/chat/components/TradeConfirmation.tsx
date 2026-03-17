@@ -1,5 +1,9 @@
+"use client";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
 import type { TradeConfirmData } from "@/lib/types";
 import { track } from "@/lib/analytics";
+import RiskGauge from "./ui/RiskGauge";
 
 interface Props {
   data: Record<string, unknown>;
@@ -11,13 +15,32 @@ export default function TradeConfirmation({ data, actionId, onAction }: Props) {
   const d = data as unknown as TradeConfirmData;
   const isBuy = d.txn_type === "BUY";
   const accentColor = isBuy ? "var(--positive)" : "var(--negative)";
-  const accentBg = isBuy ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)";
+  const accentBg = isBuy ? "rgba(0,255,170,0.08)" : "rgba(255,59,92,0.08)";
   const estValue = d.price && d.qty ? d.price * d.qty : null;
 
+  const riskScore = !estValue ? 25
+    : estValue < 10_000 ? 20
+    : estValue < 50_000 ? 45
+    : estValue < 200_000 ? 70
+    : 90;
+
+  // Keyboard shortcuts: Enter to confirm, Escape to cancel
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onAction(actionId, "confirm"); }
+      if (e.key === "Escape") onAction(actionId, "cancel");
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [actionId, onAction]);
+
   return (
-    <div
+    <motion.div
       role="alertdialog"
       aria-label={`Confirm ${d.txn_type} order for ${d.symbol}`}
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 350, damping: 28 }}
       className="rounded-xl border overflow-hidden"
       style={{ borderColor: accentColor, background: "var(--surface)" }}
     >
@@ -74,33 +97,45 @@ export default function TradeConfirmation({ data, actionId, onAction }: Props) {
               : "Market"}
           </p>
         </div>
-        {estValue && (
-          <div className="col-span-2">
-            <p className="text-[11px] mb-0.5" style={{ color: "var(--muted)" }}>Est. Value</p>
-            <p className="text-sm font-semibold" style={{ color: accentColor }}>
-              ₹{estValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Buttons — stacked, confirm full-width */}
-      <div className="flex flex-col gap-2 px-4 pb-4">
+      {/* Est. Value — prominent row */}
+      {estValue && (
+        <div className="mx-4 mb-3 rounded-xl px-3 py-2.5" style={{ background: "var(--card-bg)" }}>
+          <p className="text-[11px] mb-0.5" style={{ color: "var(--muted)" }}>Estimated Value</p>
+          <p className="text-xl font-bold" style={{ color: accentColor }}>
+            ₹{estValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      )}
+
+      {/* Risk gauge */}
+      <RiskGauge value={riskScore} />
+
+      {/* Buttons */}
+      <div className="flex flex-col gap-2 px-4 pb-3">
         <button
           onClick={() => { track("trade_action", "trade_confirm", { action_id: actionId, symbol: d.symbol }); onAction(actionId, "confirm"); }}
-          className="w-full rounded-xl py-2.5 text-sm font-semibold tracking-wide transition-all hover:opacity-90"
+          className="confirm-pulse w-full rounded-xl py-2.5 text-sm font-semibold tracking-wide transition-all hover:opacity-90 flex items-center justify-center gap-2"
           style={{ background: accentColor, color: "#0A0A0A" }}
         >
           Confirm {d.txn_type}
+          <kbd className="kbd text-[10px]">Enter</kbd>
         </button>
         <button
           onClick={() => { track("trade_action", "trade_cancel", { action_id: actionId, symbol: d.symbol }); onAction(actionId, "cancel"); }}
-          className="w-full rounded-xl border py-2 text-xs font-medium tracking-wide transition-all hover:opacity-80"
+          className="w-full rounded-xl border py-2 text-xs font-medium tracking-wide transition-all hover:opacity-80 flex items-center justify-center gap-2"
           style={{ borderColor: "var(--card-border)", color: "var(--muted)", background: "transparent" }}
         >
           Cancel
+          <kbd className="kbd text-[10px]">Esc</kbd>
         </button>
       </div>
-    </div>
+
+      {/* Disclaimer */}
+      <p className="px-4 pb-3 text-[10px] text-center" style={{ color: "var(--muted)", opacity: 0.5 }}>
+        This will execute a live order on your Zerodha account
+      </p>
+    </motion.div>
   );
 }

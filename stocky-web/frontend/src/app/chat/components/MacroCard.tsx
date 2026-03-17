@@ -2,6 +2,7 @@
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import AnimatedNumber from "./ui/AnimatedNumber";
 
 interface PricePoint {
   price: number;
@@ -38,8 +39,10 @@ function MacroTile({
         {icon && <span className="text-[11px]">{icon}</span>}
         <p className="text-[10px] font-medium" style={{ color: "var(--muted)" }}>{label}</p>
       </div>
-      <p className="text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
-        {unit}{typeof value === "number" ? value.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : value}
+      <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+        {typeof value === "number"
+          ? <AnimatedNumber value={value} prefix={unit} decimals={2} locale="en-IN" />
+          : `${unit ?? ""}${value}`}
       </p>
       {changePct != null && (
         <p

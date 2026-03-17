@@ -3,6 +3,7 @@ import type { OverviewData } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import AnimatedNumber from "./ui/AnimatedNumber";
 
 function fmt(v: number | null | undefined) {
   if (v == null) return "—";
@@ -77,8 +78,8 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="count-flash text-sm font-semibold tabular-nums" style={{ color: vixColor! }}>
-              {pct(vix.value)}
+            <span className="text-sm font-semibold" style={{ color: vixColor! }}>
+              {vix.value != null ? <AnimatedNumber value={vix.value} decimals={2} /> : "—"}
             </span>
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-medium"
@@ -109,7 +110,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
                   {idx.name}
                 </p>
                 <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-                  {fmt(idx.value)}
+                  {idx.value != null ? <AnimatedNumber value={idx.value} decimals={2} locale="en-IN" /> : "—"}
                 </p>
                 <p className="text-xs font-medium mt-0.5" style={{ color }}>
                   {isPos ? "+" : ""}{fmt(idx.change)} ({isPos ? "+" : ""}{pct(idx.pct_change)}%)

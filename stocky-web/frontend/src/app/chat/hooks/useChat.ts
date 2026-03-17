@@ -421,6 +421,14 @@ export function useChat() {
     setConversationId(null);
   }, []);
 
+  const removeLastAssistant = useCallback(() => {
+    setMessages((prev) => {
+      const idx = [...prev].reverse().findIndex((m) => m.role === "assistant");
+      if (idx === -1) return prev;
+      return prev.filter((_, i) => i !== prev.length - 1 - idx);
+    });
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -431,5 +439,6 @@ export function useChat() {
     handleTradeAction,
     loadConversation,
     newChat,
+    removeLastAssistant,
   };
 }

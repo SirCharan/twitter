@@ -97,6 +97,7 @@ export default function ChatShell() {
               onDeepResearch={chat.streamDeepResearch}
               onGeneralDeepResearch={chat.streamGeneralDeepResearch}
               onToggleSidebar={toggleSidebar}
+              onRemoveLastAssistant={chat.removeLastAssistant}
             />
           </div>
         </div>

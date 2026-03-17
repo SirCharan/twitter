@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import type { ChatMessage } from "@/lib/types";
 import ErrorBoundary from "./ErrorBoundary";
 import MarkdownRich from "./MarkdownRich";
@@ -24,11 +25,53 @@ import SuggestionCard from "./SuggestionCard";
 import AgentDebateCard from "./AgentDebateCard";
 import DebateProgressCard from "./DebateProgressCard";
 import Confetti from "./Confetti";
+import MessageActions from "./MessageActions";
+import Avatar from "./ui/Avatar";
 
 interface Props {
   message: ChatMessage;
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
   onSend: (text: string) => void;
+  onRegenerate: () => void;
+  isLastAssistant: boolean;
+  isLoading: boolean;
+}
+
+const TYPEWRITER_MAX = 2000;
+
+function TypewriterText({ text }: { text: string }) {
+  const hasAnimated = useRef(false);
+  const [displayed, setDisplayed] = useState(() => {
+    // Skip animation for long text or reduced-motion
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return text;
+    if (text.length > TYPEWRITER_MAX) return text;
+    return "";
+  });
+  const [done, setDone] = useState(text.length > TYPEWRITER_MAX);
+
+  useEffect(() => {
+    if (hasAnimated.current) return;
+    if (text.length > TYPEWRITER_MAX) { setDisplayed(text); setDone(true); return; }
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayed(text); setDone(true); return;
+    }
+    hasAnimated.current = true;
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) { clearInterval(id); setDone(true); }
+    }, 8);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (done) return <MarkdownRich text={text} />;
+  return (
+    <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--foreground)", opacity: 0.88 }}>
+      {displayed}
+      <span className="inline-block w-0.5 h-3.5 ml-0.5 align-middle animate-pulse" style={{ background: "var(--accent)", opacity: 0.7 }} />
+    </p>
+  );
 }
 
 // These types render full-width without a bubble wrapper
@@ -39,8 +82,14 @@ const FULL_WIDTH_TYPES = new Set([
   "agent_debate", "debate_progress",
 ]);
 
-export default function MessageBubble({ message, onTradeAction, onSend }: Props) {
+// Types that should NOT show MessageActions
+const NO_ACTIONS_TYPES = new Set([
+  "progress", "debate_progress", "suggestion", "error", "trade_confirm",
+]);
+
+export default function MessageBubble({ message, onTradeAction, onSend, onRegenerate, isLastAssistant, isLoading }: Props) {
   const isUser = message.role === "user";
+  const showActions = !isUser && !NO_ACTIONS_TYPES.has(message.type);
 
   if (!isUser && FULL_WIDTH_TYPES.has(message.type)) {
     return (
@@ -50,10 +99,20 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="group"
       >
         <ErrorBoundary>
           <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
         </ErrorBoundary>
+        {showActions && (
+          <MessageActions
+            message={message}
+            onContextAction={onSend}
+            onRegenerate={onRegenerate}
+            isLast={isLastAssistant}
+            isLoading={isLoading}
+          />
+        )}
       </motion.div>
     );
   }
@@ -65,26 +124,49 @@ export default function MessageBubble({ message, onTradeAction, onSend }: Props)
       initial={{ opacity: 0, x: isUser ? 20 : -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+      className={`group flex ${isUser ? "justify-end" : "justify-start"}`}
     >
-      <div
-        className={`bubble-hover max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? "ml-3 sm:ml-8" : "mr-3 sm:mr-8"}`}
-        style={{
-          background: isUser ? "var(--card-bg)" : "var(--surface)",
-          border: "1px solid var(--card-border)",
-          borderLeft: isUser ? "none" : "2px solid var(--accent-dim)",
-        }}
-      >
-        {isUser ? (
-          <p className="selectable text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--foreground)" }}>
-            {message.content}
-          </p>
-        ) : (
-          <ErrorBoundary>
-            <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
-          </ErrorBoundary>
+      {!isUser && (
+        <div className="mr-2 mt-1 shrink-0">
+          <Avatar role="assistant" />
+        </div>
+      )}
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[85%] sm:max-w-[80%]`}>
+        <div
+          className={`bubble-hover rounded-2xl px-4 py-3 ${isUser ? "ml-3 sm:ml-8" : "mr-3 sm:mr-8"}`}
+          style={{
+            background: isUser ? "var(--card-bg)" : "var(--surface)",
+            border: "1px solid var(--card-border)",
+            borderLeft: isUser ? "none" : "2px solid var(--accent-dim)",
+          }}
+        >
+          {isUser ? (
+            <p className="selectable text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--foreground)" }}>
+              {message.content}
+            </p>
+          ) : (
+            <ErrorBoundary>
+              <RichContent message={message} onTradeAction={onTradeAction} onSend={onSend} />
+            </ErrorBoundary>
+          )}
+        </div>
+        {showActions && (
+          <div className="px-1">
+            <MessageActions
+              message={message}
+              onContextAction={onSend}
+              onRegenerate={onRegenerate}
+              isLast={isLastAssistant}
+              isLoading={isLoading}
+            />
+          </div>
         )}
       </div>
+      {isUser && (
+        <div className="ml-2 mt-1 shrink-0">
+          <Avatar role="user" />
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -219,8 +301,8 @@ function RichContent({
 
     default:
       return (
-        <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-          <MarkdownRich text={message.content} />
+        <div className="text-sm leading-relaxed">
+          <TypewriterText text={message.content} />
         </div>
       );
   }

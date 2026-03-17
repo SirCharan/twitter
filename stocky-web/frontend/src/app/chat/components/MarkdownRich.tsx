@@ -1,5 +1,8 @@
 "use client";
-import React, { Fragment } from "react";
+import React, { Fragment, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 /* ── Inline formatting: **bold**, `code`, *italic* ── */
 export function renderInline(text: string) {
@@ -87,6 +90,33 @@ function MarkdownTable({ rows }: { rows: string[][] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/* ── Inline copy button ── */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      toast.success("Copied to clipboard");
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy"
+      className="flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-white/5"
+      style={{ color: copied ? "var(--positive)" : "var(--muted)" }}
+    >
+      <AnimatePresence mode="wait">
+        {copied
+          ? <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Check size={12} /></motion.span>
+          : <motion.span key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Copy size={12} /></motion.span>
+        }
+      </AnimatePresence>
+    </button>
   );
 }
 
@@ -194,5 +224,12 @@ export default function MarkdownRich({ text }: { text: string }) {
     i++;
   }
 
-  return <div>{elements}</div>;
+  return (
+    <div className="relative group">
+      <div className="absolute -top-1 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <CopyButton text={text} />
+      </div>
+      <div>{elements}</div>
+    </div>
+  );
 }

@@ -2,6 +2,7 @@
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
+import AnimatedNumber from "./ui/AnimatedNumber";
 
 interface StockCompare {
   name: string;
@@ -49,8 +50,8 @@ function ScoreBar({ score, max = 20 }: { score: number; max?: number }) {
       <div className="h-1.5 flex-1 rounded-full" style={{ background: "var(--card-border)" }}>
         <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span className="text-[10px] tabular-nums font-medium" style={{ color, minWidth: 28 }}>
-        {score.toFixed(1)}
+      <span className="text-[10px] font-medium" style={{ color, minWidth: 28 }}>
+        <AnimatedNumber value={score} decimals={1} />
       </span>
     </div>
   );
