@@ -180,7 +180,7 @@ export default function RrgCard({ data }: Props) {
                 <text
                   x={mapX(last.rs_ratio) + 8}
                   y={mapY(last.rs_momentum) + 3}
-                  fontSize="8"
+                  fontSize="10"
                   fill="rgba(255,255,255,0.7)"
                 >
                   {sector.name.replace(/^Nifty\s+/, "")}

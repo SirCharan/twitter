@@ -144,7 +144,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
             <div style={{ width: `${100 - advPct - decPct}%`, background: "var(--muted)", opacity: 0.3 }} className="h-full" />
             <div style={{ width: `${decPct}%`, background: "var(--negative)" }} className="bar-fill h-full" />
           </div>
-          <div className="mt-1.5 flex flex-wrap justify-between gap-1 text-[10px]">
+          <div className="mt-1.5 flex flex-wrap justify-between gap-1 text-[9px] sm:text-[10px]">
             <span style={{ color: "var(--positive)" }}>▲ {ad.advances} Up</span>
             <span style={{ color: "var(--muted)" }}>{ad.unchanged} Flat</span>
             <span style={{ color: "var(--negative)" }}>▼ {ad.declines} Down</span>
