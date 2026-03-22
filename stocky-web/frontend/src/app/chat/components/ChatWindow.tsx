@@ -196,11 +196,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
     if (analyseOpen) setTimeout(() => stockInputRef.current?.focus(), 50);
   }, [analyseOpen]);
 
-  useEffect(() => {
-    if (lastMsg?.role === "assistant" && !isLoading) {
-      setFeatureBarVisible(true);
-    }
-  }, [lastMsg?.role, isLoading]);
+  // Feature bar stays hidden after responses — user toggles via "Tools & shortcuts" button
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
