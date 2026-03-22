@@ -92,6 +92,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
       {/* Mode toggle with sliding indicator */}
       <div className="flex items-center gap-2">
         <div
+          ref={toggleContainerRef}
           role="group"
           aria-label="Chat mode"
           className="relative inline-flex items-center rounded-lg p-0.5 min-h-[44px]"
@@ -145,7 +146,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
               className="text-[10px] font-medium uppercase tracking-wider"
               style={{ color: "var(--accent)" }}
             >
-              3 agents — triad protocol
+              6 agents — council protocol
             </motion.span>
           )}
         </AnimatePresence>
@@ -165,7 +166,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isDeep ? "Ask anything — 3 agents will research this..." : "Ask Stocky anything..."}
+          placeholder={isDeep ? "Ask anything — 6 agents will research this..." : "Ask Stocky anything..."}
           disabled={disabled}
           rows={1}
           aria-label={isDeep ? "Deep research query" : "Chat message"}

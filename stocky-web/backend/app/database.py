@@ -115,6 +115,18 @@ async def init_db():
                 card_data TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                message_id TEXT,
+                conversation_id TEXT,
+                query TEXT,
+                response_snippet TEXT,
+                rating TEXT CHECK(rating IN ('up', 'down')),
+                tags TEXT,
+                comment TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
         """)
         await db.commit()
         await _migrate_analytics(db)

@@ -8,9 +8,14 @@ from app.config import (
     GROQ_API_KEY,
     GROQ_API_KEY_2,
     GROQ_API_KEY_3,
+    GROQ_API_KEY_4,
+    GROQ_API_KEY_5,
+    GROQ_API_KEY_6,
     GROQ_CONV_MODEL,
     GROQ_MODEL,
     GROQ_TRIAD_MODEL,
+    GROQ_COUNCIL_MODEL_HEAVY,
+    GROQ_COUNCIL_MODEL_LIGHT,
     OPENROUTER_API_KEY,
     OPENROUTER_MODEL,
 )
@@ -324,6 +329,9 @@ _openrouter_client: httpx.AsyncClient | None = None
 # Triad clients — one per API key for parallel calls
 _groq_client_aris: AsyncGroq | None = None
 _groq_client_silas: AsyncGroq | None = None
+
+# Council clients — 6 keys for full 6-agent parallelism
+_council_clients: dict[str, AsyncGroq] = {}
 _groq_client_nexus: AsyncGroq | None = None
 
 
@@ -589,6 +597,66 @@ async def crew_call(
     except Exception as e:
         logger.error(f"Crew {agent} error: {e}")
         raise
+
+
+# ---------------------------------------------------------------------------
+# Council (6-Agent) calls — one dedicated key + model per agent
+# ---------------------------------------------------------------------------
+
+_COUNCIL_KEY_MAP: dict[str, tuple[str, str]] = {
+    # agent_short: (env_var_key, model_tier)
+    "TS": (GROQ_API_KEY, "heavy"),
+    "FA": (GROQ_API_KEY_2, "heavy"),
+    "MP": (GROQ_API_KEY_3, "light"),
+    "RG": (GROQ_API_KEY_4 or GROQ_API_KEY, "light"),
+    "ME": (GROQ_API_KEY_5 or GROQ_API_KEY_2, "light"),
+    "CSO": (GROQ_API_KEY_6 or GROQ_API_KEY_3, "heavy"),
+}
+
+
+def _get_council_client(agent_short: str) -> AsyncGroq | None:
+    """Return a dedicated Groq client for a Council agent."""
+    if agent_short in _council_clients:
+        return _council_clients[agent_short]
+
+    key_val, _ = _COUNCIL_KEY_MAP.get(agent_short, (GROQ_API_KEY, "light"))
+    if not key_val:
+        return None
+    client = AsyncGroq(api_key=key_val)
+    _council_clients[agent_short] = client
+    return client
+
+
+async def council_call(
+    agent_short: str,
+    user_message: str,
+    system_prompt: str,
+    max_tokens: int = 2048,
+) -> str:
+    """Call a Council agent using its dedicated Groq client + correct model."""
+    client = _get_council_client(agent_short)
+    if not client:
+        return f"[{agent_short}] Agent unavailable — no API key configured."
+
+    _, model_tier = _COUNCIL_KEY_MAP.get(agent_short, (None, "light"))
+    model = GROQ_COUNCIL_MODEL_HEAVY if model_tier == "heavy" else GROQ_COUNCIL_MODEL_LIGHT
+
+    try:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.7,
+            max_tokens=max_tokens,
+        )
+        tokens = response.usage.total_tokens if response.usage else 0
+        await log_api_call("groq", f"council_{agent_short}", tokens)
+        return response.choices[0].message.content or ""
+    except Exception as e:
+        logger.error(f"Council {agent_short} error: {e}")
+        return f"[{agent_short}] Analysis unavailable: {e}"
 
 
 # ---------------------------------------------------------------------------

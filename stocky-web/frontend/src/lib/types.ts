@@ -29,7 +29,9 @@ export type MessageType =
   | "dividends"
   | "sectors"
   | "valuation"
-  | "announcements";
+  | "announcements"
+  | "council_progress"
+  | "council_debate";
 
 export interface ChatMessage {
   id: string;
@@ -239,4 +241,74 @@ export interface OverviewData {
   summary?: string;
   vix?: { value: number; change: number; pct_change: number };
   ai_mood?: string;
+}
+
+// ---------------------------------------------------------------------------
+// 6-Agent Stocky Council types
+// ---------------------------------------------------------------------------
+
+export interface CouncilAgent {
+  name: string;
+  short: string;
+  icon: string;
+  color: string;
+  skills: string[];
+}
+
+export interface CouncilStep {
+  step: number;
+  agent: string | null;
+  label: string;
+  content: string;
+  elapsed: number;
+}
+
+export interface CouncilRebuttal {
+  agent: string;
+  target: string;
+  conflict: string;
+  content: string;
+  elapsed: number;
+}
+
+export interface CouncilTrade {
+  action: string;
+  entry?: number;
+  target_1?: number;
+  target_2?: number;
+  stoploss?: number;
+  sizing: string;
+  timeframe: string;
+  risk_reward: string;
+}
+
+export interface CouncilSynthesis {
+  executive_summary: string;
+  bull_case: string;
+  bear_case: string;
+  key_risks: { risk: string; probability: number }[];
+  trade: CouncilTrade;
+  confidence_score: number;
+  sources: string[];
+  unverified_claims: string[];
+}
+
+export interface CouncilData {
+  query: string;
+  agents: CouncilAgent[];
+  steps: CouncilStep[];
+  rebuttals: CouncilRebuttal[];
+  synthesis: CouncilSynthesis;
+  total_elapsed: number;
+  timestamp: string;
+}
+
+export interface FeedbackRequest {
+  message_id?: string;
+  conversation_id?: string;
+  query?: string;
+  response_snippet?: string;
+  rating: "up" | "down";
+  tags?: string[];
+  comment?: string;
 }

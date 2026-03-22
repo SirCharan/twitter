@@ -1,4 +1,4 @@
-import type { ChatResponse, ConversationSummary } from "./types";
+import type { ChatResponse, ConversationSummary, FeedbackRequest } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -282,4 +282,38 @@ export async function streamDeepResearchGeneral(query: string): Promise<Response
     }
     throw err;
   }
+}
+
+/** Stream 6-agent Council research via SSE. */
+export async function streamCouncilResearch(query: string, signal?: AbortSignal): Promise<Response> {
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const url = `${API_URL}/api/council-research`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query }),
+      signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Council Research API ${res.status}: ${body || res.statusText}`);
+    }
+    return res;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error(`Network error — backend may be down. (${(err as Error).message})`);
+    }
+    throw err;
+  }
+}
+
+/** Submit user feedback (thumbs up/down). */
+export async function submitFeedback(data: FeedbackRequest): Promise<void> {
+  await apiFetch<{ status: string }>("/api/feedback", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
