@@ -1,11 +1,13 @@
 import logging
 from contextlib import asynccontextmanager
 
+import aiosqlite
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
-from app.config import ALLOWED_ORIGINS
+from app.config import ALLOWED_ORIGINS, DB_PATH
 from app.database import (
     delete_conversation,
     get_conversation_list,
@@ -364,6 +366,64 @@ async def crew_research_endpoint(req: AgentDebateRequest):
     )
 
 
+# --- Council Deep Research (6-agent) ---
+
+class CouncilRequest(BaseModel):
+    query: str
+
+
+@app.post("/api/council-research")
+async def council_research_endpoint(req: CouncilRequest):
+    """Stream 6-agent Stocky Council debate via SSE."""
+    import json as _json
+    from app.handlers.council import stream_council_debate
+
+    async def safe_stream():
+        try:
+            async for chunk in stream_council_debate(req.query):
+                yield chunk
+        except Exception as e:
+            logger.error(f"Council research stream error: {e}", exc_info=True)
+            yield f"data: {_json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        safe_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+# --- Feedback ---
+
+class FeedbackRequest(BaseModel):
+    message_id: str | None = None
+    conversation_id: str | None = None
+    query: str | None = None
+    response_snippet: str | None = None
+    rating: str  # "up" or "down"
+    tags: list[str] = []
+    comment: str | None = None
+
+
+@app.post("/api/feedback")
+async def submit_feedback(req: FeedbackRequest):
+    """Persist user feedback (thumbs up/down) to database."""
+    import json as _json
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """INSERT INTO feedback (message_id, conversation_id, query, response_snippet, rating, tags, comment)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (req.message_id, req.conversation_id, req.query, req.response_snippet,
+             req.rating, _json.dumps(req.tags), req.comment),
+        )
+        await db.commit()
+    return {"status": "ok"}
+
+
 # --- Trade confirmation ---
 
 @app.post("/api/trade/confirm")
@@ -452,6 +512,16 @@ async def log_analytics(
         request.headers.get("user-agent"),
     )
     return Response(status_code=204)
+
+
+@app.post("/api/analytics/track", status_code=204)
+async def log_analytics_compat(
+    req: AnalyticsEventRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
+    """Alias for /api/analytics/log — backward compat."""
+    return await log_analytics(req, request, background_tasks)
 
 
 @app.get("/api/analytics/stats")
