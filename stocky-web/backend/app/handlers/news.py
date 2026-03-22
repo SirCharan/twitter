@@ -102,19 +102,20 @@ def _clean_articles(articles: list[dict]) -> list[dict]:
     return [{k: v for k, v in a.items() if not k.startswith("_")} for a in articles]
 
 
-async def _generate_news_summary(titles: list[str], symbol: str | None) -> str:
-    """One-sentence AI summary of the news headlines."""
+async def _generate_news_summary(titles: list[str], symbol: str | None, deep: bool = False) -> str:
+    """AI summary of the news headlines via orchestrator."""
     if not titles:
         return ""
     try:
-        from app.prompts import NEWS_SUMMARY_PROMPT
+        from app.llm_orchestrator import enhance
         subject = f"for {symbol.upper()}" if symbol else "about the Indian market"
         headlines_text = "\n".join(f"- {t}" for t in titles)
-        data_text = f"Subject: {subject}\n{headlines_text}"
-        result = await ai_client.feature_analysis(
-            NEWS_SUMMARY_PROMPT.format(data=data_text), max_tokens=200
+        ai_result = await enhance(
+            button_type="news",
+            raw_data={"subject": subject, "headlines": headlines_text},
+            deep=deep,
         )
-        return result or ""
+        return ai_result.get("ai_analysis", "")
     except Exception:
         return ""
 

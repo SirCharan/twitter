@@ -473,7 +473,7 @@ async def _generate_news_analysis(articles: list[dict], symbol_name: str) -> str
         return None
 
 
-async def get_analysis(symbol: str) -> dict:
+async def get_analysis(symbol: str, deep: bool = False) -> dict:
     """Full stock analysis — returns structured data for the frontend."""
     yf_symbol, nse_symbol, news_terms = _resolve_symbol(symbol)
     loop = asyncio.get_event_loop()
@@ -544,10 +544,28 @@ async def get_analysis(symbol: str) -> dict:
             f"Revenue QoQ: {q.get('revenue_qoq', '?')}% | "
             f"Net Income QoQ: {q.get('net_income_qoq', '?')}%\n"
         )
+    # AI verdict via orchestrator
+    verdict = None
+    ai_metadata = None
     try:
-        verdict = await ai_client.analyse_verdict(name, data_summary)
+        from app.llm_orchestrator import enhance
+        ai_result = await enhance(
+            button_type="analyse",
+            raw_data={
+                "name": name,
+                "symbol": nse_symbol,
+                "overall_score": overall,
+                "fundamental_score": fundamental_score,
+                "technical_score": technical_score,
+                "news_score": news_score,
+                "data_summary": data_summary,
+            },
+            deep=deep,
+        )
+        verdict = ai_result.get("ai_analysis") or None
+        ai_metadata = ai_result.get("ai_metadata")
     except Exception:
-        verdict = None
+        pass
 
     if not verdict:
         if overall >= 21:
@@ -561,7 +579,7 @@ async def get_analysis(symbol: str) -> dict:
         else:
             verdict = "Everything is broken. Trend, fundamentals, sentiment — all negative. Stay away."
 
-    return {
+    result = {
         "name": name,
         "symbol": nse_symbol,
         "yf_symbol": yf_symbol,
@@ -573,3 +591,6 @@ async def get_analysis(symbol: str) -> dict:
         "shareholding": shareholding,
         "verdict": verdict,
     }
+    if ai_metadata:
+        result["ai_metadata"] = ai_metadata
+    return result

@@ -4,10 +4,51 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
-/* ── Inline formatting: **bold**, `code`, *italic* ── */
+/* ── Tag color map for verdict/signal badges ── */
+const TAG_COLORS: Record<string, { bg: string; color: string }> = {
+  // Verdict
+  BUY:       { bg: "rgba(34,197,94,0.15)",  color: "#22c55e" },
+  SELL:      { bg: "rgba(239,68,68,0.15)",   color: "#ef4444" },
+  HOLD:      { bg: "rgba(201,169,110,0.15)", color: "#C9A96E" },
+  AVOID:     { bg: "rgba(239,68,68,0.15)",   color: "#ef4444" },
+  // Impact
+  HIGH:      { bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
+  MEDIUM:    { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+  LOW:       { bg: "rgba(34,197,94,0.12)",   color: "#22c55e" },
+  // Direction
+  BULLISH:   { bg: "rgba(34,197,94,0.12)",   color: "#22c55e" },
+  BEARISH:   { bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
+  NEUTRAL:   { bg: "rgba(156,163,175,0.12)", color: "#9ca3af" },
+  // Regime
+  "RISK-ON": { bg: "rgba(34,197,94,0.12)",   color: "#22c55e" },
+  "RISK-OFF":{ bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
+  MIXED:     { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+  // IPO
+  HOT:       { bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
+  WARM:      { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+  COLD:      { bg: "rgba(96,165,250,0.12)",  color: "#60a5fa" },
+  SELECTIVE: { bg: "rgba(201,169,110,0.12)", color: "#C9A96E" },
+  // Valuation
+  CHEAP:     { bg: "rgba(34,197,94,0.12)",   color: "#22c55e" },
+  FAIR:      { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+  EXPENSIVE: { bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
+  // Quality
+  "A+":      { bg: "rgba(34,197,94,0.15)",   color: "#22c55e" },
+  A:         { bg: "rgba(34,197,94,0.12)",   color: "#22c55e" },
+  "B+":      { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+  B:         { bg: "rgba(234,179,8,0.10)",   color: "#eab308" },
+  C:         { bg: "rgba(239,68,68,0.10)",   color: "#ef4444" },
+  // Sustainability
+  STRONG:    { bg: "rgba(34,197,94,0.12)",   color: "#22c55e" },
+  ADEQUATE:  { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+  "AT RISK": { bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
+};
+
+/* ── Inline formatting: **bold**, `code`, *italic*, [TAG] badges ── */
 export function renderInline(text: string) {
-  const parts: Array<{ type: "text" | "bold" | "code" | "italic"; value: string }> = [];
-  const regex = /(\*\*(.+?)\*\*|`(.+?)`|\*(.+?)\*)/g;
+  const parts: Array<{ type: "text" | "bold" | "code" | "italic" | "tag"; value: string }> = [];
+  // Match: **bold**, `code`, *italic*, [TAG]
+  const regex = /(\*\*(.+?)\*\*|`(.+?)`|\*(.+?)\*|\[([A-Z][A-Z0-9+ -]{0,14})\])/g;
   let last = 0;
   let match;
 
@@ -18,6 +59,8 @@ export function renderInline(text: string) {
     if (match[2]) parts.push({ type: "bold", value: match[2] });
     else if (match[3]) parts.push({ type: "code", value: match[3] });
     else if (match[4]) parts.push({ type: "italic", value: match[4] });
+    else if (match[5] && TAG_COLORS[match[5]]) parts.push({ type: "tag", value: match[5] });
+    else if (match[5]) parts.push({ type: "text", value: match[0] }); // Unknown tag, render as-is
     last = match.index + match[0].length;
   }
   if (last < text.length) parts.push({ type: "text", value: text.slice(last) });
@@ -38,6 +81,18 @@ export function renderInline(text: string) {
         );
       case "italic":
         return <em key={i} style={{ color: "var(--foreground)", opacity: 0.9 }}>{p.value}</em>;
+      case "tag": {
+        const tc = TAG_COLORS[p.value];
+        return (
+          <span
+            key={i}
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+            style={{ background: tc.bg, color: tc.color }}
+          >
+            {p.value}
+          </span>
+        );
+      }
       default:
         return <Fragment key={i}>{p.value}</Fragment>;
     }
@@ -68,11 +123,18 @@ function MarkdownTable({ rows }: { rows: string[][] }) {
           </tr>
         </thead>
         <tbody>
-          {body.map((row, ri) => (
+          {body.map((row, ri) => {
+            // Scenario table coloring: Bull=green, Base=gold, Bear=red
+            const firstCell = row[0]?.trim().toLowerCase() ?? "";
+            let rowBg = ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)";
+            if (firstCell.includes("bull")) rowBg = "rgba(34,197,94,0.06)";
+            else if (firstCell.includes("base")) rowBg = "rgba(201,169,110,0.06)";
+            else if (firstCell.includes("bear")) rowBg = "rgba(239,68,68,0.06)";
+            return (
             <tr
               key={ri}
               style={{
-                background: ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+                background: rowBg,
                 borderBottom: ri < body.length - 1 ? "1px solid var(--card-border)" : undefined,
               }}
             >
@@ -86,7 +148,7 @@ function MarkdownTable({ rows }: { rows: string[][] }) {
                 </td>
               ))}
             </tr>
-          ))}
+          );})}
         </tbody>
       </table>
     </div>

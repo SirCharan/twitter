@@ -13,7 +13,7 @@ from app.handlers.analyse import (
 logger = logging.getLogger(__name__)
 
 
-async def compare_stocks(stocks_input: str) -> dict:
+async def compare_stocks(stocks_input: str, deep: bool = False) -> dict:
     """Compare 2-3 stocks side-by-side."""
     names = [s.strip() for s in stocks_input.split(",") if s.strip()]
     if len(names) < 2:
@@ -70,31 +70,19 @@ async def compare_stocks(stocks_input: str) -> dict:
     winner = max(stocks, key=lambda s: s.get("overall_score", 0)) if len(stocks) > 1 else None
     result = {"stocks": stocks, "winner": winner["symbol"] if winner else None}
 
-    # AI verdict
+    # AI verdict via orchestrator
     if len(stocks) >= 2:
         try:
-            from app import ai_client
-            from app.prompts import COMPARE_VERDICT_PROMPT
-
-            compare_text = ""
-            for s in stocks:
-                compare_text += (
-                    f"{s['name']} ({s['symbol']}): "
-                    f"P/E {s.get('pe', '?')} | ROE {s.get('roe', '?')}% | "
-                    f"D/E {s.get('debt_to_equity', '?')} | "
-                    f"Earnings Growth {s.get('earnings_growth', '?')}% | "
-                    f"Revenue Growth {s.get('revenue_growth', '?')}% | "
-                    f"RSI {s.get('rsi', '?')} ({s.get('rsi_label', '')}) | "
-                    f"MACD {s.get('macd_signal', '?')} | "
-                    f"Profit Margin {s.get('profit_margin', '?')}% | "
-                    f"Overall Score {s.get('overall_score', '?')}/20\n"
-                )
-
-            verdict = await ai_client.feature_analysis(
-                COMPARE_VERDICT_PROMPT.format(data=compare_text), max_tokens=200
+            from app.llm_orchestrator import enhance
+            ai_result = await enhance(
+                button_type="compare",
+                raw_data={"stocks": stocks},
+                deep=deep,
             )
-            if verdict:
-                result["ai_verdict"] = verdict
+            if ai_result.get("ai_analysis"):
+                result["ai_verdict"] = ai_result["ai_analysis"]
+            if ai_result.get("ai_metadata"):
+                result["ai_metadata"] = ai_result["ai_metadata"]
         except Exception:
             pass
 

@@ -25,7 +25,7 @@ export interface ChatWindowHandle {
 interface Props {
   messages: ChatMessage[];
   isLoading: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, deep?: boolean) => void;
   onTradeAction: (actionId: string, action: "confirm" | "cancel") => void;
   onNewChat: () => void;
   onDeepResearch?: (stock: string, mode: string) => void;
@@ -270,18 +270,9 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
   function handleSend(text: string) {
     setActiveFeature(null);
     setFeatureBarVisible(false);
-    if (chatMode === "deep") {
-      // Prefer Council (6-agent) over Triad (3-agent)
-      if (onCouncilResearch) {
-        onCouncilResearch(text);
-      } else if (onGeneralDeepResearch) {
-        onGeneralDeepResearch(text);
-      } else {
-        onSend(text);
-      }
-    } else {
-      onSend(text);
-    }
+    // Deep mode sends with deep=true flag for upgraded orchestrator analysis
+    // Council/Triad remain available via explicit feature buttons
+    onSend(text, chatMode === "deep");
   }
 
   // Input bar positioning: fixed above bottom nav on mobile, static on desktop

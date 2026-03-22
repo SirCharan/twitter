@@ -41,7 +41,7 @@ SECTOR_INDICES = {
 }
 
 
-async def run_scan(scan_type: str) -> dict:
+async def run_scan(scan_type: str, deep: bool = False) -> dict:
     """Run a market scan and return results."""
     loop = asyncio.get_event_loop()
 
@@ -60,26 +60,21 @@ async def run_scan(scan_type: str) -> dict:
         "count": len(results),
     }
 
-    # AI scan analysis
+    # AI scan analysis via orchestrator
     if results:
         try:
-            from app import ai_client
-            from app.prompts import SCAN_ANALYSIS_PROMPT
+            from app.llm_orchestrator import enhance
 
             scan_label = scan_type.replace("_", " ").title()
-            scan_text = ""
-            for r in results[:8]:
-                scan_text += (
-                    f"{r['symbol']}: LTP {r['ltp']} ({r.get('change_pct', 0):+.2f}%) "
-                    f"— {r.get('trigger', '')}\n"
-                )
-
-            analysis = await ai_client.feature_analysis(
-                SCAN_ANALYSIS_PROMPT.format(scan_type=scan_label, data=scan_text),
-                max_tokens=200,
+            ai_result = await enhance(
+                button_type="scan",
+                raw_data={"scan_type": scan_label, "results": results[:8]},
+                deep=deep,
             )
-            if analysis:
-                data["ai_analysis"] = analysis
+            if ai_result.get("ai_analysis"):
+                data["ai_analysis"] = ai_result["ai_analysis"]
+            if ai_result.get("ai_metadata"):
+                data["ai_metadata"] = ai_result["ai_metadata"]
         except Exception:
             pass
 

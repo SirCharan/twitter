@@ -35,22 +35,21 @@ TYPE_KEYWORDS = {
 
 
 @cached(ttl=900)
-async def get_announcements() -> dict:
+async def get_announcements(deep: bool = False) -> dict:
     """Fetch and classify corporate announcements from RSS feeds."""
     loop = asyncio.get_event_loop()
     await log_api_call("rss", "announcements")
 
     data = await loop.run_in_executor(None, _fetch_announcements)
 
-    # AI analysis
+    # AI analysis via orchestrator
     try:
-        ann_text = _format_for_ai(data)
-        if ann_text.strip():
-            analysis = await ai_client.feature_analysis(
-                ANNOUNCEMENTS_ANALYSIS_PROMPT.format(data=ann_text), max_tokens=256
-            )
-            if analysis:
-                data["ai_analysis"] = analysis
+        from app.llm_orchestrator import enhance
+        ai_result = await enhance(button_type="announcements", raw_data=data, deep=deep)
+        if ai_result.get("ai_analysis"):
+            data["ai_analysis"] = ai_result["ai_analysis"]
+        if ai_result.get("ai_metadata"):
+            data["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

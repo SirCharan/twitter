@@ -84,6 +84,7 @@ async def chat(req: ChatRequest):
         message=req.message,
         username=username,
         conversation_id=req.conversation_id,
+        deep=req.deep,
     )
     return ChatResponse(
         type=result.get("type", "text"),

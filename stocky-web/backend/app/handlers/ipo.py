@@ -20,7 +20,7 @@ KNOWN_IPOS = [
 ]
 
 
-async def get_ipo_data() -> dict:
+async def get_ipo_data(deep: bool = False) -> dict:
     """Fetch IPO data — tries NSE API then falls back to known IPO list with live prices."""
     loop = asyncio.get_event_loop()
     try:
@@ -33,31 +33,18 @@ async def get_ipo_data() -> dict:
         logger.warning(f"NSE IPO fetch failed: {e}")
         data = await loop.run_in_executor(None, _get_fallback_data)
 
-    # AI analysis
+    # AI analysis via orchestrator
     try:
-        from app import ai_client
-        from app.prompts import IPO_ANALYSIS_PROMPT
-
-        ipo_text = ""
-        for ipo in data.get("listed", []):
-            gain_str = f"{ipo['current_gain']:+.1f}%" if ipo.get("current_gain") is not None else "N/A"
-            ipo_text += (
-                f"{ipo['company']} ({ipo.get('symbol', '?')}): "
-                f"Issue {ipo.get('issue_price', '?')} → Current {ipo.get('current_price', '?')} "
-                f"({gain_str}), Listed {ipo.get('listing_date', '?')}\n"
-            )
-        upcoming = data.get("upcoming", [])
-        if upcoming:
-            ipo_text += f"\nUpcoming IPOs: {len(upcoming)}\n"
-            for u in upcoming[:3]:
-                ipo_text += f"  {u.get('company', '?')} — Price band: {u.get('issue_price', '?')}\n"
-
-        if ipo_text.strip():
-            analysis = await ai_client.feature_analysis(
-                IPO_ANALYSIS_PROMPT.format(data=ipo_text), max_tokens=200
-            )
-            if analysis:
-                data["ai_analysis"] = analysis
+        from app.llm_orchestrator import enhance
+        ai_result = await enhance(
+            button_type="ipo",
+            raw_data={"listed": data.get("listed", []), "upcoming": data.get("upcoming", [])},
+            deep=deep,
+        )
+        if ai_result.get("ai_analysis"):
+            data["ai_analysis"] = ai_result["ai_analysis"]
+        if ai_result.get("ai_metadata"):
+            data["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

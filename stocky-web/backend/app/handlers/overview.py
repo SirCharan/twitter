@@ -154,7 +154,7 @@ def _fetch_nse_overview() -> dict:
     return result
 
 
-async def get_overview() -> dict:
+async def get_overview(deep: bool = False) -> dict:
     """Market overview — indices, gainers/losers, breadth."""
     loop = asyncio.get_event_loop()
     await log_api_call("nse", "overview")
@@ -168,23 +168,22 @@ async def get_overview() -> dict:
         gainers = data.get("gainers", [])
         losers = data.get("losers", [])
 
-        mood_data = ""
-        for idx in indices:
-            mood_data += f"{idx['name']}: {idx['value']:,.2f} ({idx['pct_change']:+.2f}%)\n"
-        if ad:
-            mood_data += f"Breadth: {ad['advances']} advances / {ad['declines']} declines / {ad.get('unchanged', 0)} unchanged\n"
-        if data.get("vix"):
-            mood_data += f"India VIX: {data['vix']['value']} ({data['vix'].get('change_pct', 0):+.2f}%)\n"
-        if gainers:
-            mood_data += "Top gainers: " + ", ".join(f"{g['symbol']} {g['pct_change']:+.2f}%" for g in gainers[:3]) + "\n"
-        if losers:
-            mood_data += "Top losers: " + ", ".join(f"{l['symbol']} {l['pct_change']:+.2f}%" for l in losers[:3]) + "\n"
-
-        mood = await ai_client.feature_analysis(
-            OVERVIEW_MOOD_PROMPT.format(data=mood_data), max_tokens=256
+        from app.llm_orchestrator import enhance
+        ai_result = await enhance(
+            button_type="overview",
+            raw_data={
+                "indices": indices,
+                "advances_declines": ad,
+                "vix": data.get("vix"),
+                "gainers": gainers[:5] if gainers else [],
+                "losers": losers[:5] if losers else [],
+            },
+            deep=deep,
         )
-        if mood:
-            data["ai_mood"] = mood
+        if ai_result.get("ai_analysis"):
+            data["ai_mood"] = ai_result["ai_analysis"]
+        if ai_result.get("ai_metadata"):
+            data["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

@@ -43,22 +43,21 @@ SECTOR_TOP_STOCKS = {
 
 
 @cached(ttl=60)
-async def get_sectors() -> dict:
+async def get_sectors(deep: bool = False) -> dict:
     """Fetch sectoral performance across 1d, 1w, 1m timeframes."""
     loop = asyncio.get_event_loop()
     await log_api_call("yfinance", "sectors")
 
     data = await loop.run_in_executor(None, _fetch_sector_performance)
 
-    # AI analysis
+    # AI analysis via orchestrator
     try:
-        sector_text = _format_for_ai(data)
-        if sector_text.strip():
-            analysis = await ai_client.feature_analysis(
-                SECTORS_ANALYSIS_PROMPT.format(data=sector_text), max_tokens=256
-            )
-            if analysis:
-                data["ai_analysis"] = analysis
+        from app.llm_orchestrator import enhance
+        ai_result = await enhance(button_type="sectors", raw_data=data, deep=deep)
+        if ai_result.get("ai_analysis"):
+            data["ai_analysis"] = ai_result["ai_analysis"]
+        if ai_result.get("ai_metadata"):
+            data["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

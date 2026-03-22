@@ -25,7 +25,7 @@ NIFTY_50 = [
 
 
 @cached(ttl=300)
-async def get_dividends(symbol: str | None = None) -> dict:
+async def get_dividends(symbol: str | None = None, deep: bool = False) -> dict:
     """Fetch dividend data for a stock or top Nifty-50 yielders."""
     loop = asyncio.get_event_loop()
     await log_api_call("yfinance", "dividends")
@@ -35,15 +35,14 @@ async def get_dividends(symbol: str | None = None) -> dict:
     else:
         data = await loop.run_in_executor(None, _fetch_top_yielders)
 
-    # AI analysis
+    # AI analysis via orchestrator
     try:
-        div_text = _format_for_ai(data)
-        if div_text.strip():
-            analysis = await ai_client.feature_analysis(
-                DIVIDENDS_ANALYSIS_PROMPT.format(data=div_text), max_tokens=256
-            )
-            if analysis:
-                data["ai_analysis"] = analysis
+        from app.llm_orchestrator import enhance
+        ai_result = await enhance(button_type="dividends", raw_data=data, deep=deep)
+        if ai_result.get("ai_analysis"):
+            data["ai_analysis"] = ai_result["ai_analysis"]
+        if ai_result.get("ai_metadata"):
+            data["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

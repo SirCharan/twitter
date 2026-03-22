@@ -19,6 +19,7 @@ class TokenResponse(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     conversation_id: str | None = None
+    deep: bool = False
 
 
 class ChatResponse(BaseModel):

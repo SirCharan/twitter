@@ -51,12 +51,14 @@ async function apiFetch<T>(
 export async function sendMessage(
   message: string,
   conversationId?: string,
+  deep?: boolean,
 ): Promise<ChatResponse> {
   return apiFetch<ChatResponse>("/api/chat", {
     method: "POST",
     body: JSON.stringify({
       message,
       conversation_id: conversationId || null,
+      deep: deep || false,
     }),
   });
 }

@@ -22,29 +22,24 @@ SECTORS = {
 }
 
 
-async def get_rrg_data() -> dict:
+async def get_rrg_data(deep: bool = False) -> dict:
     loop = asyncio.get_event_loop()
     data = await loop.run_in_executor(None, _compute_rrg)
 
-    # AI analysis of rotation
+    # AI analysis of rotation via orchestrator
     try:
-        from app import ai_client
-        from app.prompts import RRG_ANALYSIS_PROMPT
+        from app.llm_orchestrator import enhance
         sectors = data.get("sectors", [])
         if sectors:
-            rrg_text = ""
-            for q in ["Leading", "Weakening", "Lagging", "Improving"]:
-                in_q = [s for s in sectors if s["quadrant"] == q]
-                if in_q:
-                    rrg_text += f"{q}: " + ", ".join(
-                        f"{s['name']} (RS-Ratio: {s['rs_ratio']}, Momentum: {s['rs_momentum']})"
-                        for s in in_q
-                    ) + "\n"
-            analysis = await ai_client.feature_analysis(
-                RRG_ANALYSIS_PROMPT.format(data=rrg_text), max_tokens=256
+            ai_result = await enhance(
+                button_type="rrg",
+                raw_data={"sectors": sectors, "benchmark": data.get("benchmark", "Nifty 50")},
+                deep=deep,
             )
-            if analysis:
-                data["ai_analysis"] = analysis
+            if ai_result.get("ai_analysis"):
+                data["ai_analysis"] = ai_result["ai_analysis"]
+            if ai_result.get("ai_metadata"):
+                data["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

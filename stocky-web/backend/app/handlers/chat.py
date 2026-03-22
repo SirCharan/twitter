@@ -259,6 +259,7 @@ async def handle_chat(
     message: str,
     username: str,
     conversation_id: str | None = None,
+    deep: bool = False,
 ) -> dict:
     """Main chat handler — NLP dispatch + AI fallback. Returns structured response."""
     if not conversation_id:
@@ -335,7 +336,7 @@ async def handle_chat(
     await database.log_command(intent, " ".join(args), source="nlp")
 
     try:
-        response = await _dispatch(intent, args, username, conversation_id, history)
+        response = await _dispatch(intent, args, username, conversation_id, history, deep=deep)
     except Exception as e:
         logger.error(f"Handler error for {intent}: {e}")
         response = {
@@ -364,6 +365,7 @@ async def _dispatch(
     username: str,
     conversation_id: str,
     history: list[dict],
+    deep: bool = False,
 ) -> dict:
     """Dispatch intent to the appropriate handler."""
 
@@ -377,7 +379,7 @@ async def _dispatch(
         symbol = " ".join(args) if args else ""
         if not symbol:
             return {"type": "text", "content": "Give me a stock name. RELIANCE, INFY, TCS — anything."}
-        data = await analyse.get_analysis(symbol)
+        data = await analyse.get_analysis(symbol, deep=deep)
         # get_analysis may return suggestion or error if ticker not found
         if data.get("type") in ("suggestion", "error"):
             return data
@@ -469,7 +471,7 @@ async def _dispatch(
         return {"type": "news", "content": content, "data": data}
 
     if intent == "overview":
-        data = await overview.get_overview()
+        data = await overview.get_overview(deep=deep)
         content = "Market Overview"
         return {"type": "overview", "content": content, "data": data}
 
@@ -519,7 +521,7 @@ async def _dispatch(
     if intent == "scan":
         from app.handlers.scan import run_scan
         scan_type = args[0] if args else "volume_pump"
-        data = await run_scan(scan_type)
+        data = await run_scan(scan_type, deep=deep)
         return {"type": "scan", "content": f"Market scan — {scan_type.replace('_', ' ')}", "data": data}
 
     if intent == "chart":
@@ -528,7 +530,7 @@ async def _dispatch(
         chart_type = args[1] if len(args) > 1 else "tradingview"
         if not stock:
             return {"type": "text", "content": "Which stock?"}
-        data = await generate_chart(stock, chart_type)
+        data = await generate_chart(stock, chart_type, deep=deep)
         return {"type": "chart", "content": f"Chart — {stock}", "data": data}
 
     if intent == "compare":
@@ -536,22 +538,22 @@ async def _dispatch(
         stocks_str = args[0] if args else ""
         if not stocks_str:
             return {"type": "text", "content": "Which stocks should I compare?"}
-        data = await compare_stocks(stocks_str)
+        data = await compare_stocks(stocks_str, deep=deep)
         return {"type": "compare", "content": f"Comparing: {stocks_str}", "data": data}
 
     if intent == "ipo":
         from app.handlers.ipo import get_ipo_data
-        data = await get_ipo_data()
+        data = await get_ipo_data(deep=deep)
         return {"type": "ipo", "content": "IPO Tracker", "data": data}
 
     if intent == "macro":
         from app.handlers.macro import get_macro_data
-        data = await get_macro_data()
+        data = await get_macro_data(deep=deep)
         return {"type": "macro", "content": "Macro Dashboard", "data": data}
 
     if intent == "rrg":
         from app.handlers.rrg import get_rrg_data
-        data = await get_rrg_data()
+        data = await get_rrg_data(deep=deep)
         return {"type": "rrg", "content": "Relative Rotation Graph", "data": data}
 
     if intent == "summarise":
@@ -566,28 +568,28 @@ async def _dispatch(
     if intent == "earnings":
         from app.handlers.earnings import get_earnings
         symbol = args[0] if args else None
-        data = await get_earnings(symbol)
+        data = await get_earnings(symbol, deep=deep)
         return {"type": "earnings", "content": "Earnings Calendar", "data": data}
 
     if intent == "dividends":
         from app.handlers.dividends import get_dividends
         symbol = args[0] if args else None
-        data = await get_dividends(symbol)
+        data = await get_dividends(symbol, deep=deep)
         return {"type": "dividends", "content": "Dividend Tracker", "data": data}
 
     if intent == "sectors":
         from app.handlers.sectors import get_sectors
-        data = await get_sectors()
+        data = await get_sectors(deep=deep)
         return {"type": "sectors", "content": "Sector Performance", "data": data}
 
     if intent == "valuation":
         from app.handlers.valuation import get_valuation
-        data = await get_valuation()
+        data = await get_valuation(deep=deep)
         return {"type": "valuation", "content": "Market Valuation", "data": data}
 
     if intent == "announcements":
         from app.handlers.announcements import get_announcements
-        data = await get_announcements()
+        data = await get_announcements(deep=deep)
         return {"type": "announcements", "content": "Corporate Announcements", "data": data}
 
     if intent == "watchlist":

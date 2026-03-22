@@ -10,7 +10,7 @@ from app.handlers.analyse import _resolve_symbol, _validate_yf_ticker
 logger = logging.getLogger(__name__)
 
 
-async def generate_chart(stock: str, chart_type: str) -> dict:
+async def generate_chart(stock: str, chart_type: str, deep: bool = False) -> dict:
     """Generate a chart response for the given stock."""
     loop = asyncio.get_event_loop()
     yf_symbol, nse_symbol, _ = _resolve_symbol(stock)
@@ -32,19 +32,21 @@ async def generate_chart(stock: str, chart_type: str) -> dict:
             "stock": nse_symbol,
         }
 
-    # AI chart analysis
+    # AI chart analysis via orchestrator
     try:
-        from app import ai_client
-        from app.prompts import CHART_ANALYSIS_PROMPT
+        from app.llm_orchestrator import enhance
 
         tech_summary = await loop.run_in_executor(None, _get_chart_technicals, yf_symbol)
         if tech_summary:
-            analysis = await ai_client.feature_analysis(
-                CHART_ANALYSIS_PROMPT.format(stock=nse_symbol, data=tech_summary),
-                max_tokens=300,
+            ai_result = await enhance(
+                button_type="chart",
+                raw_data={"stock": nse_symbol, "technicals": tech_summary},
+                deep=deep,
             )
-            if analysis:
-                result["ai_analysis"] = analysis
+            if ai_result.get("ai_analysis"):
+                result["ai_analysis"] = ai_result["ai_analysis"]
+            if ai_result.get("ai_metadata"):
+                result["ai_metadata"] = ai_result["ai_metadata"]
     except Exception:
         pass
 

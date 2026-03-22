@@ -43,7 +43,7 @@ export function useChat() {
   }, []);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, deep: boolean = false) => {
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
@@ -62,7 +62,7 @@ export function useChat() {
       });
 
       try {
-        const res = await apiSendMessage(text, conversationId || undefined);
+        const res = await apiSendMessage(text, conversationId || undefined, deep);
 
         if (!conversationId) {
           setConversationId(res.conversation_id);
