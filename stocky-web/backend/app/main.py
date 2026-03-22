@@ -201,6 +201,16 @@ async def rrg_endpoint():
         raise HTTPException(500, str(e))
 
 
+@app.get("/api/fii-dii")
+async def fii_dii_endpoint():
+    from app.handlers.fii_dii import get_fii_dii_data
+    try:
+        data = await get_fii_dii_data()
+        return {"type": "fii_dii", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 @app.post("/api/summarise")
 async def summarise_endpoint(req: SummariseRequest):
     from app import ai_client

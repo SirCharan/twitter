@@ -45,7 +45,7 @@ const ANALYSE_MODES = [
 ] as const;
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 
-const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's|earnings?|dividends?|sectors?|valuation|announcements?)\b/i;
+const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's|earnings?|dividends?|sectors?|valuation|announcements?|fii.?dii|institutional flows?|fpi)\b/i;
 
 function inferSkeletonType(text: string): string | undefined {
   const t = text.toLowerCase();
@@ -60,6 +60,7 @@ function inferSkeletonType(text: string): string | undefined {
   if (/\bdividends?\b/.test(t)) return "dividends";
   if (/\bsectors?\b/.test(t)) return "sectors";
   if (/\bvaluation\b/.test(t)) return "valuation";
+  if (/\bfii.?dii\b/.test(t)) return "fii_dii";
   if (/\bannouncements?\b/.test(t)) return "announcements";
   return undefined;
 }
@@ -106,6 +107,7 @@ function composeFeatureMessage(feature: FeatureId, params: Record<string, string
     case "sectors": return "sector performance";
     case "valuation": return "market valuation";
     case "announcements": return "corporate announcements";
+    case "fii_dii": return "fii dii flows";
   }
 }
 
@@ -239,7 +241,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
     setAnalyseNote("");
   }
 
-  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg", "sectors", "valuation", "announcements"]);
+  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg", "sectors", "valuation", "announcements", "fii_dii"]);
 
   function handleFeatureSelect(id: FeatureId | null) {
     if (!id) { setActiveFeature(null); return; }

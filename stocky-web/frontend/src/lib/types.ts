@@ -30,6 +30,7 @@ export type MessageType =
   | "sectors"
   | "valuation"
   | "announcements"
+  | "fii_dii"
   | "council_progress"
   | "council_debate";
 

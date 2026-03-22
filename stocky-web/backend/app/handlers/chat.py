@@ -244,6 +244,12 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if re.match(r"^(valuation|market valuation|nifty valuation|pe ratio|nifty pe)\s*$", lower):
         return "valuation", []
 
+    # FII/DII
+    if re.match(r"^(fii.?dii|fii dii flows?|institutional flows?|fpi flows?|fii selling|dii buying)\s*$", lower):
+        return "fii_dii", []
+    if re.search(r"\b(fii.?dii|institutional flows?|fpi flows?)\b", lower):
+        return "fii_dii", []
+
     # Announcements
     if re.match(r"^(announcements?|corporate announcements?|filings?|corporate actions?)\s*$", lower):
         return "announcements", []
@@ -592,6 +598,11 @@ async def _dispatch(
         from app.handlers.valuation import get_valuation
         data = await get_valuation(deep=deep)
         return {"type": "valuation", "content": "Market Valuation", "data": data}
+
+    if intent == "fii_dii":
+        from app.handlers.fii_dii import get_fii_dii_data
+        data = await get_fii_dii_data(deep=deep)
+        return {"type": "fii_dii", "content": "FII/DII Flows", "data": data}
 
     if intent == "announcements":
         from app.handlers.announcements import get_announcements

@@ -220,6 +220,10 @@ export async function getAnnouncements() {
   return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/announcements");
 }
 
+export async function getFiiDii() {
+  return apiFetch<{ type: string; data: Record<string, unknown> }>("/api/fii-dii");
+}
+
 // --- Watchlist ---
 
 export async function saveToWatchlist(symbol: string) {

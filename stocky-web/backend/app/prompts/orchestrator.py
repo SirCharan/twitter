@@ -576,6 +576,55 @@ BUTTON_CONFIGS: dict[str, dict] = {
         "temperature": 0.5,
     },
 
+    # ─── FII/DII ───────────────────────────────────────────────────────
+    "fii_dii": {
+        "quick_prompt": (
+            "You are Stocky AI — an institutional flow analyst specialising in "
+            "Indian markets (FII/DII/FPI).\n\n"
+            "Flow data:\n{data}\n\n"
+            "Provide a sharp, numbers-first institutional flow analysis:\n\n"
+            "### Flow Regime\n"
+            "[FII BUYING] / [FII SELLING] / [DII SUPPORT] / [MIXED] — "
+            "one sentence with conviction.\n\n"
+            "### Cash Segment\n"
+            "| Participant | Buy (₹ Cr) | Sell (₹ Cr) | Net (₹ Cr) | Signal |\n"
+            "|-------------|-----------|------------|-----------|--------|\n"
+            "Fill with actual data. Highlight if net > ₹2000 Cr (large day).\n\n"
+            "### F&O Positioning\n"
+            "FII index futures long/short ratio → directional bias. "
+            "Options OI → hedging or aggressive? "
+            "Client vs FII positioning divergence.\n\n"
+            "### FII vs DII Divergence\n"
+            "When FII sells and DII buys → historically bullish for Nifty "
+            "(DII absorption). When both sell → danger. Current signal.\n\n"
+            "### Market Impact\n"
+            "How these flows affect Nifty in next 1-2 sessions. "
+            "Specific support/resistance levels if relevant.\n\n"
+            "Be specific with numbers. Think in positioning and flow, not narrative."
+        ),
+        "quick_max_tokens": 768,
+        "deep_primary": (
+            "You are Stocky AI — a senior institutional flow analyst.\n\n"
+            "Data:\n{data}\n\n"
+            "Produce a deep institutional flow analysis:\n"
+            "1. **Flow Regime Classification** — bull/bear/transition based on "
+            "multi-day FII/DII pattern\n"
+            "2. **Historical Context** — how do current daily flows compare to "
+            "30-day average? Any extreme readings?\n"
+            "3. **F&O Footprint** — FII long/short ratio in index futures, "
+            "options writing pattern, rollover signals if near expiry\n"
+            "4. **DII Counterflow** — are mutual funds/insurance absorbing FII selling? "
+            "SIP flow context (₹20K+ Cr/month)\n"
+            "5. **NSDL FPI Data** — equity vs debt preference, any rotation into "
+            "safer assets?\n"
+            "6. **Sector Rotation Signal** — where are FPIs deploying capital?\n"
+            "7. **Nifty Impact Estimate** — expected direction with conviction level\n\n"
+            "500-800 words. Think like a prop desk analyst reading the flow tape."
+        ),
+        "deep_max_tokens": 1536,
+        "temperature": 0.4,
+    },
+
     # ─── ANNOUNCEMENTS ────────────────────────────────────────────────
     "announcements": {
         "quick_prompt": (

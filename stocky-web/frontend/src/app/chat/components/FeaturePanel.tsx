@@ -28,6 +28,7 @@ const FEATURE_META: Record<FeatureId, { icon: string; label: string }> = {
   sectors:         { icon: "🏭", label: "Sector Performance" },
   valuation:       { icon: "📊", label: "Market Valuation" },
   announcements:   { icon: "📢", label: "Corporate Announcements" },
+  fii_dii:         { icon: "🏛", label: "FII/DII Flows" },
 };
 
 function Chip({
@@ -341,6 +342,13 @@ export default function FeaturePanel({ feature, onClose, onFeatureSend }: Props)
         <SimplePanel
           description="Latest corporate announcements — earnings results, dividends, bonuses, splits, board meetings."
           btnLabel="Load Announcements →"
+          onSubmit={() => submit({})}
+        />
+      );
+      case "fii_dii": return (
+        <SimplePanel
+          description="Real-time FII/DII cash flows, F&O participant OI, and NSDL FPI data with AI analysis."
+          btnLabel="Load FII/DII Flows →"
           onSubmit={() => submit({})}
         />
       );
