@@ -266,9 +266,12 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
   function handleSend(text: string) {
     setActiveFeature(null);
     setFeatureBarVisible(false);
-    // Deep mode sends with deep=true flag for upgraded orchestrator analysis
-    // Council/Triad remain available via explicit feature buttons
-    onSend(text, chatMode === "deep");
+    // Deep Research mode → route to 6-Agent Council
+    if (chatMode === "deep" && onCouncilResearch) {
+      onCouncilResearch(text);
+      return;
+    }
+    onSend(text);
   }
 
   // Input bar positioning: fixed above bottom nav on mobile, static on desktop
