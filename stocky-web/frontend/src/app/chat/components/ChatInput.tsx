@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
 
@@ -60,8 +60,10 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
 
   const isDeep = mode === "deep";
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 72 });
+  const toggleContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Measure slider position — useLayoutEffect runs before paint for instant visual update
+  const measureSlider = useCallback(() => {
     const activeRef = isDeep ? deepRef.current : quickRef.current;
     if (activeRef) {
       setSliderStyle({
@@ -70,6 +72,20 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
       });
     }
   }, [isDeep]);
+
+  // Primary measurement: runs synchronously before paint
+  useLayoutEffect(() => {
+    measureSlider();
+  }, [measureSlider]);
+
+  // Fallback: ResizeObserver recalculates if layout shifts (font loading, orientation change)
+  useEffect(() => {
+    const container = toggleContainerRef.current;
+    if (!container) return;
+    const ro = new ResizeObserver(() => measureSlider());
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [measureSlider]);
 
   return (
     <div className="space-y-1.5">
