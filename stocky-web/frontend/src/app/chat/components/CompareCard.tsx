@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import AnimatedNumber from "./ui/AnimatedNumber";
 import Disclaimer from "./ui/Disclaimer";
 import CardActions from "./ui/CardActions";
+import { Trophy } from "lucide-react";
 
 interface StockCompare {
   name: string;
@@ -102,7 +103,7 @@ export default function CompareCard({ data }: Props) {
   return (
     <CardWrapper icon="⚖️" title="Stock Comparison">
       {/* Header */}
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <span style={{ fontSize: 15 }}>⚖</span>
         <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
           Stock Comparison
@@ -112,13 +113,14 @@ export default function CompareCard({ data }: Props) {
             className="ml-auto flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
             style={{ background: "rgba(34,197,94,0.1)", color: "var(--positive)" }}
           >
-            🏆 {winner}
+            <Trophy size={10} /> {winner}
           </span>
         )}
       </div>
 
       {/* Scores + rows — horizontally scrollable on mobile */}
-      <div className="overflow-x-auto scrollbar-none">
+      <div className="relative">
+      <div className="overflow-x-auto scrollbar-none" style={{ WebkitOverflowScrolling: "touch" }}>
       <div style={{ minWidth: Math.max(320, stocks.length * 140) }}>
 
       {/* Scores */}
@@ -179,6 +181,9 @@ export default function CompareCard({ data }: Props) {
       </div>
       </div>{/* min-width wrapper */}
       </div>{/* overflow-x-auto */}
+      {/* Right-edge scroll hint — mobile only */}
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 md:hidden" style={{ background: "linear-gradient(to right, transparent, var(--card-bg))" }} />
+      </div>{/* relative wrapper */}
 
       {/* Stocky's Verdict */}
       {(data.ai_verdict as string) && (

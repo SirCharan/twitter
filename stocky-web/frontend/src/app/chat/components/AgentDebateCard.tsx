@@ -74,14 +74,14 @@ function CollapsibleSection({
     >
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
+        className="flex w-full min-h-[44px] items-center gap-2.5 px-4 py-2.5 text-left"
       >
         <span className="text-xs">{icon}</span>
         <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--foreground)" }}>
           {title}
         </span>
         <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+          className="max-w-[120px] truncate rounded-full px-2 py-0.5 text-[10px] font-medium"
           style={{ background: `${accentColor}15`, color: accentColor }}
         >
           {agentName}

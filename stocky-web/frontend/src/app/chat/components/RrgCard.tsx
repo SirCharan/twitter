@@ -119,7 +119,7 @@ export default function RrgCard({ data }: Props) {
       </div>
 
       {/* SVG Chart */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
@@ -183,7 +183,7 @@ export default function RrgCard({ data }: Props) {
                   fontSize="8"
                   fill="rgba(255,255,255,0.7)"
                 >
-                  {sector.name.replace("Nifty ", "")}
+                  {sector.name.replace(/^Nifty\s+/, "")}
                 </text>
               </g>
             );
@@ -191,8 +191,8 @@ export default function RrgCard({ data }: Props) {
         </svg>
       </div>
 
-      {/* Sector Table */}
-      <div className="mt-4 overflow-x-auto">
+      {/* Sector Table — desktop only */}
+      <div className="mt-4 hidden md:block overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
         <table className="w-full text-xs">
           <thead>
             <tr style={{ color: "var(--muted)" }}>
@@ -237,6 +237,40 @@ export default function RrgCard({ data }: Props) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile sector card-stack */}
+      <div className="mt-4 md:hidden space-y-2">
+        {sectors.map((s, i) => (
+          <motion.div
+            key={s.name}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.04, type: "spring", stiffness: 300, damping: 25 }}
+            className="flex items-center justify-between rounded-xl border px-3 py-2.5"
+            style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate" style={{ color: "var(--foreground)" }}>
+                {s.name.replace(/^Nifty\s+/, "")}
+              </p>
+              <p className="text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
+                {s.rs_ratio.toFixed(2)} / {s.rs_momentum.toFixed(2)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 ml-2 shrink-0">
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{ background: `${QUADRANT_COLORS[s.color]}15`, color: QUADRANT_COLORS[s.color] }}
+              >
+                {s.quadrant}
+              </span>
+              <span className="text-[11px] font-semibold" style={{ color: REC_COLORS[s.recommendation] }}>
+                {s.recommendation}
+              </span>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Stocky's Rotation Read */}

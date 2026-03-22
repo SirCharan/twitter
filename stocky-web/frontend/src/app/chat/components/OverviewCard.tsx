@@ -111,14 +111,14 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
                 <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>
                   {idx.name}
                 </p>
-                <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                <p className="text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
                   {idx.value != null ? <AnimatedNumber value={idx.value} decimals={2} locale="en-IN" /> : "—"}
                 </p>
                 <p className="text-xs font-medium mt-0.5" style={{ color }}>
                   {isPos ? "+" : ""}{fmt(idx.change)} ({isPos ? "+" : ""}{pct(idx.pct_change)}%)
                 </p>
                 {(idx.open || idx.high || idx.low) && (
-                  <div className="mt-1.5 flex gap-2 text-[10px]" style={{ color: "var(--muted)" }}>
+                  <div className="mt-1.5 flex gap-2 text-[9px] sm:text-[10px]" style={{ color: "var(--muted)" }}>
                     {idx.open ? <span>O: {fmt(idx.open)}</span> : null}
                     {idx.high ? <span style={{ color: "var(--positive)" }}>H: {fmt(idx.high)}</span> : null}
                     {idx.low  ? <span style={{ color: "var(--negative)" }}>L: {fmt(idx.low)}</span>  : null}

@@ -100,13 +100,13 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="rounded-lg p-2.5" style={{ background: "var(--card-bg)" }}>
             <p className="text-[11px] mb-0.5" style={{ color: "var(--muted)" }}>Invested</p>
-            <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+            <p className="text-base sm:text-sm font-semibold" style={{ color: "var(--foreground)" }}>
               {formatINR(inv.invested)}
             </p>
           </div>
           <div className="rounded-lg p-2.5" style={{ background: "var(--card-bg)" }}>
             <p className="text-[11px] mb-0.5" style={{ color: "var(--muted)" }}>Current</p>
-            <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+            <p className="text-base sm:text-sm font-semibold" style={{ color: "var(--foreground)" }}>
               {formatINR(inv.current)}
             </p>
           </div>
@@ -176,11 +176,11 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="rounded-lg p-2.5" style={{ background: "var(--card-bg)" }}>
             <p className="text-[11px] mb-0.5" style={{ color: "var(--muted)" }}>Day P&L</p>
-            <p className="text-sm font-semibold"><PnlText value={trd.day_pnl} /></p>
+            <p className="text-base sm:text-sm font-semibold"><PnlText value={trd.day_pnl} /></p>
           </div>
           <div className="rounded-lg p-2.5" style={{ background: "var(--card-bg)" }}>
             <p className="text-[11px] mb-0.5" style={{ color: "var(--muted)" }}>Realised</p>
-            <p className="text-sm font-semibold"><PnlText value={trd.realised} /></p>
+            <p className="text-base sm:text-sm font-semibold"><PnlText value={trd.realised} /></p>
           </div>
         </div>
 
@@ -195,10 +195,10 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
               {groupByUnderlying(trd.positions).map(([underlying, positions]) => {
                 const groupPnl = positions.reduce((s, p) => s + p.pnl, 0);
                 return (
+                  <div key={underlying} className="relative">
                   <div
-                    key={underlying}
                     className="rounded-lg border overflow-hidden overflow-x-auto"
-                    style={{ borderColor: "var(--card-border)", background: "var(--card-bg)" }}
+                    style={{ borderColor: "var(--card-border)", background: "var(--card-bg)", WebkitOverflowScrolling: "touch" }}
                   >
                     {/* Group header */}
                     <div
@@ -270,6 +270,9 @@ export default function PortfolioCard({ data }: { data: Record<string, unknown> 
                         </span>
                       </div>
                     ))}
+                  </div>
+                  {/* Right-edge scroll hint — mobile only */}
+                  <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 rounded-r-lg md:hidden" style={{ background: "linear-gradient(to right, transparent, var(--card-bg))" }} />
                   </div>
                 );
               })}

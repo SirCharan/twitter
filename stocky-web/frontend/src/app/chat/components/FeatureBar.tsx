@@ -101,7 +101,7 @@ function FeatureChip({
       disabled={disabled}
       aria-label={f.label}
       aria-pressed={isActive}
-      className="relative flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 sm:py-1 text-[11px] font-medium transition-colors disabled:opacity-30"
+      className="relative flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 sm:py-1 text-[11px] font-medium transition-colors disabled:opacity-30 min-h-[44px] sm:min-h-0"
       style={{
         borderColor: isActive ? "var(--accent)" : "var(--card-border)",
         background: isActive ? "rgba(201,169,110,0.1)" : "transparent",

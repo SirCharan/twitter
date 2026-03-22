@@ -61,7 +61,7 @@ export default function SuggestionChips({ message, onSend }: Props) {
   if (!suggestions.length) return null;
 
   return (
-    <div className="mt-2 flex flex-wrap gap-1.5 pl-1">
+    <div className="mt-2 flex gap-1.5 overflow-x-auto scrollbar-none pl-1 pb-1">
       {suggestions.map((s, i) => (
         <motion.button
           key={s}
@@ -74,7 +74,7 @@ export default function SuggestionChips({ message, onSend }: Props) {
             track("action", "suggestion_chip", { suggestion: s, type: message.type });
             onSend(s);
           }}
-          className="rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors"
+          className="shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors min-h-[44px] sm:min-h-0 flex items-center"
           style={{
             borderColor: "var(--card-border)",
             color: "var(--muted)",
