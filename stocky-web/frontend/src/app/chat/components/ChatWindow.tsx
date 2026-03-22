@@ -154,7 +154,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
   const [analyseNote, setAnalyseNote] = useState("");
 
   const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
-  const [featureBarVisible, setFeatureBarVisible] = useState(true);
+  const [featureBarVisible, setFeatureBarVisible] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -597,6 +597,24 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
         style={inputBarStyle}
       >
         <div className="mx-auto max-w-3xl">
+          {/* Feature bar toggle — only show toggle when messages exist */}
+          {!showEmpty && !analyseOpen && !isLoading && (
+            <div className="flex justify-center mb-1">
+              <button
+                onClick={() => setFeatureBarVisible((v) => !v)}
+                className="text-[10px] px-3 py-1 rounded-full border transition-colors hover:border-[var(--accent-dim)]"
+                style={{
+                  color: "var(--muted)",
+                  borderColor: featureBarVisible ? "var(--accent)" : "var(--card-border)",
+                  background: featureBarVisible ? "rgba(201,169,110,0.06)" : "transparent",
+                  opacity: 0.7,
+                }}
+              >
+                {featureBarVisible ? "Hide tools ↑" : "Tools & shortcuts ↓"}
+              </button>
+            </div>
+          )}
+
           {/* Feature bar */}
           <FeatureBar
             active={activeFeature}
