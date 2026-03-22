@@ -68,8 +68,9 @@ export default function MobileBottomNav({ onSend, onNewChat, onOpenFeatureBar, o
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-[5rem] left-4 right-4 z-50 rounded-xl border p-3 text-center"
+            className="fixed left-4 right-4 z-50 rounded-xl border p-3 text-center"
             style={{
+              bottom: "5rem",
               background: "var(--surface)",
               borderColor: "var(--accent)",
               boxShadow: "0 -4px 24px rgba(0,0,0,0.3)",
