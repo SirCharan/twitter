@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { AnalysisData } from "@/lib/types";
+import type { AnalysisData, StructuredMeta as StructuredMetaType } from "@/lib/types";
 import CardWrapper from "./ui/CardWrapper";
 import AnimatedNumber from "./ui/AnimatedNumber";
 import Disclaimer from "./ui/Disclaimer";
 import CardActions from "./ui/CardActions";
+import StructuredMeta from "./ui/StructuredMeta";
+import ActionTag from "./ui/ActionTag";
 
 function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
   const pct = (score / max) * 100;
@@ -82,6 +84,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function AnalysisCard({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as AnalysisData;
+  const meta = (data as Record<string, unknown>)?.structured_meta as StructuredMetaType | undefined;
   const [showAllNews, setShowAllNews] = useState(false);
   const [showDetailedResults, setShowDetailedResults] = useState(false);
 
@@ -90,8 +93,9 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
     <div className="space-y-1">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <p className="text-xs" style={{ color: "var(--muted)" }}>{d.symbol}</p>
+          {meta?.action_tag && <ActionTag tag={meta.action_tag} size="sm" />}
         </div>
         <div className="text-right">
           <p className="text-xs" style={{ color: "var(--muted)" }}>Overall Score</p>
@@ -353,6 +357,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
         </motion.div>
       )}
     </div>
+      {meta && <StructuredMeta meta={meta} />}
       <CardActions cardType="analysis" cardData={data} ticker={d.symbol as string} />
       <Disclaimer />
     </CardWrapper>

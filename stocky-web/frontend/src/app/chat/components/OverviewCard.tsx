@@ -1,11 +1,12 @@
 "use client";
-import type { OverviewData } from "@/lib/types";
+import type { OverviewData, StructuredMeta as StructuredMetaType } from "@/lib/types";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import { motion } from "framer-motion";
 import AnimatedNumber from "./ui/AnimatedNumber";
 import Disclaimer from "./ui/Disclaimer";
 import CardActions from "./ui/CardActions";
+import StructuredMeta from "./ui/StructuredMeta";
 
 function fmt(v: number | null | undefined) {
   if (v == null) return "—";
@@ -262,6 +263,10 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         </div>
       )}
     </div>
+      {(() => {
+        const sm = (data as Record<string, unknown>)?.structured_meta as StructuredMetaType | undefined;
+        return sm ? <StructuredMeta meta={sm} compact /> : null;
+      })()}
       <CardActions cardType="overview" cardData={data} />
       <Disclaimer />
     </CardWrapper>

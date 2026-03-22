@@ -579,6 +579,38 @@ async def get_analysis(symbol: str, deep: bool = False) -> dict:
         else:
             verdict = "Everything is broken. Trend, fundamentals, sentiment — all negative. Stay away."
 
+    # Build structured meta from verdict and scores
+    from app.response_formatter import build_structured_meta, parse_structured_from_ai
+
+    ai_meta = parse_structured_from_ai(verdict or "") if verdict else {}
+
+    # Determine action tag from score
+    if overall >= 22:
+        default_tag = "BUY"
+    elif overall >= 16:
+        default_tag = "HOLD"
+    elif overall >= 10:
+        default_tag = "WATCH"
+    else:
+        default_tag = "SELL"
+
+    structured_meta = build_structured_meta(
+        action_tag=ai_meta.get("action_tag", default_tag),
+        confidence=ai_meta.get("confidence", min(95, max(20, int(overall * 3.3)))),
+        confidence_reason=ai_meta.get("confidence_reason", f"Based on {overall:.0f}/30 composite score"),
+        payoff_box=ai_meta.get("payoff_box") or {
+            "upside": f"{technical.get('sma_200', 'N/A')} (SMA200)" if technical.get("sma_200") else "See analysis",
+            "downside": f"{technical.get('week_52_low', 'N/A')} (52W Low)" if technical.get("week_52_low") else "See analysis",
+            "asymmetry": "See verdict",
+        },
+        thesis_killers=ai_meta.get("thesis_killers", []),
+        sources=[
+            {"name": "NSE India", "freshness": "Live"},
+            {"name": "yfinance", "freshness": "15m delay"},
+            {"name": "RSS News", "freshness": "Recent"},
+        ],
+    )
+
     result = {
         "name": name,
         "symbol": nse_symbol,
@@ -590,6 +622,7 @@ async def get_analysis(symbol: str, deep: bool = False) -> dict:
         "quarterly": quarterly,
         "shareholding": shareholding,
         "verdict": verdict,
+        "structured_meta": structured_meta,
     }
     if ai_metadata:
         result["ai_metadata"] = ai_metadata

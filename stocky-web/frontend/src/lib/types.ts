@@ -303,6 +303,24 @@ export interface CouncilData {
   timestamp: string;
 }
 
+// ---------------------------------------------------------------------------
+// Structured response metadata (action tags, confidence, payoff box)
+// ---------------------------------------------------------------------------
+
+export interface StructuredMeta {
+  action_tag: "BUY" | "HOLD" | "SELL" | "ALERT" | "WATCH";
+  action_color: string;
+  confidence: number;
+  confidence_reasoning: string;
+  payoff_box: {
+    upside: string;
+    downside: string;
+    asymmetry: string;
+  };
+  thesis_killers: string[];
+  sources: { name: string; freshness: string }[];
+}
+
 export interface FeedbackRequest {
   message_id?: string;
   conversation_id?: string;

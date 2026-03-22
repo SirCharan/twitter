@@ -12,6 +12,10 @@ KITE_USER_ID = os.environ.get("KITE_USER_ID", "")
 KITE_PASSWORD = os.environ.get("KITE_PASSWORD", "")
 KITE_TOTP_SECRET = os.environ.get("KITE_TOTP_SECRET", "")
 
+# Dhan HQ
+DHAN_CLIENT_ID = os.environ.get("DHAN_CLIENT_ID", "")
+DHAN_ACCESS_TOKEN = os.environ.get("DHAN_ACCESS_TOKEN", "")
+
 # Database
 DB_PATH = os.environ.get("DB_PATH", "stocky_web.db")
 

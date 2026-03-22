@@ -26,7 +26,9 @@ OVERVIEW_MOOD_PROMPT = (
     "2. Which sector is leading and which is lagging — one line each with rationale\n"
     "3. Breadth quality — is the rally/sell-off broad-based or narrow?\n"
     "4. One forward-looking risk or catalyst to watch\n\n"
-    "Be specific with numbers. No fluff. Think in payoffs."
+    "Be specific with numbers. No fluff. Think in payoffs.\n\n"
+    "Also include: market action tag (ALERT if volatile, WATCH if range-bound, "
+    "BUY if strongly bullish, SELL if strongly bearish) and confidence 0-100."
 )
 
 NEWS_SUMMARY_PROMPT = (
@@ -50,6 +52,11 @@ ANALYSE_VERDICT_PROMPT = (
     "2. Key levels — Support 1, Support 2, Resistance 1, Resistance 2 "
     "(derive from SMA50, SMA200, 52W range, recent price action)\n"
     "3. One catalyst or risk to watch in the near term\n\n"
+    "Also include:\n"
+    "- Action tag: one of BUY / HOLD / SELL / ALERT / WATCH\n"
+    "- Confidence: 0-100 with one-line reasoning\n"
+    "- Thesis killers: 2-3 things that would invalidate this view\n"
+    "- Payoff asymmetry: upside target vs downside risk\n\n"
     "Be direct. State it as fact."
 )
 

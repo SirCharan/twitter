@@ -116,6 +116,15 @@ async def init_db():
                 created_at TEXT DEFAULT (datetime('now'))
             );
 
+            CREATE TABLE IF NOT EXISTS user_facts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                fact_key TEXT NOT NULL,
+                fact_value TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(username, fact_key)
+            );
+
             CREATE TABLE IF NOT EXISTS feedback (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 message_id TEXT,
@@ -564,3 +573,30 @@ async def get_analytics_stats() -> dict:
             "recent": recent,
             "total": total,
         }
+
+
+# --- User Facts ---
+
+async def upsert_user_fact(username: str, fact_key: str, fact_value: str):
+    """Store or update a user fact."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO user_facts (username, fact_key, fact_value) "
+            "VALUES (?, ?, ?) ON CONFLICT(username, fact_key) DO UPDATE SET "
+            "fact_value = excluded.fact_value, created_at = datetime('now')",
+            (username, fact_key, fact_value),
+        )
+        await db.commit()
+
+
+async def get_user_facts(username: str) -> list[dict]:
+    """Get all stored facts for a user."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT fact_key, fact_value FROM user_facts WHERE username = ? "
+            "ORDER BY created_at DESC LIMIT 20",
+            (username,),
+        )
+        rows = await cursor.fetchall()
+        return [{"key": r["fact_key"], "value": r["fact_value"]} for r in rows]

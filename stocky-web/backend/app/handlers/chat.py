@@ -2,7 +2,7 @@ import logging
 import re
 import uuid
 
-from app import ai_client, database
+from app import ai_client, database, context_manager
 from app.handlers import analyse, alerts, market, news, overview, portfolio, trading
 
 logger = logging.getLogger(__name__)
@@ -268,8 +268,14 @@ async def handle_chat(
     # Save user message
     await database.save_message(conversation_id, username, "user", message)
 
-    # Load conversation history for context
-    history = await database.get_recent_history(conversation_id, limit=10)
+    # Extract and store user facts (non-blocking, no AI call)
+    try:
+        await context_manager.extract_and_store_facts(username, message, conversation_id)
+    except Exception as e:
+        logger.debug("Fact extraction skipped: %s", e)
+
+    # Load smart conversation context (rolling summary + user facts)
+    history = await context_manager.get_smart_context(conversation_id, message, username)
 
     # Try regex NLP first
     result = _parse_natural(message)
