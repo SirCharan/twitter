@@ -148,8 +148,10 @@ export default function ChatShell() {
               onNewChat={handleNewChat}
               onDeepResearch={chat.streamDeepResearch}
               onGeneralDeepResearch={chat.streamGeneralDeepResearch}
+              onCouncilResearch={chat.streamCouncilResearch}
               onToggleSidebar={toggleSidebar}
               onRemoveLastAssistant={chat.removeLastAssistant}
+              onStop={chat.stopGeneration}
               hideHeaderOnMobile={!isDesktop}
             />
 

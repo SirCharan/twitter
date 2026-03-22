@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { ChatMessage } from "@/lib/types";
 import {
   sendMessage as apiSendMessage,
@@ -7,6 +7,7 @@ import {
   getConversationMessages,
   streamResearch,
   streamDeepResearchGeneral,
+  streamCouncilResearch as apiStreamCouncil,
 } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 
@@ -29,6 +30,13 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const stopGeneration = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
+  }, []);
 
   const updateMessage = useCallback((id: string, updates: Partial<ChatMessage>) => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
@@ -429,6 +437,166 @@ export function useChat() {
     [conversationId, updateMessage],
   );
 
+  // -----------------------------------------------------------------------
+  // Council Deep Research (6-agent)
+  // -----------------------------------------------------------------------
+  const COUNCIL_STEP_LABELS = [
+    "Query Decomposition", "Market Data Fetch", "Technical Analysis",
+    "Fundamental Deep Dive", "Sentiment & News Flow", "Risk & Scenario Modeling",
+    "Macro Context", "Trade Idea Generation", "Final Synthesis",
+  ];
+
+  const streamCouncilResearch = useCallback(
+    async (query: string) => {
+      const convId = conversationId || "";
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: query,
+        type: "text",
+        timestamp: new Date().toISOString(),
+        conversationId: convId,
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      trackEvent("query_submit", "council_debate", { query });
+
+      const progressId = `council-${Date.now()}`;
+      const stepStatuses: Array<"pending" | "running" | "done"> = Array(9).fill("pending");
+      const stepContents: Array<string | undefined> = Array(9).fill(undefined);
+      const stepElapseds: Array<number | undefined> = Array(9).fill(undefined);
+      const stepThinkings: Array<string | undefined> = Array(9).fill(undefined);
+      const stepAgents: Array<string | null> = [
+        "CSO", null, "TS", "FA", "MP", "RG", "ME", "CSO", "CSO",
+      ];
+      let agents: Array<Record<string, unknown>> = [];
+      let currentRound = 1;
+      let rebuttals: Array<Record<string, unknown>> = [];
+
+      const makeProgressData = () => ({
+        agents,
+        currentRound,
+        currentStep: stepStatuses.filter((s) => s === "done").length + 1,
+        steps: COUNCIL_STEP_LABELS.map((label, i) => ({
+          step: i + 1,
+          label,
+          agent: stepAgents[i],
+          status: stepStatuses[i],
+          content: stepContents[i],
+          elapsed: stepElapseds[i],
+          thinking: stepThinkings[i],
+        })),
+        rebuttals,
+      });
+
+      const progressMsg: ChatMessage = {
+        id: progressId,
+        role: "assistant",
+        content: "Stocky Council Research",
+        type: "council_progress",
+        data: makeProgressData(),
+        timestamp: new Date().toISOString(),
+        conversationId: convId,
+      };
+      setMessages((prev) => [...prev, progressMsg]);
+      setIsLoading(true);
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      try {
+        const res = await apiStreamCouncil(query, controller.signal);
+        if (!res.body) throw new Error("No response body");
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              const ev = JSON.parse(line.slice(6));
+
+              if (ev.type === "council_start") {
+                agents = ev.agents || [];
+                updateMessage(progressId, { data: makeProgressData() });
+
+              } else if (ev.type === "step_start") {
+                const idx = (ev.step as number) - 1;
+                if (idx >= 0 && idx < 9) {
+                  stepStatuses[idx] = "running";
+                  if (ev.agent) stepAgents[idx] = ev.agent;
+                  updateMessage(progressId, { data: makeProgressData() });
+                }
+
+              } else if (ev.type === "agent_thinking") {
+                const idx = stepStatuses.indexOf("running");
+                if (idx >= 0) {
+                  stepThinkings[idx] = ev.thinking;
+                  updateMessage(progressId, { data: makeProgressData() });
+                }
+
+              } else if (ev.type === "agent_output" || ev.type === "data_fetch") {
+                const idx = (ev.step as number) - 1;
+                if (idx >= 0 && idx < 9) {
+                  stepStatuses[idx] = "done";
+                  stepContents[idx] = ev.content;
+                  stepElapseds[idx] = ev.elapsed;
+                  updateMessage(progressId, { data: makeProgressData() });
+                }
+
+              } else if (ev.type === "round_start") {
+                currentRound = ev.round || currentRound;
+                updateMessage(progressId, { data: makeProgressData() });
+
+              } else if (ev.type === "rebuttal") {
+                rebuttals.push({
+                  agent: ev.agent, target: ev.target,
+                  content: ev.content, elapsed: ev.elapsed,
+                });
+                updateMessage(progressId, { data: makeProgressData() });
+
+              } else if (ev.type === "error") {
+                throw new Error(`Council error: ${ev.message || "Unknown"}`);
+
+              } else if (ev.type === "result") {
+                updateMessage(progressId, {
+                  type: "council_debate",
+                  content: "Stocky Council Report",
+                  data: ev.data as Record<string, unknown>,
+                });
+              }
+            } catch (parseErr) {
+              if (parseErr instanceof Error && parseErr.message.startsWith("Council error:")) throw parseErr;
+            }
+          }
+        }
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") {
+          updateMessage(progressId, {
+            type: "text",
+            content: "Council research was cancelled.",
+          });
+        } else {
+          updateMessage(progressId, {
+            type: "error",
+            content: err instanceof Error ? err.message : "Council research failed.",
+          });
+        }
+      } finally {
+        abortControllerRef.current = null;
+        setIsLoading(false);
+      }
+    },
+    [conversationId, updateMessage],
+  );
+
   const newChat = useCallback(() => {
     setMessages([]);
     setConversationId(null);
@@ -449,9 +617,11 @@ export function useChat() {
     sendMessage,
     streamDeepResearch,
     streamGeneralDeepResearch,
+    streamCouncilResearch,
     handleTradeAction,
     loadConversation,
     newChat,
     removeLastAssistant,
+    stopGeneration,
   };
 }

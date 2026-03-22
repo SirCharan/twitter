@@ -30,8 +30,10 @@ interface Props {
   onNewChat: () => void;
   onDeepResearch?: (stock: string, mode: string) => void;
   onGeneralDeepResearch?: (query: string) => void;
+  onCouncilResearch?: (query: string) => void;
   onToggleSidebar?: () => void;
   onRemoveLastAssistant?: () => void;
+  onStop?: () => void;
   hideHeaderOnMobile?: boolean;
 }
 
@@ -131,8 +133,10 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
   onNewChat,
   onDeepResearch,
   onGeneralDeepResearch,
+  onCouncilResearch,
   onToggleSidebar,
   onRemoveLastAssistant,
+  onStop,
   hideHeaderOnMobile = false,
 }, ref) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -266,8 +270,15 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
   function handleSend(text: string) {
     setActiveFeature(null);
     setFeatureBarVisible(false);
-    if (chatMode === "deep" && onGeneralDeepResearch) {
-      onGeneralDeepResearch(text);
+    if (chatMode === "deep") {
+      // Prefer Council (6-agent) over Triad (3-agent)
+      if (onCouncilResearch) {
+        onCouncilResearch(text);
+      } else if (onGeneralDeepResearch) {
+        onGeneralDeepResearch(text);
+      } else {
+        onSend(text);
+      }
     } else {
       onSend(text);
     }

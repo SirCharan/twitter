@@ -29,6 +29,8 @@ import DividendsCard from "./DividendsCard";
 import SectorsCard from "./SectorsCard";
 import ValuationCard from "./ValuationCard";
 import AnnouncementsCard from "./AnnouncementsCard";
+import CouncilProgressCard from "./CouncilProgressCard";
+import CouncilResultCard from "./CouncilResultCard";
 import Confetti from "./Confetti";
 import MessageActions from "./MessageActions";
 import Avatar from "./ui/Avatar";
@@ -85,12 +87,13 @@ const FULL_WIDTH_TYPES = new Set([
   "compare", "ipo", "macro", "rrg", "portfolio", "positions",
   "holdings", "orders", "overview", "news", "suggestion",
   "agent_debate", "debate_progress",
+  "council_progress", "council_debate",
   "earnings", "dividends", "sectors", "valuation", "announcements",
 ]);
 
 // Types that should NOT show MessageActions
 const NO_ACTIONS_TYPES = new Set([
-  "progress", "debate_progress", "suggestion", "error", "trade_confirm",
+  "progress", "debate_progress", "council_progress", "suggestion", "error", "trade_confirm",
 ]);
 
 export default function MessageBubble({ message, onTradeAction, onSend, onRegenerate, isLastAssistant, isLoading }: Props) {
@@ -256,6 +259,12 @@ function RichContent({
       }>) || [];
       return <DebateProgressCard phases={phases} />;
     }
+
+    case "council_progress":
+      return <CouncilProgressCard data={data as Record<string, unknown>} />;
+
+    case "council_debate":
+      return <CouncilResultCard data={data as Record<string, unknown>} />;
 
     case "earnings":
       return <EarningsCard data={data as Record<string, unknown>} />;
