@@ -722,6 +722,8 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
             disabled={isLoading}
             mode={chatMode}
             onModeChange={setChatMode}
+            isStreaming={isLoading}
+            onStop={onStop}
           />
         </div>
       </div>

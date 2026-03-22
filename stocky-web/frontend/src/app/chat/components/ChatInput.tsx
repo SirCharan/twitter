@@ -13,9 +13,13 @@ interface Props {
   onModeChange: (mode: ChatMode) => void;
   /** Optional forwarded ref so parent (ChatWindow) can focus the textarea */
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+  /** When true, shows a stop button instead of send */
+  isStreaming?: boolean;
+  /** Called when user clicks stop button */
+  onStop?: () => void;
 }
 
-export default function ChatInput({ onSend, disabled, mode, onModeChange, textareaRef: externalRef }: Props) {
+export default function ChatInput({ onSend, disabled, mode, onModeChange, textareaRef: externalRef, isStreaming, onStop }: Props) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showCheck, setShowCheck] = useState(false);
@@ -179,62 +183,88 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
           className="flex-1 resize-none bg-transparent text-base md:text-sm leading-relaxed outline-none placeholder:text-[var(--muted)]"
           style={{ color: "var(--foreground)", transition: "height 0.15s ease" }}
         />
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ scale: 1.05 }}
-          onClick={handleSubmit}
-          disabled={disabled || !text.trim()}
-          aria-label="Send message"
-          data-analytics="send"
-          className={`relative overflow-hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
-            text.trim() && !disabled ? "send-ready" : ""
-          }`}
-          style={{ background: text.trim() ? "var(--accent)" : "var(--card-border)" }}
-        >
-          {/* Ripple burst on send */}
-          <AnimatePresence>
-            {rippleKey > 0 && (
-              <motion.span
-                key={rippleKey}
-                initial={{ scale: 0, opacity: 0.3 }}
-                animate={{ scale: 2.5, opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 rounded-xl"
-                style={{ background: "rgba(255,255,255,0.4)" }}
-              />
-            )}
-          </AnimatePresence>
-          {/* Icon: arrow or checkmark */}
-          <AnimatePresence mode="wait">
-            {showCheck ? (
-              <motion.svg
-                key="check"
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 45 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                width="16" height="16" viewBox="0 0 16 16" fill="none"
-              >
-                <path d="M3 8l4 4 6-7" stroke="var(--background)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </motion.svg>
-            ) : (
-              <motion.svg
-                key="arrow"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                width="16" height="16" viewBox="0 0 16 16" fill="none"
-                style={{
-                  transform: sending ? "rotate(45deg) scale(0.9)" : "rotate(0deg) scale(1)",
-                  transition: "transform 0.3s ease",
-                }}
-              >
-                <path d="M3 13L13 8L3 3v4l6 1-6 1v4z" fill={text.trim() ? "var(--background)" : "var(--muted)"} />
-              </motion.svg>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <AnimatePresence mode="wait">
+          {isStreaming ? (
+            <motion.button
+              key="stop"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onStop?.()}
+              aria-label="Stop generation"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all"
+              style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="2" y="2" width="10" height="10" rx="2" fill="#ef4444" />
+              </svg>
+            </motion.button>
+          ) : (
+            <motion.button
+              key="send"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={handleSubmit}
+              disabled={disabled || !text.trim()}
+              aria-label="Send message"
+              data-analytics="send"
+              className={`relative overflow-hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
+                text.trim() && !disabled ? "send-ready" : ""
+              }`}
+              style={{ background: text.trim() ? "var(--accent)" : "var(--card-border)" }}
+            >
+              {/* Ripple burst on send */}
+              <AnimatePresence>
+                {rippleKey > 0 && (
+                  <motion.span
+                    key={rippleKey}
+                    initial={{ scale: 0, opacity: 0.3 }}
+                    animate={{ scale: 2.5, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="absolute inset-0 rounded-xl"
+                    style={{ background: "rgba(255,255,255,0.4)" }}
+                  />
+                )}
+              </AnimatePresence>
+              {/* Icon: arrow or checkmark */}
+              <AnimatePresence mode="wait">
+                {showCheck ? (
+                  <motion.svg
+                    key="check"
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0, rotate: 45 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    width="16" height="16" viewBox="0 0 16 16" fill="none"
+                  >
+                    <path d="M3 8l4 4 6-7" stroke="var(--background)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </motion.svg>
+                ) : (
+                  <motion.svg
+                    key="arrow"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    width="16" height="16" viewBox="0 0 16 16" fill="none"
+                    style={{
+                      transform: sending ? "rotate(45deg) scale(0.9)" : "rotate(0deg) scale(1)",
+                      transition: "transform 0.3s ease",
+                    }}
+                  >
+                    <path d="M3 13L13 8L3 3v4l6 1-6 1v4z" fill={text.trim() ? "var(--background)" : "var(--muted)"} />
+                  </motion.svg>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
