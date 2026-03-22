@@ -67,17 +67,12 @@ class AgentDebateRequest(BaseModel):
     conversation_id: str | None = None
 
 
-class AnalyticsEvent(BaseModel):
-    event_type: str
-    event_name: str
-    event_data: dict | None = None
-    platform: str = "web"
-    conversation_id: str | None = None
+class AnalyticsEventRequest(BaseModel):
     session_id: str | None = None
-
-
-class AnalyticsBatchRequest(BaseModel):
-    events: list[AnalyticsEvent]
+    event_type: str
+    target: str
+    details: dict | None = None
+    page_url: str | None = None
 
 
 class WatchlistAddRequest(BaseModel):

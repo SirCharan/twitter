@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import AnalyticsInit from "./AnalyticsInit";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -107,6 +108,10 @@ export default function RootLayout({
           }}
         />
 
+        {/* PWA enhancements */}
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
+
         {/* iOS Splash Screens */}
         <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" href="/splash/iPhone_16_Pro_Max.png" />
         <link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" href="/splash/iPhone_16_Pro.png" />
@@ -176,6 +181,7 @@ export default function RootLayout({
       </head>
       <body className={`${geist.variable} font-sans antialiased bg-[#0A0A0A] text-[#F5F0EB]`}>
         {children}
+        <AnalyticsInit />
       </body>
     </html>
   );

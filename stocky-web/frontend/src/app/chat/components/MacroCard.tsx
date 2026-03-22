@@ -39,7 +39,7 @@ function MacroTile({
     >
       <div className="mb-1 flex items-center gap-1.5">
         {icon && <span className="text-[11px]">{icon}</span>}
-        <p className="text-[10px] font-medium" style={{ color: "var(--muted)" }}>{label}</p>
+        <p className="text-[11px] sm:text-[10px] font-medium" style={{ color: "var(--muted)" }}>{label}</p>
       </div>
       <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
         {typeof value === "number"
@@ -48,7 +48,7 @@ function MacroTile({
       </p>
       {changePct != null && (
         <p
-          className="mt-0.5 text-[10px] font-medium"
+          className="mt-0.5 text-[11px] sm:text-[10px] font-medium"
           style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}
         >
           {isPositive ? "+" : ""}{changePct.toFixed(2)}%

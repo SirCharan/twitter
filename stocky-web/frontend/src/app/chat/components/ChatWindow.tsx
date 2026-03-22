@@ -1,8 +1,9 @@
 "use client";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ChatMessage } from "@/lib/types";
-import { track } from "@/lib/analytics";
+import { trackEvent, track } from "@/lib/analytics";
+import { Search } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import ChatInput, { type ChatMode } from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
@@ -14,6 +15,12 @@ import Header from "./Header";
 import SuggestionChips from "./SuggestionChips";
 import CommandPalette from "./CommandPalette";
 import ThinkingScreen from "./ThinkingScreen";
+import { useMediaQuery } from "../hooks/useMediaQuery";
+
+export interface ChatWindowHandle {
+  openFeatureBar: () => void;
+  enterDeepResearch: () => void;
+}
 
 interface Props {
   messages: ChatMessage[];
@@ -25,6 +32,7 @@ interface Props {
   onGeneralDeepResearch?: (query: string) => void;
   onToggleSidebar?: () => void;
   onRemoveLastAssistant?: () => void;
+  hideHeaderOnMobile?: boolean;
 }
 
 const ANALYSE_MODES = [
@@ -35,10 +43,8 @@ const ANALYSE_MODES = [
 ] as const;
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 
-// Feature keywords that return card-type responses (show skeleton instead of typing indicator)
 const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's|earnings?|dividends?|sectors?|valuation|announcements?)\b/i;
 
-/** Infer the skeleton type from user message content */
 function inferSkeletonType(text: string): string | undefined {
   const t = text.toLowerCase();
   if (/\b(analy[sz]|how is|how's)\b/.test(t)) return "analysis";
@@ -56,7 +62,6 @@ function inferSkeletonType(text: string): string | undefined {
   return undefined;
 }
 
-/** Hover tooltips for quick-send feature cards */
 const FEATURE_TOOLTIPS: Partial<Record<FeatureId, string>> = {
   market_overview: "Live indices, gainers, losers & market breadth",
   market_news: "Latest market news with AI sentiment analysis",
@@ -71,17 +76,12 @@ const FEATURE_TOOLTIPS: Partial<Record<FeatureId, string>> = {
   announcements: "Latest corporate actions and announcements",
 };
 
-/** Compose the chat message for each feature */
 function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
   switch (feature) {
-    case "market_overview":
-      return "how's the market";
-    case "market_news":
-      return "market news";
-    case "portfolio":
-      return "my portfolio";
-    case "analyse":
-      return ""; // handled separately via analyseOpen
+    case "market_overview": return "how's the market";
+    case "market_news": return "market news";
+    case "portfolio": return "my portfolio";
+    case "analyse": return "";
     case "deep_research": {
       const mode = params.mode ?? "full";
       const modeLabel: Record<string, string> = {
@@ -92,34 +92,21 @@ function composeFeatureMessage(feature: FeatureId, params: Record<string, string
       };
       return `deep research on ${params.stock} — ${modeLabel[mode] ?? "full report"}`;
     }
-    case "scan":
-      return `market scan — ${params.scan?.replace(/_/g, " ") ?? "volume pump"}`;
-    case "chart":
-      return `${params.type === "analysis" ? "analysis chart" : "chart"} for ${params.stock}`;
-    case "compare":
-      return `compare stocks: ${params.stocks}`;
-    case "ipo":
-      return "ipo tracker";
-    case "macro":
-      return "macro dashboard";
-    case "rrg":
-      return "rrg";
-    case "summarise":
-      return `summarise this:\n\n${params.text}`;
-    case "earnings":
-      return params.stock ? `earnings for ${params.stock}` : "earnings calendar";
-    case "dividends":
-      return params.stock ? `dividends for ${params.stock}` : "dividends";
-    case "sectors":
-      return "sector performance";
-    case "valuation":
-      return "market valuation";
-    case "announcements":
-      return "corporate announcements";
+    case "scan": return `market scan — ${params.scan?.replace(/_/g, " ") ?? "volume pump"}`;
+    case "chart": return `${params.type === "analysis" ? "analysis chart" : "chart"} for ${params.stock}`;
+    case "compare": return `compare stocks: ${params.stocks}`;
+    case "ipo": return "ipo tracker";
+    case "macro": return "macro dashboard";
+    case "rrg": return "rrg";
+    case "summarise": return `summarise this:\n\n${params.text}`;
+    case "earnings": return params.stock ? `earnings for ${params.stock}` : "earnings calendar";
+    case "dividends": return params.stock ? `dividends for ${params.stock}` : "dividends";
+    case "sectors": return "sector performance";
+    case "valuation": return "market valuation";
+    case "announcements": return "corporate announcements";
   }
 }
 
-/** Typewriter hook */
 function useTypewriter(text: string, speed = 40) {
   const [displayed, setDisplayed] = useState("");
   useEffect(() => {
@@ -136,7 +123,7 @@ function useTypewriter(text: string, speed = 40) {
   return displayed;
 }
 
-export default function ChatWindow({
+const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
   messages,
   isLoading,
   onSend,
@@ -146,28 +133,40 @@ export default function ChatWindow({
   onGeneralDeepResearch,
   onToggleSidebar,
   onRemoveLastAssistant,
-}: Props) {
+  hideHeaderOnMobile = false,
+}, ref) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stockInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  // Chat mode toggle
+  // Chat mode — lifted here so FAB and nav can control it
   const [chatMode, setChatMode] = useState<ChatMode>("quick");
 
-  // Analyse a stock (empty state picker)
   const [analyseOpen, setAnalyseOpen] = useState(false);
   const [stockQuery, setStockQuery] = useState("");
   const [analyseMode, setAnalyseMode] = useState<AnalyseMode>("full");
   const [analyseNote, setAnalyseNote] = useState("");
 
-  // Feature bar
   const [activeFeature, setActiveFeature] = useState<FeatureId | null>(null);
   const [featureBarVisible, setFeatureBarVisible] = useState(true);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
-
-  // Scroll-to-bottom FAB
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+
+  // Expose imperative handle so ChatShell can drive feature bar + deep research mode
+  useImperativeHandle(ref, () => ({
+    openFeatureBar() {
+      setFeatureBarVisible(true);
+      setActiveFeature(null);
+    },
+    enterDeepResearch() {
+      setChatMode("deep");
+      // Focus textarea after a tick
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    },
+  }));
 
   const lastMsg = messages[messages.length - 1];
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
@@ -182,8 +181,6 @@ export default function ChatWindow({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, onRemoveLastAssistant]);
 
-  // Should we show skeleton (card loading) vs typing indicator?
-  // Don't show any loading indicator when debate_progress or progress cards are already rendering
   const hasActiveProgress = lastMsg?.type === "debate_progress" || lastMsg?.type === "progress";
   const showSkeleton = isLoading && !hasActiveProgress && lastUserMsg && CARD_KEYWORDS.test(lastUserMsg.content);
 
@@ -195,14 +192,12 @@ export default function ChatWindow({
     if (analyseOpen) setTimeout(() => stockInputRef.current?.focus(), 50);
   }, [analyseOpen]);
 
-  // Show feature bar again after AI responds
   useEffect(() => {
     if (lastMsg?.role === "assistant" && !isLoading) {
       setFeatureBarVisible(true);
     }
   }, [lastMsg?.role, isLoading]);
 
-  // Cmd+K to open command palette
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setCmdOpen((prev) => !prev); }
@@ -216,7 +211,6 @@ export default function ChatWindow({
     handleFeatureSelect(id as FeatureId);
   }
 
-  // Track scroll position for FAB
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -229,8 +223,6 @@ export default function ChatWindow({
   }, []);
 
   const showEmpty = messages.length === 0 && !isLoading;
-
-  // Typewriter for subtitle
   const subtitle = useTypewriter(showEmpty ? "Your AI trading assistant. Ask me anything." : "", 35);
 
   function handleAnalyseSubmit() {
@@ -250,21 +242,12 @@ export default function ChatWindow({
   const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg", "sectors", "valuation", "announcements"]);
 
   function handleFeatureSelect(id: FeatureId | null) {
-    if (!id) {
-      setActiveFeature(null);
-      return;
-    }
-    // Quick-send features — send message immediately, no panel
+    if (!id) { setActiveFeature(null); return; }
     if (QUICK_SEND_FEATURES.has(id)) {
       handleSend(composeFeatureMessage(id, {}));
       return;
     }
-    // Analyse — open the stock picker
-    if (id === "analyse") {
-      setAnalyseOpen(true);
-      return;
-    }
-    // All others — open feature panel
+    if (id === "analyse") { setAnalyseOpen(true); return; }
     setAnalyseOpen(false);
     setActiveFeature(id);
     setFeatureBarVisible(false);
@@ -290,14 +273,25 @@ export default function ChatWindow({
     }
   }
 
+  // Input bar positioning: fixed above bottom nav on mobile, static on desktop
+  const inputBarStyle = !isDesktop
+    ? {
+        bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))",
+        background: "var(--background)",
+        borderTop: "1px solid var(--card-border)",
+      }
+    : undefined;
+
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <Header
-        onNewChat={onNewChat}
-        onToggleSidebar={onToggleSidebar ?? (() => {})}
-        onFeedbackOpen={() => setFeedbackOpen(true)}
-      />
+    <div className="flex h-full flex-col relative">
+      {/* Header — desktop always, mobile only when not replaced by MobileHeader */}
+      <div className={hideHeaderOnMobile ? "hidden md:block" : undefined}>
+        <Header
+          onNewChat={onNewChat}
+          onToggleSidebar={onToggleSidebar ?? (() => {})}
+          onFeedbackOpen={() => setFeedbackOpen(true)}
+        />
+      </div>
 
       {/* Top-bar progress strip */}
       <AnimatePresence>
@@ -313,11 +307,11 @@ export default function ChatWindow({
         )}
       </AnimatePresence>
 
-      {/* Messages */}
+      {/* Messages scroll area */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="relative flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6"
+        className={`relative flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 ${!isDesktop ? "chat-scroll-mobile-pad" : "pb-6"}`}
         role="log"
         aria-live="polite"
         aria-busy={isLoading}
@@ -354,7 +348,7 @@ export default function ChatWindow({
                 />
               </p>
 
-              {/* Feature card grid — all features organized by category */}
+              {/* Feature card grid */}
               {!analyseOpen && activeFeature === null && (
                 <div className="mt-3 sm:mt-6 w-full space-y-1 sm:space-y-3 text-left">
                   {CATEGORIES.map((cat, catIdx) => (
@@ -379,16 +373,11 @@ export default function ChatWindow({
                             transition={{ delay: catIdx * 0.06 + i * 0.04, duration: 0.25 }}
                             whileHover={{ y: -2, boxShadow: "0 0 16px rgba(201,169,110,0.06)" }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                              track("click", "empty_card", { feature: f.id, category: cat.label });
-                              handleFeatureSelect(f.id);
-                            }}
+                            onClick={() => handleFeatureSelect(f.id)}
+                            data-analytics={`chip-${f.id}`}
                             title={FEATURE_TOOLTIPS[f.id as FeatureId]}
-                            className="flex items-center gap-1.5 rounded-xl border px-2 py-1.5 sm:px-3 sm:py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
-                            style={{
-                              borderColor: "var(--card-border)",
-                              background: "var(--surface)",
-                            }}
+                            className="flex items-center gap-1.5 rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 text-left transition-colors duration-200 hover:border-[var(--accent-dim)]"
+                            style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
                           >
                             <span className="text-xs sm:text-sm">{f.icon}</span>
                             <span className="text-[11px] sm:text-xs font-medium" style={{ color: "var(--muted)" }}>
@@ -402,7 +391,7 @@ export default function ChatWindow({
                 </div>
               )}
 
-              {/* Inline FeaturePanel on empty state (for panel-opening features) */}
+              {/* Inline FeaturePanel on empty state */}
               <AnimatePresence>
                 {!analyseOpen && activeFeature !== null && (
                   <motion.div
@@ -447,7 +436,6 @@ export default function ChatWindow({
                         Analyse a stock
                       </span>
                     </div>
-
                     <input
                       ref={stockInputRef}
                       type="text"
@@ -462,7 +450,6 @@ export default function ChatWindow({
                         boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
                       }}
                     />
-
                     <div className="mt-4 flex flex-wrap gap-2">
                       {ANALYSE_MODES.map((m) => {
                         const sel = analyseMode === m.id;
@@ -483,7 +470,6 @@ export default function ChatWindow({
                         );
                       })}
                     </div>
-
                     <textarea
                       value={analyseNote}
                       onChange={(e) => setAnalyseNote(e.target.value)}
@@ -492,7 +478,6 @@ export default function ChatWindow({
                       className="mt-4 w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-xs outline-none"
                       style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}
                     />
-
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={handleAnalyseSubmit}
@@ -550,8 +535,11 @@ export default function ChatWindow({
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               onClick={scrollToBottom}
-              className="fixed bottom-28 right-3 sm:right-6 z-30 rounded-full border p-2.5 shadow-lg backdrop-blur-sm transition-colors hover:bg-white/5"
+              className="fixed right-3 sm:right-6 z-30 rounded-full border p-2.5 shadow-lg backdrop-blur-sm transition-colors hover:bg-white/5"
               style={{
+                bottom: !isDesktop
+                  ? "calc(8rem + env(safe-area-inset-bottom, 0px))"
+                  : "7rem",
                 background: "var(--glass)",
                 borderColor: "var(--card-border)",
               }}
@@ -565,10 +553,49 @@ export default function ChatWindow({
         </AnimatePresence>
       </div>
 
-      {/* Input + Feature bar + Prompt helpers */}
-      <div className="px-3 pb-3 pt-1.5 sm:px-4" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
+      {/* Deep Research FAB — mobile only, always visible */}
+      <AnimatePresence>
+        {!isDesktop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.3 }}
+            whileTap={{ scale: 0.93 }}
+            onClick={() => {
+              setChatMode("deep");
+              setTimeout(() => textareaRef.current?.focus(), 50);
+            }}
+            className="fixed z-30 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold pointer-events-auto"
+            style={{
+              bottom: "calc(8.25rem + env(safe-area-inset-bottom, 0px))",
+              background: chatMode === "deep"
+                ? "linear-gradient(135deg, var(--accent), #B8894E)"
+                : "rgba(201,169,110,0.12)",
+              color: chatMode === "deep" ? "#0A0A0A" : "var(--accent)",
+              border: chatMode === "deep" ? "none" : "1px solid rgba(201,169,110,0.3)",
+              boxShadow: chatMode === "deep"
+                ? "0 4px 20px rgba(201,169,110,0.4)"
+                : "0 2px 12px rgba(0,0,0,0.3)",
+              letterSpacing: "0.02em",
+            }}
+            aria-label="Toggle Deep Research mode"
+            aria-pressed={chatMode === "deep"}
+            data-analytics="mode-deep"
+          >
+            <Search size={11} strokeWidth={2.5} />
+            Deep Research
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Input bar — fixed above bottom nav on mobile, static on desktop */}
+      <div
+        className={`px-3 pt-2 pb-3 sm:px-4 ${!isDesktop ? "fixed left-0 right-0 z-30" : "relative"}`}
+        style={inputBarStyle}
+      >
         <div className="mx-auto max-w-3xl">
-          {/* Feature bar (above input, auto-hides after selection) */}
+          {/* Feature bar */}
           <FeatureBar
             active={activeFeature}
             onSelect={handleFeatureSelect}
@@ -576,7 +603,7 @@ export default function ChatWindow({
             visible={featureBarVisible && !analyseOpen && !showEmpty && !isLoading}
           />
 
-          {/* Feature panel (expands when chip selected, only in message state) */}
+          {/* Feature panel */}
           <AnimatePresence>
             {activeFeature && !showEmpty && (
               <motion.div
@@ -596,7 +623,7 @@ export default function ChatWindow({
             )}
           </AnimatePresence>
 
-          {/* Analyse stock picker (works in both empty and message states) */}
+          {/* Analyse stock picker */}
           <AnimatePresence>
             {analyseOpen && !showEmpty && (
               <motion.div
@@ -619,10 +646,9 @@ export default function ChatWindow({
                     back
                   </button>
                   <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
-                    🔍 Analyse a stock
+                    Analyse a stock
                   </span>
                 </div>
-
                 <input
                   ref={stockInputRef}
                   type="text"
@@ -637,7 +663,6 @@ export default function ChatWindow({
                     boxShadow: stockQuery ? "0 0 0 1px var(--accent-dim), 0 0 12px rgba(201,169,110,0.08)" : "none",
                   }}
                 />
-
                 <div className="mt-3 flex flex-wrap gap-2">
                   {ANALYSE_MODES.map((m) => {
                     const sel = analyseMode === m.id;
@@ -658,7 +683,6 @@ export default function ChatWindow({
                     );
                   })}
                 </div>
-
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAnalyseSubmit}
@@ -676,7 +700,13 @@ export default function ChatWindow({
             )}
           </AnimatePresence>
 
-          <ChatInput onSend={handleSend} disabled={isLoading} mode={chatMode} onModeChange={setChatMode} />
+          <ChatInput
+            textareaRef={textareaRef}
+            onSend={handleSend}
+            disabled={isLoading}
+            mode={chatMode}
+            onModeChange={setChatMode}
+          />
         </div>
       </div>
 
@@ -684,4 +714,6 @@ export default function ChatWindow({
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} onAction={handleCmdAction} />
     </div>
   );
-}
+});
+
+export default ChatWindow;

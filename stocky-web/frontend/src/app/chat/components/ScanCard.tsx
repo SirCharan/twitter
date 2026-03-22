@@ -119,8 +119,47 @@ export default function ScanCard({ data }: Props) {
         </div>
       </div>
 
-      {/* Results table */}
-      <div className="overflow-x-auto">
+      {/* Mobile card-stack view */}
+      <div className="md:hidden space-y-2">
+        {visible.map((r, i) => {
+          const isPositive = r.change_pct >= 0;
+          const chgColor = isPositive ? "var(--positive)" : "var(--negative)";
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, type: "spring", stiffness: 300, damping: 25 }}
+              className="flex items-center justify-between rounded-xl border px-3 py-3"
+              style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+            >
+              <div className="flex items-center gap-3">
+                {r.sparkline && r.sparkline.length >= 2 && (
+                  <Sparkline data={r.sparkline} color={chgColor} />
+                )}
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                    {r.symbol}
+                  </p>
+                  <p className="text-[11px]" style={{ color: "var(--muted)" }}>{r.trigger}</p>
+                </div>
+              </div>
+              <div className="text-right shrink-0 ml-3">
+                <p className="text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
+                  ₹{r.ltp?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs font-medium tabular-nums" style={{ color: chgColor }}>
+                  {isPositive ? "+" : ""}{r.change_pct?.toFixed(2)}%
+                </p>
+                {r.volume_ratio != null && <VolumeBar ratio={r.volume_ratio} />}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr style={{ color: "var(--muted)" }}>
@@ -138,39 +177,26 @@ export default function ScanCard({ data }: Props) {
               const chgColor = isPositive ? "var(--positive)" : "var(--negative)";
               return (
                 <tr key={i} className="hover:opacity-80 transition-opacity">
-                  <td className="py-2 font-medium" style={{ color: "var(--foreground)" }}>
-                    {r.symbol}
-                  </td>
+                  <td className="py-2 font-medium" style={{ color: "var(--foreground)" }}>{r.symbol}</td>
                   {hasSparkline && (
                     <td className="py-2 text-center">
                       {r.sparkline && r.sparkline.length >= 2 ? (
                         <Sparkline data={r.sparkline} color={chgColor} />
-                      ) : (
-                        <span style={{ color: "var(--muted)" }}>—</span>
-                      )}
+                      ) : <span style={{ color: "var(--muted)" }}>—</span>}
                     </td>
                   )}
                   <td className="py-2 text-right tabular-nums" style={{ color: "var(--foreground)" }}>
                     {r.ltp?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </td>
-                  <td
-                    className="py-2 text-right tabular-nums font-medium"
-                    style={{ color: chgColor }}
-                  >
+                  <td className="py-2 text-right tabular-nums font-medium" style={{ color: chgColor }}>
                     {isPositive ? "+" : ""}{r.change_pct?.toFixed(2)}%
                   </td>
                   {hasVolume && (
                     <td className="py-2 text-right">
-                      {r.volume_ratio != null ? (
-                        <VolumeBar ratio={r.volume_ratio} />
-                      ) : (
-                        <span style={{ color: "var(--muted)" }}>—</span>
-                      )}
+                      {r.volume_ratio != null ? <VolumeBar ratio={r.volume_ratio} /> : <span style={{ color: "var(--muted)" }}>—</span>}
                     </td>
                   )}
-                  <td className="py-2 pl-4" style={{ color: "var(--muted)" }}>
-                    {r.trigger}
-                  </td>
+                  <td className="py-2 pl-4" style={{ color: "var(--muted)" }}>{r.trigger}</td>
                 </tr>
               );
             })}
@@ -181,7 +207,7 @@ export default function ScanCard({ data }: Props) {
       {hasMore && (
         <button
           onClick={() => setShowAll((v) => !v)}
-          className="mt-3 text-xs underline-offset-2 hover:underline"
+          className="mt-3 text-xs underline-offset-2 hover:underline min-h-[44px] flex items-center"
           style={{ color: "var(--muted)" }}
         >
           {showAll ? "Show less ↑" : `View all ${results.length} results ↓`}

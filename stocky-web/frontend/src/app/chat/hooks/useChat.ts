@@ -8,6 +8,12 @@ import {
   streamResearch,
   streamDeepResearchGeneral,
 } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
+
+const SYMBOL_NOISE = new Set(["NSE","BSE","IPO","RBI","FII","DII","AI","GDP","SMA","RSI","EPS","P&L","LTP"]);
+function extractSymbols(text: string): string[] {
+  return (text.match(/\b[A-Z]{2,10}\b/g) ?? []).filter((s) => !SYMBOL_NOISE.has(s));
+}
 
 const RESEARCH_STEPS = [
   "Fetching technical indicators",
@@ -41,6 +47,11 @@ export function useChat() {
 
       setMessages((prev) => [...prev, userMsg]);
       setIsLoading(true);
+      trackEvent("query_submit", "chat_send", {
+        query: text,
+        symbols: extractSymbols(text),
+        conversationId: conversationId ?? undefined,
+      });
 
       try {
         const res = await apiSendMessage(text, conversationId || undefined);
@@ -95,6 +106,7 @@ export function useChat() {
         conversationId: convId,
       };
       setMessages((prev) => [...prev, userMsg]);
+      trackEvent("query_submit", "deep_research", { stock, mode });
 
       // Add animated progress placeholder
       const progressId = `progress-${Date.now()}`;
@@ -266,6 +278,7 @@ export function useChat() {
         conversationId: convId,
       };
       setMessages((prev) => [...prev, userMsg]);
+      trackEvent("query_submit", "agent_debate", { query });
 
       // Add Triad progress placeholder
       const progressId = `debate-${Date.now()}`;

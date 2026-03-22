@@ -1,62 +1,46 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const SESSION_KEY = "stocky_session_id";
 
-let sessionId: string | null = null;
 function getSessionId(): string {
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(SESSION_KEY, id);
   }
-  return sessionId;
+  return id;
 }
 
-interface AnalyticsEvent {
-  event_type: string;
-  event_name: string;
-  event_data?: Record<string, unknown>;
-  conversation_id?: string;
-}
-
-let buffer: AnalyticsEvent[] = [];
-let flushTimer: ReturnType<typeof setTimeout> | null = null;
-
-function flush() {
-  if (buffer.length === 0) return;
-  const events = buffer.map((e) => ({
-    ...e,
-    platform: "web",
+export function trackEvent(
+  event_type: string,
+  target: string,
+  details: Record<string, unknown> = {},
+): void {
+  if (typeof window === "undefined") return;
+  const payload = {
     session_id: getSessionId(),
-  }));
-  buffer = [];
-  if (flushTimer) {
-    clearTimeout(flushTimer);
-    flushTimer = null;
-  }
-  fetch(`${API_URL}/api/analytics/track`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ events }),
-    keepalive: true,
-  }).catch(() => {});
-}
-
-export function track(
-  eventType: string,
-  eventName: string,
-  eventData?: Record<string, unknown>,
-  conversationId?: string,
-) {
-  buffer.push({
-    event_type: eventType,
-    event_name: eventName,
-    event_data: eventData,
-    conversation_id: conversationId,
-  });
-  if (buffer.length >= 10) {
-    flush();
-  } else if (!flushTimer) {
-    flushTimer = setTimeout(flush, 2000);
+    event_type,
+    target,
+    details,
+    page_url: window.location.href,
+  };
+  const url = `${API_URL}/api/analytics/log`;
+  const body = JSON.stringify(payload);
+  // sendBeacon is fire-and-forget — zero blocking lag
+  if (navigator.sendBeacon) {
+    const blob = new Blob([body], { type: "application/json" });
+    navigator.sendBeacon(url, blob);
+  } else {
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {}); // silent fail — never block the UI
   }
 }
 
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", flush);
-}
+// Alias for legacy call sites: track(event_type, target, details)
+export const track = trackEvent;

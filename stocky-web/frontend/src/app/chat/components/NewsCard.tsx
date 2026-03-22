@@ -51,10 +51,10 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
 
       {/* Category filter tabs */}
       {categories.length > 1 && (
-        <div className="mb-3 flex flex-wrap gap-1.5">
+        <div className="mb-3 flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
           <button
             onClick={() => setActiveCategory(null)}
-            className="bounce-tap rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all"
+            className="bounce-tap shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all min-h-[36px] flex items-center"
             style={{
               borderColor: !activeCategory ? "var(--accent)" : "var(--card-border)",
               background: !activeCategory ? "rgba(201,169,110,0.08)" : "transparent",
@@ -70,7 +70,7 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(isActive ? null : cat)}
-                className="bounce-tap rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all"
+                className="bounce-tap shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-all min-h-[36px] flex items-center"
                 style={{
                   borderColor: isActive ? color : "var(--card-border)",
                   background: isActive ? `${color}15` : "transparent",
@@ -93,7 +93,7 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
           return (
             <div
               key={i}
-              className="slide-up stagger flex items-start gap-2 rounded-lg border p-2.5"
+              className="slide-up stagger flex items-start gap-2 rounded-lg border p-3 sm:p-2.5 active:bg-white/5 transition-colors"
               style={{ ["--i" as string]: i, borderColor: "var(--card-border)", background: "var(--surface)" }}
             >
               <span className="mt-0.5 text-xs" style={{ color: sentimentColor }}>
@@ -105,13 +105,13 @@ export default function NewsCard({ data }: { data: Record<string, unknown> }) {
                     href={a.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs leading-snug hover:underline"
+                    className="text-sm sm:text-xs leading-snug hover:underline"
                     style={{ color: "var(--foreground)" }}
                   >
                     {a.title}
                   </a>
                 ) : (
-                  <p className="text-xs leading-snug" style={{ color: "var(--foreground)" }}>
+                  <p className="text-sm sm:text-xs leading-snug" style={{ color: "var(--foreground)" }}>
                     {a.title}
                   </p>
                 )}

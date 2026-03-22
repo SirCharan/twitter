@@ -8,7 +8,7 @@ html {
 body {
   overscroll-behavior: none;
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* padding-bottom handled per-component to avoid double-padding with fixed bottom nav */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
@@ -35,11 +35,11 @@ body {
   --card-bg: #141414;
   --card-border: #1F1F1F;
   --surface: #111111;
-  --positive: #00FFAA;
+  --positive: #00FF9D;
   --negative: #FF3B5C;
-  --positive-glow: rgba(0, 255, 170, 0.12);
+  --positive-glow: rgba(0, 255, 157, 0.12);
   --negative-glow: rgba(255, 59, 92, 0.12);
-  --positive-dim: rgba(0, 255, 170, 0.6);
+  --positive-dim: rgba(0, 255, 157, 0.6);
   --negative-dim: rgba(255, 59, 92, 0.6);
   --glass: rgba(20, 20, 20, 0.7);
   --glass-border: rgba(255, 255, 255, 0.06);
@@ -400,6 +400,42 @@ body {
 @keyframes ripple {
   0% { transform: scale(0); opacity: 0.35; }
   100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* ─── Mobile bottom nav bar ─── */
+.bottom-nav-bar {
+  height: calc(4rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ─── Message scroll area bottom pad (mobile) ─── */
+/* Accounts for fixed input bar (~3.5rem) + bottom nav (4rem) + small gap */
+.chat-scroll-mobile-pad {
+  padding-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ─── Tab pop animation for active nav indicator dot ─── */
+@keyframes tabPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.nav-active-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin: 0 auto;
+  animation: tabPop 0.2s ease-out forwards;
+}
+
+/* ─── Live pulse dot (MobileHeader connection indicator) ─── */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.live-dot {
+  animation: livePulse 2s ease-in-out infinite;
 }
 
 /* ─── Top-bar loading progress strip ─── */

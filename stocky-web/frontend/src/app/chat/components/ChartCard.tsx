@@ -134,7 +134,7 @@ function TradingViewChart({ symbol, stock }: { symbol: string; stock: string }) 
         style={{ borderBottom: "1px solid var(--card-border)", color: "var(--muted)" }}
       >
         <span>📈</span>
-        <span>{stock} — Live Chart (TradingView)</span>
+        <span className="truncate">{stock} — Live Chart (TradingView)</span>
         <span className="ml-auto text-[10px]" style={{ color: "var(--accent)" }}>
           {symbol}
         </span>
@@ -142,7 +142,7 @@ function TradingViewChart({ symbol, stock }: { symbol: string; stock: string }) 
       <div
         ref={containerRef}
         className="tradingview-widget-container"
-        style={{ height: 550, width: "100%" }}
+        style={{ height: "min(550px, calc(100vw * 0.75))", width: "100%" }}
       />
     </div>
   );

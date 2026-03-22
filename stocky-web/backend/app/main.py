@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -18,7 +18,7 @@ from app.kite_auth import auto_login, get_authenticated_kite
 from app.models import (
     AgentDebateRequest,
     AlertRequest,
-    AnalyticsBatchRequest,
+    AnalyticsEventRequest,
     ChartRequest,
     ChatRequest,
     ChatResponse,
@@ -434,29 +434,27 @@ async def delete_alert_endpoint(alert_id: int):
 
 # --- Analytics ---
 
-@app.post("/api/analytics/track")
-async def track_analytics(req: AnalyticsBatchRequest):
-    from app.database import log_analytics_batch
-    events = [e.model_dump() for e in req.events]
-    await log_analytics_batch(events)
-    return {"status": "ok", "count": len(events)}
-
-
-@app.get("/api/analytics/dashboard")
-async def analytics_dashboard(days: int = 30):
-    from app.database import (
-        get_analytics_daily_counts,
-        get_analytics_feature_counts,
-        get_analytics_hourly_distribution,
-        get_analytics_platform_breakdown,
-        get_analytics_recent,
-        get_analytics_summary,
+@app.post("/api/analytics/log", status_code=204)
+async def log_analytics(
+    req: AnalyticsEventRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
+    from app.database import log_event
+    background_tasks.add_task(
+        log_event,
+        req.session_id,
+        req.event_type,
+        req.target,
+        req.details,
+        req.page_url,
+        request.client.host if request.client else None,
+        request.headers.get("user-agent"),
     )
-    return {
-        "daily_counts": await get_analytics_daily_counts(days),
-        "feature_counts": await get_analytics_feature_counts(days),
-        "hourly_distribution": await get_analytics_hourly_distribution(days),
-        "platform_breakdown": await get_analytics_platform_breakdown(days),
-        "recent_activity": await get_analytics_recent(),
-        "summary": await get_analytics_summary(),
-    }
+    return Response(status_code=204)
+
+
+@app.get("/api/analytics/stats")
+async def analytics_stats():
+    from app.database import get_analytics_stats
+    return await get_analytics_stats()

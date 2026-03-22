@@ -27,7 +27,7 @@ function GainBadge({ gain }: { gain: number }) {
   const isPositive = gain >= 0;
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums"
+      className="rounded-full px-2 py-0.5 text-[11px] sm:text-[10px] font-semibold tabular-nums"
       style={{
         background: isPositive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
         color: isPositive ? "var(--positive)" : "var(--negative)",

@@ -11,23 +11,28 @@ interface Props {
   disabled: boolean;
   mode: ChatMode;
   onModeChange: (mode: ChatMode) => void;
+  /** Optional forwarded ref so parent (ChatWindow) can focus the textarea */
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
-export default function ChatInput({ onSend, disabled, mode, onModeChange }: Props) {
+export default function ChatInput({ onSend, disabled, mode, onModeChange, textareaRef: externalRef }: Props) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showCheck, setShowCheck] = useState(false);
   const [rippleKey, setRippleKey] = useState(0);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = externalRef ?? internalRef;
   const quickRef = useRef<HTMLButtonElement>(null);
   const deepRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      // Cap height at 80px on mobile, 120px on desktop to prevent keyboard overlap
+      const maxH = typeof window !== "undefined" && window.innerWidth < 768 ? 80 : 120;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, maxH)}px`;
     }
-  }, [text]);
+  }, [text, textareaRef]);
 
   function handleSubmit() {
     const trimmed = text.trim();
@@ -53,7 +58,6 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
     }
   }
 
-  // Calculate slider position based on active mode
   const isDeep = mode === "deep";
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 72 });
 
@@ -74,7 +78,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
         <div
           role="group"
           aria-label="Chat mode"
-          className="relative inline-flex rounded-lg p-0.5"
+          className="relative inline-flex items-center rounded-lg p-0.5 min-h-[44px]"
           style={{ background: "var(--surface)", border: "1px solid var(--card-border)" }}
         >
           {/* Sliding background indicator */}
@@ -82,18 +86,14 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
             className="absolute top-0.5 bottom-0.5 rounded-md"
             animate={{ left: sliderStyle.left, width: sliderStyle.width }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            style={{
-              background: "rgba(201,169,110,0.12)",
-            }}
+            style={{ background: "rgba(201,169,110,0.12)" }}
           />
           <button
             ref={quickRef}
             onClick={() => { track("click", "mode_toggle", { mode: "quick" }); onModeChange("quick"); }}
             disabled={disabled}
             className="bounce-tap relative z-10 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors"
-            style={{
-              color: !isDeep ? "var(--accent)" : "var(--muted)",
-            }}
+            style={{ color: !isDeep ? "var(--accent)" : "var(--muted)" }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
@@ -109,31 +109,12 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
             onClick={() => { track("click", "mode_toggle", { mode: "deep" }); onModeChange("deep"); }}
             disabled={disabled}
             className="bounce-tap relative z-10 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors"
-            style={{
-              color: isDeep ? "var(--accent)" : "var(--muted)",
-            }}
+            style={{ color: isDeep ? "var(--accent)" : "var(--muted)" }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <circle
-                cx="6" cy="5" r="3.5"
-                stroke={isDeep ? "var(--accent)" : "var(--muted)"}
-                strokeWidth="1.2"
-                fill="none"
-                opacity={isDeep ? 1 : 0.5}
-              />
-              <path
-                d="M4.5 5C4.5 5 5 6.5 6 6.5S7.5 5 7.5 5"
-                stroke={isDeep ? "var(--accent)" : "var(--muted)"}
-                strokeWidth="0.8"
-                fill="none"
-                opacity={isDeep ? 1 : 0.5}
-              />
-              <line
-                x1="6" y1="8.5" x2="6" y2="11"
-                stroke={isDeep ? "var(--accent)" : "var(--muted)"}
-                strokeWidth="1.2"
-                opacity={isDeep ? 1 : 0.5}
-              />
+              <circle cx="6" cy="5" r="3.5" stroke={isDeep ? "var(--accent)" : "var(--muted)"} strokeWidth="1.2" fill="none" opacity={isDeep ? 1 : 0.5} />
+              <path d="M4.5 5C4.5 5 5 6.5 6 6.5S7.5 5 7.5 5" stroke={isDeep ? "var(--accent)" : "var(--muted)"} strokeWidth="0.8" fill="none" opacity={isDeep ? 1 : 0.5} />
+              <line x1="6" y1="8.5" x2="6" y2="11" stroke={isDeep ? "var(--accent)" : "var(--muted)"} strokeWidth="1.2" opacity={isDeep ? 1 : 0.5} />
             </svg>
             Deep Research
           </button>
@@ -164,7 +145,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
         }}
       >
         <textarea
-          ref={textareaRef}
+          ref={textareaRef as React.RefObject<HTMLTextAreaElement>}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -172,7 +153,13 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           disabled={disabled}
           rows={1}
           aria-label={isDeep ? "Deep research query" : "Chat message"}
-          className="flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-[var(--muted)]"
+          inputMode="text"
+          autoComplete="off"
+          autoCorrect="on"
+          autoCapitalize="sentences"
+          spellCheck={true}
+          // 16px minimum prevents iOS auto-zoom
+          className="flex-1 resize-none bg-transparent text-base md:text-sm leading-relaxed outline-none placeholder:text-[var(--muted)]"
           style={{ color: "var(--foreground)", transition: "height 0.15s ease" }}
         />
         <motion.button
@@ -181,6 +168,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange }: Prop
           onClick={handleSubmit}
           disabled={disabled || !text.trim()}
           aria-label="Send message"
+          data-analytics="send"
           className={`relative overflow-hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-20 ${
             text.trim() && !disabled ? "send-ready" : ""
           }`}

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { AnalysisData } from "@/lib/types";
 import CardWrapper from "./ui/CardWrapper";
 import AnimatedNumber from "./ui/AnimatedNumber";
@@ -22,7 +22,7 @@ function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
           style={{ background: color }}
         />
       </div>
-      <span className="count-flash text-xs font-medium tabular-nums" style={{ color }}>
+      <span className="count-flash text-sm font-semibold tabular-nums" style={{ color }}>
         {score.toFixed(1)}/{max}
       </span>
     </div>
@@ -32,7 +32,7 @@ function ScoreBar({ score, max = 10 }: { score: number; max?: number }) {
 function StatRow({ label, value }: { label: string; value: string | number | undefined }) {
   if (value === undefined || value === null) return null;
   return (
-    <div className="row-hover flex items-center justify-between py-1 px-1 -mx-1 rounded">
+    <div className="row-hover flex items-center justify-between py-1.5 px-1 -mx-1 rounded min-h-[32px]">
       <span className="text-xs" style={{ color: "var(--muted)" }}>{label}</span>
       <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
         {typeof value === "number" ? value.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : value}
@@ -42,12 +42,40 @@ function StatRow({ label, value }: { label: string; value: string | number | und
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
   return (
     <div className="mt-3">
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
-        {title}
-      </p>
-      {children}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="bounce-tap flex w-full items-center justify-between mb-1.5 min-h-[36px]"
+        aria-expanded={open}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+          {title}
+        </p>
+        <motion.svg
+          animate={{ rotate: open ? 0 : -90 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          stroke="currentColor" strokeWidth="1.5"
+          style={{ color: "var(--muted)", flexShrink: 0 }}
+        >
+          <path d="M3 5l3 3 3-3" />
+        </motion.svg>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="overflow-hidden"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -67,7 +95,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
         </div>
         <div className="text-right">
           <p className="text-xs" style={{ color: "var(--muted)" }}>Overall Score</p>
-          <p className="text-lg font-semibold" style={{ color: "var(--accent)" }}>
+          <p className="text-xl sm:text-lg font-semibold" style={{ color: "var(--accent)" }}>
             <AnimatedNumber value={d.overall_score} decimals={1} suffix="/30" />
           </p>
         </div>
@@ -201,7 +229,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
       {/* Quarterly Results */}
       {d.quarterly && d.quarterly.length > 0 && (
         <Section title="Quarterly Results">
-          <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "var(--card-border)" }}>
+          <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "var(--card-border)", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
             <table className="w-full text-xs">
               <thead>
                 <tr style={{ background: "var(--surface)" }}>
@@ -319,7 +347,7 @@ export default function AnalysisCard({ data }: { data: Record<string, unknown> }
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
             Stocky's Verdict
           </p>
-          <p className="mt-1 text-sm" style={{ color: "var(--foreground)" }}>
+          <p className="mt-1 text-base sm:text-sm" style={{ color: "var(--foreground)" }}>
             {d.verdict}
           </p>
         </motion.div>
