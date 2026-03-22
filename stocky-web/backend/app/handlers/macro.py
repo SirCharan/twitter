@@ -27,10 +27,49 @@ SYMBOLS = {
 }
 
 
+async def _overlay_dhan_prices(data: dict) -> dict:
+    """Overlay Dhan live prices for Indian indices (faster than yfinance)."""
+    try:
+        from app.dhan_client import dhan
+        if not dhan.enabled:
+            return data
+
+        import httpx
+        DHAN_IDX = {"NIFTY": 13, "BANKNIFTY": 25}
+        payload = {"IDX_I": list(DHAN_IDX.values())}
+        async with httpx.AsyncClient(timeout=8) as client:
+            resp = await client.post(
+                f"{dhan.BASE}/marketfeed/ltp",
+                headers=dhan._headers(),
+                json=payload,
+            )
+            if resp.status_code != 200:
+                return data
+            raw = resp.json()
+            id_to_key = {13: "nifty", 25: "banknifty"}
+            indices = data.get("indices", {})
+            for item in raw.get("data", {}).get("IDX_I", []):
+                sec_id = item.get("security_id")
+                key = id_to_key.get(sec_id)
+                if key and item.get("LTP"):
+                    ltp = float(item["LTP"])
+                    prev = float(item.get("prev_close", 0) or 0)
+                    chg = round(ltp - prev, 2) if prev else 0
+                    pct = round((chg / prev) * 100, 2) if prev else 0
+                    indices[key] = {"price": round(ltp, 2), "change": chg, "change_pct": pct}
+            data["indices"] = indices
+    except Exception:
+        pass
+    return data
+
+
 async def get_macro_data(deep: bool = False) -> dict:
-    """Fetch macro dashboard data from yfinance."""
+    """Fetch macro dashboard data from yfinance + Dhan overlay."""
     loop = asyncio.get_event_loop()
     data = await loop.run_in_executor(None, _fetch_macro)
+
+    # Overlay Dhan live prices for Indian indices
+    data = await _overlay_dhan_prices(data)
 
     # AI macro analysis via orchestrator
     try:

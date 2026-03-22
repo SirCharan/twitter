@@ -80,32 +80,49 @@ async def _get_nse_client() -> httpx.AsyncClient:
 # ---------------------------------------------------------------------------
 
 
+def _extract_flows(raw: list | dict) -> dict[str, Any] | None:
+    """Parse FII/DII cash flows from NSE API response (handles multiple formats)."""
+    result: dict[str, Any] = {"date": None, "fii": {}, "dii": {}}
+
+    entries = raw if isinstance(raw, list) else raw.get("data", [])
+    for entry in entries:
+        cat = str(entry.get("category", "")).upper()
+        date_str = entry.get("date", "") or entry.get("trade_date", "")
+        if date_str and not result["date"]:
+            result["date"] = date_str
+
+        # NSE uses various field names across versions
+        buy = (_parse_cr(entry.get("buyValue"))
+               or _parse_cr(entry.get("buy_value"))
+               or _parse_cr(entry.get("BUY_VALUE")))
+        sell = (_parse_cr(entry.get("sellValue"))
+                or _parse_cr(entry.get("sell_value"))
+                or _parse_cr(entry.get("SELL_VALUE")))
+        net = (_parse_cr(entry.get("netValue"))
+               or _parse_cr(entry.get("net_value"))
+               or _parse_cr(entry.get("NET_VALUE")))
+
+        # If net is missing but buy and sell exist, compute it
+        if net is None and buy is not None and sell is not None:
+            net = round(buy - sell, 2)
+
+        if "FII" in cat or "FPI" in cat:
+            result["fii"] = {"buy": buy, "sell": sell, "net": net}
+        elif "DII" in cat:
+            result["dii"] = {"buy": buy, "sell": sell, "net": net}
+
+    return result if result["fii"] or result["dii"] else None
+
+
 async def _fetch_cash_flows(client: httpx.AsyncClient) -> dict[str, Any] | None:
     """Fetch FII/DII cash market buy/sell/net from NSE."""
     try:
         resp = await client.get("https://www.nseindia.com/api/fiidiiTradeReact")
         resp.raise_for_status()
         raw = resp.json()
-
-        # NSE returns a list of dicts with category, buyValue, sellValue, netValue
-        result: dict[str, Any] = {"date": None, "fii": {}, "dii": {}}
-
-        for entry in raw:
-            cat = entry.get("category", "").upper()
-            date_str = entry.get("date", "")
-            if date_str and not result["date"]:
-                result["date"] = date_str
-
-            buy = _parse_cr(entry.get("buyValue"))
-            sell = _parse_cr(entry.get("sellValue"))
-            net = _parse_cr(entry.get("netValue"))
-
-            if "FII" in cat or "FPI" in cat:
-                result["fii"] = {"buy": buy, "sell": sell, "net": net}
-            elif "DII" in cat:
-                result["dii"] = {"buy": buy, "sell": sell, "net": net}
-
-        return result if result["fii"] or result["dii"] else None
+        logger.info("NSE FII/DII raw response type=%s len=%s", type(raw).__name__,
+                     len(raw) if isinstance(raw, list) else "dict")
+        return _extract_flows(raw)
 
     except Exception as e:
         logger.warning("NSE cash flows fetch failed: %s", e)
@@ -115,6 +132,7 @@ async def _fetch_cash_flows(client: httpx.AsyncClient) -> dict[str, Any] | None:
 
 async def _fetch_cash_flows_proxy() -> dict[str, Any] | None:
     """Fallback: fetch via allorigins proxy."""
+    import json
     import urllib.parse
 
     url = urllib.parse.quote("https://www.nseindia.com/api/fiidiiTradeReact", safe="")
@@ -127,26 +145,8 @@ async def _fetch_cash_flows_proxy() -> dict[str, Any] | None:
             if not contents:
                 return None
 
-            import json
             raw = json.loads(contents)
-            result: dict[str, Any] = {"date": None, "fii": {}, "dii": {}}
-
-            for entry in raw:
-                cat = entry.get("category", "").upper()
-                date_str = entry.get("date", "")
-                if date_str and not result["date"]:
-                    result["date"] = date_str
-
-                buy = _parse_cr(entry.get("buyValue"))
-                sell = _parse_cr(entry.get("sellValue"))
-                net = _parse_cr(entry.get("netValue"))
-
-                if "FII" in cat or "FPI" in cat:
-                    result["fii"] = {"buy": buy, "sell": sell, "net": net}
-                elif "DII" in cat:
-                    result["dii"] = {"buy": buy, "sell": sell, "net": net}
-
-            return result if result["fii"] or result["dii"] else None
+            return _extract_flows(raw)
     except Exception as e:
         logger.warning("Proxy cash flows fetch failed: %s", e)
         return None

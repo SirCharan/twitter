@@ -20,6 +20,14 @@ YF_INDEX_MAP = {
     "SMALLCAP 100": "^CNXSC",
 }
 
+# Dhan security IDs for indices (IDX_I segment)
+DHAN_INDEX_MAP = {
+    "NIFTY": 13,
+    "BANKNIFTY": 25,
+    "NIFTY IT": 10,
+    "FINNIFTY": 27,
+}
+
 # ── 60-second in-memory cache ───────────────────────────────────────
 _overview_cache: dict = {"data": None, "ts": 0.0}
 
@@ -36,8 +44,53 @@ def _with_timeout(fn, timeout: int = 8):
         return None
 
 
+async def _fetch_indices_dhan() -> list[dict]:
+    """Fetch Indian index prices from Dhan HQ API (fast, reliable)."""
+    try:
+        from app.dhan_client import dhan
+        if not dhan.enabled:
+            return []
+
+        import httpx
+        payload = {"IDX_I": list(DHAN_INDEX_MAP.values())}
+        async with httpx.AsyncClient(timeout=8) as client:
+            resp = await client.post(
+                f"{dhan.BASE}/marketfeed/ltp",
+                headers=dhan._headers(),
+                json=payload,
+            )
+            if resp.status_code != 200:
+                logger.warning("Dhan index LTP error %d", resp.status_code)
+                return []
+
+            data = resp.json()
+            id_to_name = {v: k for k, v in DHAN_INDEX_MAP.items()}
+            indices = []
+            for item in data.get("data", {}).get("IDX_I", []):
+                sec_id = item.get("security_id")
+                name = id_to_name.get(sec_id)
+                if name and item.get("LTP"):
+                    ltp = float(item["LTP"])
+                    prev = float(item.get("prev_close", 0) or 0)
+                    change = round(ltp - prev, 2) if prev else 0
+                    pct = round((change / prev) * 100, 2) if prev else 0
+                    indices.append({
+                        "name": name,
+                        "value": round(ltp, 2),
+                        "change": change,
+                        "pct_change": pct,
+                        "open": round(float(item.get("open", 0) or 0), 2),
+                        "high": round(float(item.get("high", 0) or 0), 2),
+                        "low": round(float(item.get("low", 0) or 0), 2),
+                    })
+            return indices
+    except Exception as e:
+        logger.warning("Dhan index fetch failed: %s", e)
+        return []
+
+
 def _fetch_indices_yfinance() -> list[dict]:
-    """Fetch all major indices via yfinance (no NSE dependency)."""
+    """Fetch all major indices via yfinance (fallback)."""
     indices: list[dict] = []
     for display_name, yf_symbol in YF_INDEX_MAP.items():
         try:
@@ -159,6 +212,32 @@ async def get_overview(deep: bool = False) -> dict:
     loop = asyncio.get_event_loop()
     await log_api_call("nse", "overview")
     data = await loop.run_in_executor(None, _fetch_nse_overview)
+
+    # Overlay Dhan live prices on top of yfinance (more accurate, faster refresh)
+    try:
+        dhan_indices = await _fetch_indices_dhan()
+        if dhan_indices:
+            existing_names = {idx["name"] for idx in data.get("indices", [])}
+            dhan_by_name = {idx["name"]: idx for idx in dhan_indices}
+            # Replace yfinance values with Dhan where available
+            updated = []
+            for idx in data.get("indices", []):
+                if idx["name"] in dhan_by_name:
+                    dhan_val = dhan_by_name[idx["name"]]
+                    # Only replace if Dhan has a real price (non-zero)
+                    if dhan_val.get("value", 0) > 0:
+                        updated.append(dhan_val)
+                    else:
+                        updated.append(idx)
+                else:
+                    updated.append(idx)
+            # Add any Dhan indices not in yfinance
+            for idx in dhan_indices:
+                if idx["name"] not in existing_names and idx.get("value", 0) > 0:
+                    updated.append(idx)
+            data["indices"] = updated
+    except Exception:
+        pass  # Dhan overlay failed, keep yfinance data
 
     # AI market mood
     try:
