@@ -246,6 +246,19 @@ async def get_options_analytics(symbol: str = "NIFTY", deep: bool = False) -> di
     Full options analytics for a symbol.
     Fetches weekly + monthly chains, computes analytics, passes to LLM orchestrator.
     """
+    try:
+        return await _get_options_analytics_impl(symbol, deep)
+    except Exception as e:
+        logger.exception("Options analytics failed for %s", symbol)
+        return {
+            "symbol": symbol.upper(),
+            "error": f"Options analytics error: {type(e).__name__}: {e}",
+            "timestamp": datetime.now(IST).strftime("%Y-%m-%d %H:%M IST"),
+        }
+
+
+async def _get_options_analytics_impl(symbol: str, deep: bool) -> dict:
+    """Internal implementation — separated for clean error handling."""
     clean = symbol.upper().replace(".NS", "").strip()
     sec_id = SECURITY_MAP.get(clean)
 
