@@ -49,6 +49,8 @@ DEEP_SYNTHESIS_UNIVERSAL = (
     "5. **Payoff Asymmetry** — is the upside/downside skew favorable? Quantify.\n"
     "6. **Actionable Now** — 1-2 trades with Entry / SL / Target / R:R\n\n"
     "Timestamp your analysis with current IST date.\n"
+    "CRITICAL: If you do not have data for a section, SKIP IT ENTIRELY. "
+    "Never output empty tables, placeholder rows, or 'no data available' text.\n"
     "Maintain Stocky's voice: contrarian, direct, game-theoretic. "
     "Output ONLY clean markdown: tables, bullets, section headers. No prose paragraphs.\n"
     "400-800 words. State it as fact. No 'I think.'"
@@ -87,9 +89,10 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "### Options Chain (if F&O data present in data above)\n"
             "If options chain summary is included: interpret PCR, Max Pain, ATM IV, "
             "top OI strikes. Map OI clusters to support/resistance. "
-            "If no options data, skip this section.\n\n"
+            "If no options data is present in the data above, do not include this section at all.\n\n"
             "### Catalyst Watch\n"
             "One upcoming event that could move the stock ±5%.\n\n"
+            "CRITICAL: Skip any section entirely if you lack data for it — no empty tables or placeholders.\n"
             "Timestamp your analysis. Output ONLY clean markdown. No prose."
         ),
         "quick_max_tokens": 1024,
@@ -104,7 +107,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "3. **Valuation** — P/E, P/B, EV/EBITDA vs historical and peers\n"
             "4. **Technical Setup** — RSI, MACD, trend, key S/R levels\n"
             "5. **Options Chain** — if F&O data present: PCR, Max Pain, IV percentile, "
-            "top OI strikes mapped to S/R, unusual activity. If absent, skip.\n"
+            "top OI strikes mapped to S/R, unusual activity. If not present in data, do not include this section.\n"
             "6. **News & Sentiment** — dominant narrative, contrarian angle\n"
             "7. **Stocky Score: X/20** with 4-factor breakdown\n"
             "8. **3-Scenario Table** — Bull/Base/Bear with targets\n"
@@ -137,7 +140,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "FII-Nifty correlation.\n\n"
             "### Nifty Options Pulse (if options data present)\n"
             "PCR, Max Pain, ATM IV — what does the options market signal? "
-            "If no options data, skip.\n\n"
+            "If no options data is present, do not include this section at all.\n\n"
             "### Risk-Reward of the Day\n"
             "One asymmetric setup visible right now.\n\n"
             "### Forward Catalyst\n"
@@ -183,6 +186,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "Based on these headlines, likely FII reaction: [Buy/Sell/Neutral].\n\n"
             "### What the Market is Missing\n"
             "One second-order effect the headlines don't capture.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown tables and bullets."
         ),
         "quick_max_tokens": 768,
@@ -222,6 +226,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "Which sectors dominate? Rotation signal?\n\n"
             "### Pattern Cluster\n"
             "Theme in scan hits (e.g., PSU banks dominating = sector rotation).\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -255,7 +260,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "- Volume: trend on up/down days\n\n"
             "### Options OI Overlay (if options data present)\n"
             "Map OI clusters to S/R levels. PCR, Max Pain, IV percentile. "
-            "If no options data, skip.\n\n"
+            "If no options data is present, do not include this section at all.\n\n"
             "### Trade Setup\n"
             "| Level | Price | Rationale |\n"
             "|-------|-------|-----------|\n"
@@ -266,6 +271,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "| R:R | X:1 | |\n\n"
             "### Contrarian View\n"
             "What invalidates this setup?\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 896,
@@ -277,7 +283,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "2. **Weekly Context** — daily aligned with weekly trend?\n"
             "3. **S/R Map** — 3 key levels each with rationale\n"
             "4. **Options OI Overlay** — if data present: OI at key strikes mapped to S/R, "
-            "PCR, Max Pain, IV. If absent, skip.\n"
+            "PCR, Max Pain, IV. If not present in data, do not include this section.\n"
             "5. **Indicator Convergence** — RSI/MACD/MA alignment, divergences\n"
             "6. **Trade Plan** — Entry/SL/T1/T2/T3/R:R\n"
             "7. **Invalidation** — what price kills the thesis?\n\n"
@@ -301,12 +307,13 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "| ROE | X% | X% | A/B |\n"
             "(minimum 8 rows)\n\n"
             "### Options Comparison (if both F&O eligible + data present)\n"
-            "IV percentile, PCR, OI buildup comparison. If no data, skip.\n\n"
+            "IV percentile, PCR, OI buildup comparison. If not present in data, do not include this section.\n\n"
             "### Investor Frame\n"
             "- Value: picks [STOCK] because...\n"
             "- Growth: picks [STOCK] because...\n\n"
             "### Contrarian Angle\n"
             "What consensus is missing about the loser.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -341,6 +348,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "Best and worst with reasoning.\n\n"
             "### Listing Day Playbook\n"
             "Subscribe-and-hold, list-and-exit, or skip?\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -374,7 +382,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "| VIX | X | Complacent/Fearful |\n\n"
             "### Nifty Options Pulse (if options data present)\n"
             "PCR, Max Pain, ATM IV — what does derivatives market signal? "
-            "If no data, skip.\n\n"
+            "If not present in data, do not include this section.\n\n"
             "### FII Flow Forecast\n"
             "Based on macro signals, expected FII behavior next week: "
             "[Buyer/Seller/Neutral].\n\n"
@@ -382,6 +390,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "Next move (hold/cut/hike) with probability.\n\n"
             "### Sector Implications\n"
             "Who benefits, who suffers? 2-3 sentences.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -418,6 +427,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "Which sectors align with FII buying patterns?\n\n"
             "### Macro Overlay\n"
             "Rotation aligned with macro cycle?\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -453,6 +463,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "If no options data, provide general earnings setup.\n\n"
             "### Sector Earnings Trend\n"
             "Which sector showing earnings acceleration/deceleration?\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 896,
@@ -487,9 +498,10 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "| Nifty yield | ~1.3% | Market |\n\n"
             "### Covered Call Overlay (if F&O eligible + data present)\n"
             "Selling covered calls can enhance yield by X% annualized. "
-            "If not F&O eligible, skip.\n\n"
+            "If not F&O eligible, do not include this section.\n\n"
             "### Ex-Date Strategy\n"
             "Accumulate pre-ex-date, buy dip, or avoid?\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -526,6 +538,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "- **Underweight:** [2-3 sectors] with reasoning\n\n"
             "### ETF Trade Idea\n"
             "One sector play with entry rationale.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -562,6 +575,7 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "- **Overvalued:** unjustified premium\n\n"
             "### Contrarian Angle\n"
             "What PE/PB numbers are hiding (earnings quality, composition shifts).\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -597,17 +611,16 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "| Participant | Buy (₹ Cr) | Sell (₹ Cr) | Net (₹ Cr) | Signal |\n"
             "|-------------|-----------|------------|-----------|--------|\n"
             "Fill from data. Flag if net > ₹2000 Cr.\n\n"
-            "### Last 5-Session Trend\n"
-            "| Date | FII Net | DII Net | Nifty Δ | Correlation |\n"
-            "|------|---------|---------|---------|-------------|\n"
-            "If historical data not in feed, infer from context.\n\n"
             "### F&O Positioning\n"
-            "FII index futures long/short → directional bias. "
-            "If Nifty options chain present: PCR, Max Pain, ATM IV.\n\n"
-            "### FII-Nifty Correlation\n"
-            "Over recent sessions, FII flow predicted Nifty direction X/5 times.\n\n"
+            "If F&O participant OI or Nifty options chain data is present: "
+            "FII index futures long/short ratio, PCR, Max Pain, ATM IV. "
+            "If not present, do not include this section.\n\n"
             "### Market Impact\n"
             "Expected Nifty direction next 1-2 sessions with S/R levels.\n\n"
+            "CRITICAL: If you do not have actual data for a section, SKIP IT ENTIRELY. "
+            "Never output empty tables, placeholder rows, or 'no data available' text. "
+            "Only include sections where you have specific numbers from the data above.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 1024,
@@ -621,9 +634,10 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "rollover signals. If Nifty chain present: PCR/Max Pain/IV\n"
             "5. **DII Counterflow** — MF/insurance absorption, SIP context\n"
             "6. **NSDL FPI** — equity vs debt rotation\n"
-            "7. **Last 5-Session Trend Table** with Nifty correlation\n"
-            "8. **Sector Rotation Signal** — where are FPIs deploying?\n"
-            "9. **Nifty Impact Estimate** — direction + conviction\n\n"
+            "7. **Sector Rotation Signal** — where are FPIs deploying?\n"
+            "8. **Nifty Impact Estimate** — direction + conviction\n\n"
+            "CRITICAL: Only include sections where you have actual data. "
+            "Skip any section entirely if data is not available — no empty tables or placeholders.\n\n"
             "500-800 words. Think like a prop desk flow analyst."
         ),
         "deep_max_tokens": 2048,
@@ -640,13 +654,14 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "|-------------|--------|-----------|-------|---------------|\n"
             "| ... | HIGH/MED | BULL/BEAR | ... | +X% to -X% |\n\n"
             "### F&O Amplification (if affected stocks are F&O eligible)\n"
-            "OI buildup that may amplify the move. If no data, skip.\n\n"
+            "OI buildup that may amplify the move. If not present in data, do not include this section.\n\n"
             "### Pattern Detection\n"
             "Any clustering? Insider patterns? Board meeting concentration?\n\n"
             "### Event-Driven Trade Idea\n"
             "One actionable setup with entry rationale.\n\n"
             "### Corporate Action Calendar\n"
             "Upcoming record dates, splits, bonuses to track.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 768,
@@ -712,11 +727,12 @@ BUTTON_CONFIGS: dict[str, dict] = {
             "| Portfolio Impact | -X% | -X% | -X% |\n\n"
             "### Hedging (if F&O eligible positions + data present)\n"
             "Protective put or collar strategy for largest holding. "
-            "If no F&O data, skip.\n\n"
+            "If no F&O data present, do not include this section.\n\n"
             "### FII Alignment\n"
             "How many holdings in FII-accumulation vs FII-selling sectors?\n\n"
             "### Optimization\n"
             "One specific action: diversify, hedge, trim, or add.\n\n"
+            "Skip any section if you lack data — no empty tables or placeholders.\n"
             "Timestamp. Output ONLY clean markdown."
         ),
         "quick_max_tokens": 896,
@@ -734,5 +750,66 @@ BUTTON_CONFIGS: dict[str, dict] = {
         ),
         "deep_max_tokens": 1536,
         "temperature": 0.5,
+    },
+
+    # ─── OPTIONS ANALYTICS ─────────────────────────────────────────
+    "options": {
+        "quick_prompt": (
+            "You are Stocky AI — derivatives analytics specialist (real-time IST).\n\n"
+            "Symbol: {name}\nOptions Chain Data:\n{data}\n\n"
+            "Provide professional options analytics:\n\n"
+            "### Options Signal Score: X/20\n"
+            "(PCR signal 0-5, Max Pain alignment 0-5, IV regime 0-5, OI buildup 0-5)\n\n"
+            "### Verdict\n"
+            "[BULLISH] / [BEARISH] / [NEUTRAL] / [RANGE-BOUND] — "
+            "2-sentence conviction with reasoning.\n\n"
+            "### PCR Analysis\n"
+            "| Expiry | PCR | Signal | Interpretation |\n"
+            "|--------|-----|--------|----------------|\n"
+            "| Weekly | X | ... | ... |\n"
+            "| Monthly | X | ... | ... |\n"
+            "If divergence between weekly/monthly, call it out — it's a strong signal.\n\n"
+            "### Max Pain vs Spot\n"
+            "Max Pain: X, Spot: X, Distance: X%. "
+            "Pin risk assessment. Expiry convergence probability.\n\n"
+            "### OI Concentration (Support & Resistance)\n"
+            "| Strike | Call OI | Put OI | Role |\n"
+            "|--------|--------|--------|------|\n"
+            "Map the top OI strikes as Support or Resistance levels. "
+            "Call OI = resistance, Put OI = support.\n\n"
+            "### IV Skew\n"
+            "ATM IV vs OTM put/call. Skew direction = fear/greed indicator. "
+            "Comment on IV percentile if discernible from data.\n\n"
+            "### Top 3 Strategy Recommendations\n"
+            "| # | Strategy | Strikes | Rationale | Risk-Reward |\n"
+            "|---|----------|---------|-----------|-------------|\n"
+            "Base on current PCR, IV, and OI patterns. "
+            "Include straddle/strangle if IV is low, credit spreads if IV is high.\n\n"
+            "### Expiry Playbook\n"
+            "Expected move for nearest expiry. Key levels to watch.\n\n"
+            "Timestamp. Output ONLY clean markdown. No fluff."
+        ),
+        "quick_max_tokens": 1024,
+        "deep_primary": (
+            "You are Stocky AI — institutional derivatives strategist (real-time IST).\n\n"
+            "Symbol: {name}\nData:\n{data}\n\n"
+            "Produce a comprehensive options analysis:\n"
+            "1. **Options Signal Score: X/20** — breakdown by PCR/Max Pain/IV/OI\n"
+            "2. **PCR Deep Dive** — weekly vs monthly, historical context, divergence signals\n"
+            "3. **Max Pain Analysis** — convergence probability, pin risk, delta to spot\n"
+            "4. **OI Buildup Interpretation** — fresh longs vs short covering vs "
+            "short buildup vs long unwinding (infer from OI direction + price)\n"
+            "5. **IV Surface** — ATM vs OTM skew, term structure (weekly vs monthly IV), "
+            "IV percentile assessment\n"
+            "6. **Support/Resistance from OI** — map top 5 call + put OI as S/R levels\n"
+            "7. **Strategy Matrix** — 3 strategies with full payoff reasoning:\n"
+            "   | Strategy | Strikes | Entry | Max Profit | Max Loss | Breakeven | Edge |\n"
+            "8. **Expiry Day Playbook** — expected move, theta decay curve, key gamma levels\n"
+            "9. **What Can Go Wrong** — top 2-3 risks to the options positioning\n\n"
+            "600-1000 words. Reference actual strike prices and OI numbers from the data. "
+            "Never hallucinate numbers. Cite the data provided."
+        ),
+        "deep_max_tokens": 2048,
+        "temperature": 0.4,
     },
 }
