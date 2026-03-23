@@ -250,10 +250,20 @@ class DhanClient:
             return {}
 
     def compute_chain_summary(self, chain_data: dict) -> dict | None:
-        """Compute compact summary from raw option chain response."""
+        """Compute compact summary from raw Dhan option chain response.
+
+        Dhan format:
+          data.last_price = spot (float)
+          data.oc = {"17750.0": {"ce": {"oi": X, "implied_volatility": X, "greeks": {...}}, "pe": {...}}, ...}
+        """
         try:
-            strikes = chain_data.get("data", [])
-            if not strikes:
+            inner = chain_data.get("data", {})
+            if not isinstance(inner, dict):
+                return None
+
+            spot = inner.get("last_price", 0)
+            oc = inner.get("oc", {})
+            if not oc:
                 return None
 
             total_call_oi = 0
@@ -261,25 +271,38 @@ class DhanClient:
             call_oi_map: dict[float, int] = {}
             put_oi_map: dict[float, int] = {}
             atm_iv = None
-            spot = chain_data.get("last_price", 0)
+            min_atm_dist = float("inf")
 
-            for s in strikes:
-                strike_price = s.get("strikePrice", 0) or s.get("strike_price", 0)
-                ce_oi = s.get("ce_oi", 0) or s.get("CE_OI", 0) or 0
-                pe_oi = s.get("pe_oi", 0) or s.get("PE_OI", 0) or 0
-                ce_iv = s.get("ce_iv", 0) or s.get("CE_IV", 0) or 0
+            for strike_str, sides in oc.items():
+                if not isinstance(sides, dict):
+                    continue
+                try:
+                    strike_price = float(strike_str)
+                except (ValueError, TypeError):
+                    continue
+
+                ce = sides.get("ce", {}) or {}
+                pe = sides.get("pe", {}) or {}
+
+                ce_oi = int(ce.get("oi", 0) or 0)
+                pe_oi = int(pe.get("oi", 0) or 0)
+                ce_iv = float(ce.get("implied_volatility", 0) or 0)
 
                 total_call_oi += ce_oi
                 total_put_oi += pe_oi
-
-                if strike_price:
-                    call_oi_map[strike_price] = ce_oi
-                    put_oi_map[strike_price] = pe_oi
+                call_oi_map[strike_price] = ce_oi
+                put_oi_map[strike_price] = pe_oi
 
                 # ATM IV: strike closest to spot
-                if spot and strike_price and atm_iv is None:
-                    if abs(strike_price - spot) < (spot * 0.01):  # within 1%
-                        atm_iv = round(ce_iv, 2) if ce_iv else None
+                if spot and strike_price:
+                    dist = abs(strike_price - spot)
+                    if dist < min_atm_dist:
+                        min_atm_dist = dist
+                        if ce_iv > 0:
+                            atm_iv = round(ce_iv, 2)
+
+            if total_call_oi == 0 and total_put_oi == 0:
+                return None
 
             pcr = round(total_put_oi / total_call_oi, 2) if total_call_oi > 0 else None
 
@@ -305,6 +328,7 @@ class DhanClient:
             top_put = sorted(put_oi_map.items(), key=lambda x: x[1], reverse=True)[:5]
 
             return {
+                "spot": spot,
                 "pcr": pcr,
                 "max_pain": max_pain,
                 "atm_iv": atm_iv,
