@@ -268,7 +268,7 @@ export default function OverviewCard({ data }: { data: Record<string, unknown> }
         return sm ? <StructuredMeta meta={sm} compact /> : null;
       })()}
       <CardActions cardType="overview" cardData={data} />
-      <Disclaimer />
+      <Disclaimer freshnessWarning={data.freshness_warning as string | undefined} />
     </CardWrapper>
   );
 }

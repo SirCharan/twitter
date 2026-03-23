@@ -341,6 +341,19 @@ async def get_fii_dii_data(deep: bool = False) -> dict:
         "nsdl_fpi": nsdl,
     }
 
+    # Nifty options chain overlay
+    try:
+        from app.options_data import get_options_summary
+        nifty_opts = await get_options_summary("NIFTY")
+        if nifty_opts:
+            data["nifty_options"] = nifty_opts
+    except Exception:
+        pass
+
+    # Freshness check
+    from app.freshness import check_freshness
+    data = check_freshness(data, max_age_seconds=300)
+
     # AI enhancement
     try:
         from app.llm_orchestrator import enhance

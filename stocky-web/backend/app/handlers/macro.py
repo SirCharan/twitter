@@ -71,6 +71,15 @@ async def get_macro_data(deep: bool = False) -> dict:
     # Overlay Dhan live prices for Indian indices
     data = await _overlay_dhan_prices(data)
 
+    # Nifty options chain overlay
+    try:
+        from app.options_data import get_options_summary
+        nifty_opts = await get_options_summary("NIFTY")
+        if nifty_opts:
+            data["nifty_options"] = nifty_opts
+    except Exception:
+        pass
+
     # AI macro analysis via orchestrator
     try:
         from app.llm_orchestrator import enhance

@@ -209,7 +209,7 @@ export default function MacroCard({ data }: Props) {
         </div>
       )}
       <CardActions cardType="macro" cardData={data} />
-      <Disclaimer />
+      <Disclaimer freshnessWarning={data.freshness_warning as string | undefined} />
     </CardWrapper>
   );
 }

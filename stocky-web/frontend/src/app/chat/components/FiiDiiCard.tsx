@@ -278,7 +278,7 @@ export default function FiiDiiCard({ data }: Props) {
       )}
 
       <CardActions cardType="fii_dii" cardData={data} />
-      <Disclaimer />
+      <Disclaimer freshnessWarning={data.freshness_warning as string | undefined} />
     </CardWrapper>
   );
 }

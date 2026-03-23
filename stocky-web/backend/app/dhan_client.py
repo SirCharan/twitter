@@ -201,6 +201,122 @@ class DhanClient:
             logger.error("Dhan OHLC failed: %s", e)
             return {}
 
+    def is_fno_eligible(self, symbol: str) -> bool:
+        """Check if a symbol is likely F&O eligible (in our security map)."""
+        clean = symbol.upper().replace(".NS", "").replace(".BO", "").strip()
+        return clean in SECURITY_MAP
+
+    async def get_expiry_list(self, underlying_id: int, segment: str = "IDX_I") -> list[str]:
+        """Get available expiry dates for an underlying."""
+        if not self._enabled:
+            return []
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.post(
+                    f"{self.BASE}/optionchain/expirylist",
+                    headers=self._headers(),
+                    json={"UnderlyingScrip": underlying_id, "UnderlyingSeg": segment},
+                )
+                if resp.status_code != 200:
+                    logger.error("Dhan expiry list error %d: %s", resp.status_code, resp.text[:200])
+                    return []
+                data = resp.json()
+                return data.get("data", [])
+        except Exception as e:
+            logger.error("Dhan expiry list failed: %s", e)
+            return []
+
+    async def get_option_chain(self, underlying_id: int, segment: str = "IDX_I", expiry: str = "") -> dict:
+        """Get full option chain for an underlying + expiry."""
+        if not self._enabled:
+            return {}
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    f"{self.BASE}/optionchain",
+                    headers=self._headers(),
+                    json={
+                        "UnderlyingScrip": underlying_id,
+                        "UnderlyingSeg": segment,
+                        "Expiry": expiry,
+                    },
+                )
+                if resp.status_code != 200:
+                    logger.error("Dhan option chain error %d: %s", resp.status_code, resp.text[:200])
+                    return {}
+                return resp.json()
+        except Exception as e:
+            logger.error("Dhan option chain failed: %s", e)
+            return {}
+
+    def compute_chain_summary(self, chain_data: dict) -> dict | None:
+        """Compute compact summary from raw option chain response."""
+        try:
+            strikes = chain_data.get("data", [])
+            if not strikes:
+                return None
+
+            total_call_oi = 0
+            total_put_oi = 0
+            call_oi_map: dict[float, int] = {}
+            put_oi_map: dict[float, int] = {}
+            atm_iv = None
+            spot = chain_data.get("last_price", 0)
+
+            for s in strikes:
+                strike_price = s.get("strikePrice", 0) or s.get("strike_price", 0)
+                ce_oi = s.get("ce_oi", 0) or s.get("CE_OI", 0) or 0
+                pe_oi = s.get("pe_oi", 0) or s.get("PE_OI", 0) or 0
+                ce_iv = s.get("ce_iv", 0) or s.get("CE_IV", 0) or 0
+
+                total_call_oi += ce_oi
+                total_put_oi += pe_oi
+
+                if strike_price:
+                    call_oi_map[strike_price] = ce_oi
+                    put_oi_map[strike_price] = pe_oi
+
+                # ATM IV: strike closest to spot
+                if spot and strike_price and atm_iv is None:
+                    if abs(strike_price - spot) < (spot * 0.01):  # within 1%
+                        atm_iv = round(ce_iv, 2) if ce_iv else None
+
+            pcr = round(total_put_oi / total_call_oi, 2) if total_call_oi > 0 else None
+
+            # Max Pain: strike where total exercise value is minimized
+            max_pain = None
+            if call_oi_map and put_oi_map:
+                all_strikes = sorted(set(call_oi_map.keys()) | set(put_oi_map.keys()))
+                min_pain_value = float("inf")
+                for test_strike in all_strikes:
+                    pain = 0
+                    for k, oi in call_oi_map.items():
+                        if k < test_strike:
+                            pain += oi * (test_strike - k)
+                    for k, oi in put_oi_map.items():
+                        if k > test_strike:
+                            pain += oi * (k - test_strike)
+                    if pain < min_pain_value:
+                        min_pain_value = pain
+                        max_pain = test_strike
+
+            # Top 5 OI strikes
+            top_call = sorted(call_oi_map.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_put = sorted(put_oi_map.items(), key=lambda x: x[1], reverse=True)[:5]
+
+            return {
+                "pcr": pcr,
+                "max_pain": max_pain,
+                "atm_iv": atm_iv,
+                "total_call_oi": total_call_oi,
+                "total_put_oi": total_put_oi,
+                "top_call_oi": [{"strike": k, "oi": v} for k, v in top_call],
+                "top_put_oi": [{"strike": k, "oi": v} for k, v in top_put],
+            }
+        except Exception as e:
+            logger.error("Chain summary computation failed: %s", e)
+            return None
+
     async def get_historical(
         self,
         symbol: str,

@@ -266,4 +266,22 @@ async def get_overview(deep: bool = False) -> dict:
     except Exception:
         pass
 
+    # Options chain overlay (Nifty + BankNifty)
+    try:
+        from app.options_data import get_options_summary
+        nifty_opts = await get_options_summary("NIFTY")
+        bn_opts = await get_options_summary("BANKNIFTY")
+        if nifty_opts or bn_opts:
+            data["options"] = {}
+            if nifty_opts:
+                data["options"]["nifty"] = nifty_opts
+            if bn_opts:
+                data["options"]["banknifty"] = bn_opts
+    except Exception:
+        pass
+
+    # Freshness check
+    from app.freshness import check_freshness
+    data = check_freshness(data, max_age_seconds=300)
+
     return data
