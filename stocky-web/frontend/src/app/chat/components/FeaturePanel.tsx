@@ -29,6 +29,7 @@ const FEATURE_META: Record<FeatureId, { icon: string; label: string }> = {
   valuation:       { icon: "📊", label: "Market Valuation" },
   announcements:   { icon: "📢", label: "Corporate Announcements" },
   fii_dii:         { icon: "🏛", label: "FII/DII Flows" },
+  options:          { icon: "📊", label: "Options Analytics" },
 };
 
 function Chip({
