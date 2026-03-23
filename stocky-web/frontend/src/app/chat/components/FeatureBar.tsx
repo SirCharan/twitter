@@ -6,7 +6,7 @@ import {
   TrendingUp, Newspaper, Briefcase, Search,
   Microscope, BarChart3, LineChart, Scale,
   Rocket, Globe, RefreshCw, Sparkles,
-  Calendar, Coins, Factory, Gauge, Megaphone, ArrowLeftRight,
+  Calendar, Coins, Factory, Gauge, Megaphone, ArrowLeftRight, Activity,
 } from "lucide-react";
 
 export type FeatureId =
@@ -27,7 +27,8 @@ export type FeatureId =
   | "sectors"
   | "valuation"
   | "announcements"
-  | "fii_dii";
+  | "fii_dii"
+  | "options";
 
 export const CATEGORIES: { label: string; features: { id: FeatureId; icon: ReactNode; label: string }[] }[] = [
   {
@@ -46,6 +47,7 @@ export const CATEGORIES: { label: string; features: { id: FeatureId; icon: React
       { id: "scan",          icon: <BarChart3 size={12} />,  label: "Scan" },
       { id: "chart",         icon: <LineChart size={12} />,  label: "Chart" },
       { id: "compare",       icon: <Scale size={12} />,      label: "Compare" },
+      { id: "options",        icon: <Activity size={12} />,   label: "Options" },
     ],
   },
   {

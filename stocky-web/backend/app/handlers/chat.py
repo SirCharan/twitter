@@ -250,6 +250,16 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if re.search(r"\b(fii.?dii|institutional flows?|fpi flows?)\b", lower):
         return "fii_dii", []
 
+    # Options Analytics
+    m = re.match(r"^options?\s*(?:analytics?|chain|signals?|data)?\s*(?:for\s+|of\s+|on\s+)?(\w+)?\s*$", lower)
+    if m:
+        sym = m.group(1).upper() if m.group(1) else "NIFTY"
+        return "options", [sym]
+    if re.search(r"\b(options?\s*(?:analytics|chain|signals?)|option chain|oi analysis|pcr analysis|max pain)\b", lower):
+        sym_match = re.search(r"(?:for|of|on)\s+(\w+)", lower)
+        sym = sym_match.group(1).upper() if sym_match else "NIFTY"
+        return "options", [sym]
+
     # Announcements
     if re.match(r"^(announcements?|corporate announcements?|filings?|corporate actions?)\s*$", lower):
         return "announcements", []
@@ -603,6 +613,12 @@ async def _dispatch(
         from app.handlers.fii_dii import get_fii_dii_data
         data = await get_fii_dii_data(deep=deep)
         return {"type": "fii_dii", "content": "FII/DII Flows", "data": data}
+
+    if intent == "options":
+        from app.handlers.options import get_options_analytics
+        symbol = args[0] if args else "NIFTY"
+        data = await get_options_analytics(symbol, deep=deep)
+        return {"type": "options", "content": f"Options Analytics — {symbol}", "data": data}
 
     if intent == "announcements":
         from app.handlers.announcements import get_announcements

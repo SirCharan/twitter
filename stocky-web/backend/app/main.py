@@ -211,6 +211,16 @@ async def fii_dii_endpoint():
         raise HTTPException(500, str(e))
 
 
+@app.get("/api/options")
+async def options_endpoint(symbol: str = "NIFTY", deep: bool = False):
+    from app.handlers.options import get_options_analytics
+    try:
+        data = await get_options_analytics(symbol, deep=deep)
+        return {"type": "options", "data": data}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 @app.post("/api/summarise")
 async def summarise_endpoint(req: SummariseRequest):
     from app import ai_client
