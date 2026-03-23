@@ -53,7 +53,7 @@ def _classify_expiries(expiries: list[str]) -> tuple[str | None, str | None]:
 def _compute_iv_skew(chain_data: dict, spot: float) -> dict | None:
     """Compute IV skew: ATM vs OTM call (+5%) and OTM put (-5%)."""
     strikes = chain_data.get("data", [])
-    if not strikes or not spot:
+    if not strikes or not spot or not isinstance(strikes, list):
         return None
 
     atm_iv = None
@@ -69,6 +69,8 @@ def _compute_iv_skew(chain_data: dict, spot: float) -> dict | None:
     best_put_dist = float("inf")
 
     for s in strikes:
+        if not isinstance(s, dict):
+            continue
         strike = s.get("strikePrice", 0) or s.get("strike_price", 0)
         if not strike:
             continue
@@ -110,9 +112,13 @@ def _compute_iv_skew(chain_data: dict, spot: float) -> dict | None:
 def _compute_volume_hotspots(chain_data: dict) -> list[dict]:
     """Find top 5 strikes by volume (call + put combined)."""
     strikes = chain_data.get("data", [])
+    if not isinstance(strikes, list):
+        return []
     volumes = []
 
     for s in strikes:
+        if not isinstance(s, dict):
+            continue
         strike = s.get("strikePrice", 0) or s.get("strike_price", 0)
         ce_vol = s.get("ce_volume", 0) or s.get("CE_Volume", 0) or 0
         pe_vol = s.get("pe_volume", 0) or s.get("PE_Volume", 0) or 0
@@ -293,37 +299,36 @@ async def _get_options_analytics_impl(symbol: str, deep: bool) -> dict:
         }
 
     weekly_exp, monthly_exp = _classify_expiries(expiries)
+    logger.info("Options %s: weekly=%s monthly=%s expiries_sample=%s", clean, weekly_exp, monthly_exp, expiries[:3])
 
-    # 2. Fetch chains in parallel (safe — each call has its own try/except)
+    # 2. Fetch chains sequentially for easier debugging
     weekly_chain: dict = {}
     monthly_chain: dict | None = None
     spot: float = 0
 
-    try:
-        chain_tasks = []
-        if weekly_exp:
-            chain_tasks.append(dhan.get_option_chain(sec_id, segment, weekly_exp))
-        if monthly_exp:
-            chain_tasks.append(dhan.get_option_chain(sec_id, segment, monthly_exp))
+    if weekly_exp:
+        try:
+            raw = await dhan.get_option_chain(sec_id, segment, weekly_exp)
+            logger.info("Options %s weekly chain type=%s keys=%s",
+                        clean, type(raw).__name__,
+                        list(raw.keys())[:5] if isinstance(raw, dict) else str(raw)[:100])
+            if isinstance(raw, dict):
+                weekly_chain = raw
+        except Exception as e:
+            logger.warning("Weekly chain failed for %s: %s", clean, e)
 
-        chain_results = await asyncio.gather(*chain_tasks, return_exceptions=True)
-
-        idx = 0
-        if weekly_exp and idx < len(chain_results):
-            r = chain_results[idx]
-            if isinstance(r, dict):
-                weekly_chain = r
-            idx += 1
-        if monthly_exp and idx < len(chain_results):
-            r = chain_results[idx]
-            if isinstance(r, dict):
-                monthly_chain = r
-    except Exception as e:
-        logger.warning("Option chain fetch failed for %s: %s", clean, e)
+    if monthly_exp:
+        try:
+            raw = await dhan.get_option_chain(sec_id, segment, monthly_exp)
+            if isinstance(raw, dict):
+                monthly_chain = raw
+        except Exception as e:
+            logger.warning("Monthly chain failed for %s: %s", clean, e)
 
     # Get spot from chain data
-    if isinstance(weekly_chain, dict):
+    if weekly_chain:
         spot = weekly_chain.get("last_price", 0) or 0
+        logger.info("Options %s spot from chain: %s", clean, spot)
 
     # Fallback: get spot from LTP (only for equity symbols)
     if not spot and clean not in _INDEX_SYMBOLS:
