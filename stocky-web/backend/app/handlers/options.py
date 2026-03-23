@@ -266,7 +266,12 @@ async def get_options_analytics(symbol: str = "NIFTY", deep: bool = False) -> di
     segment = IDX if clean in _INDEX_SYMBOLS else "NSE_FNO"
 
     # 1. Get expiry list
-    expiries = await dhan.get_expiry_list(sec_id, segment)
+    try:
+        expiries = await dhan.get_expiry_list(sec_id, segment)
+    except Exception as e:
+        logger.warning("Expiry list failed for %s: %s", clean, e)
+        expiries = []
+
     if not expiries:
         return {
             "symbol": clean,
@@ -276,42 +281,57 @@ async def get_options_analytics(symbol: str = "NIFTY", deep: bool = False) -> di
 
     weekly_exp, monthly_exp = _classify_expiries(expiries)
 
-    # 2. Fetch chains + spot price in parallel
-    tasks = [dhan.get_option_chain(sec_id, segment, weekly_exp)] if weekly_exp else []
-    if monthly_exp:
-        tasks.append(dhan.get_option_chain(sec_id, segment, monthly_exp))
+    # 2. Fetch chains in parallel (safe — each call has its own try/except)
+    weekly_chain: dict = {}
+    monthly_chain: dict | None = None
+    spot: float = 0
 
-    # Get spot via LTP for equity symbols, or from chain data for indices
-    ltp_sym = clean if clean not in _INDEX_SYMBOLS else clean.replace(" ", "")
-    tasks.append(dhan.get_ltp([ltp_sym]))
+    try:
+        chain_tasks = []
+        if weekly_exp:
+            chain_tasks.append(dhan.get_option_chain(sec_id, segment, weekly_exp))
+        if monthly_exp:
+            chain_tasks.append(dhan.get_option_chain(sec_id, segment, monthly_exp))
 
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+        chain_results = await asyncio.gather(*chain_tasks, return_exceptions=True)
 
-    # Parse results
-    weekly_chain = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else {}
-    monthly_chain = None
-    ltp_result = {}
+        idx = 0
+        if weekly_exp and idx < len(chain_results):
+            r = chain_results[idx]
+            if isinstance(r, dict):
+                weekly_chain = r
+            idx += 1
+        if monthly_exp and idx < len(chain_results):
+            r = chain_results[idx]
+            if isinstance(r, dict):
+                monthly_chain = r
+    except Exception as e:
+        logger.warning("Option chain fetch failed for %s: %s", clean, e)
 
-    if monthly_exp and len(results) > 2:
-        monthly_chain = results[1] if not isinstance(results[1], Exception) else {}
-        ltp_result = results[2] if not isinstance(results[2], Exception) else {}
-    elif monthly_exp and len(results) > 1:
-        monthly_chain = results[1] if not isinstance(results[1], Exception) else {}
-    elif len(results) > 1:
-        ltp_result = results[1] if not isinstance(results[1], Exception) else {}
+    # Get spot from chain data
+    if isinstance(weekly_chain, dict):
+        spot = weekly_chain.get("last_price", 0) or 0
 
-    # Spot price from chain or LTP
-    spot = weekly_chain.get("last_price", 0) or 0
-    if not spot and isinstance(ltp_result, dict):
-        spot = ltp_result.get(ltp_sym, 0)
+    # Fallback: get spot from LTP (only for equity symbols)
+    if not spot and clean not in _INDEX_SYMBOLS:
+        try:
+            ltp = await dhan.get_ltp([clean])
+            if isinstance(ltp, dict):
+                spot = ltp.get(clean, 0)
+        except Exception:
+            pass
 
     # 3. Compute summaries using existing infrastructure
-    weekly_summary = dhan.compute_chain_summary(weekly_chain) if weekly_chain else None
-    monthly_summary = dhan.compute_chain_summary(monthly_chain) if monthly_chain else None
+    weekly_summary = None
+    monthly_summary = None
+    if isinstance(weekly_chain, dict) and weekly_chain:
+        weekly_summary = dhan.compute_chain_summary(weekly_chain)
+    if isinstance(monthly_chain, dict) and monthly_chain:
+        monthly_summary = dhan.compute_chain_summary(monthly_chain)
 
     # 4. Extended analytics
-    iv_skew = _compute_iv_skew(weekly_chain, spot) if weekly_chain else None
-    volume_hotspots = _compute_volume_hotspots(weekly_chain) if weekly_chain else []
+    iv_skew = _compute_iv_skew(weekly_chain, spot) if isinstance(weekly_chain, dict) and weekly_chain else None
+    volume_hotspots = _compute_volume_hotspots(weekly_chain) if isinstance(weekly_chain, dict) and weekly_chain else []
     signals = _derive_signals(weekly_summary, monthly_summary, spot, iv_skew)
 
     # 5. Build data payload
