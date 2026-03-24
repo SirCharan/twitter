@@ -1,0 +1,89 @@
+# Stocky AI
+
+> Personal AI trading assistant for Indian markets (NSE/BSE) built by Charandeep Kapoor.
+
+## What This Is
+
+Stocky AI is a monorepo containing:
+- A FastAPI backend with 29 handler modules and 34 API routes
+- A Next.js 16 + React 19 chat frontend with 49 components
+- A Telegram bot
+- A marketing landing page
+
+The web app at llm.stockyai.xyz lets you analyse stocks, execute trades via Zerodha Kite, scan markets, read news, and run deep research — all through a conversational AI interface.
+
+## Key Feature: 6-Agent Stocky Council
+
+Deep Research mode activates 6 specialised AI agents that debate in 3 rounds:
+
+1. Technical Strategist (TS) — chart patterns, RSI/MACD, support/resistance
+2. Fundamental Analyst (FA) — P/E, ROE, moat analysis, earnings quality
+3. Market Pulse Agent (MP) — news sentiment, FII/DII flows, options chain
+4. Risk Guardian (RG) — position sizing, stop-loss, VaR, portfolio impact
+5. Macro Economist (ME) — RBI policy, sector rotation, global cues
+6. Chief Synthesis Officer (CSO) — arbitrates conflicts, confidence scoring, final report
+
+Output: structured report with executive summary, bull/bear cases, key risks with probability %, actionable trade idea (entry/targets/SL/sizing), and confidence score 0-100.
+
+## Tech Stack
+
+- Backend: FastAPI, Python, Groq (llama-3.3-70b + llama-4-scout), aiosqlite
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS, Framer Motion, Radix UI
+- Data: Zerodha Kite (trading), yfinance (OHLCV), GNews API (news), Dhan (options), NSE (FII/DII)
+- Deployment: Railway (backend), Vercel (frontend)
+- 6 Groq API keys enable full parallel agent execution
+
+## API Endpoints
+
+POST /api/chat — main chat (regex NLP + LLM intent parsing)
+POST /api/council-research — 6-agent deep research (SSE streaming)
+POST /api/research — stock-specific deep research (SSE)
+POST /api/deep-research — general deep research via Triad (SSE, legacy)
+POST /api/crew-research — 7-agent crew research (SSE, legacy)
+POST /api/trade/confirm — confirm/cancel trade
+POST /api/scan — market scanning (6 types)
+POST /api/chart — chart generation
+POST /api/compare — stock comparison
+GET  /api/ipo — IPO data
+GET  /api/macro — macro dashboard
+GET  /api/rrg — sector rotation
+GET  /api/sectors — sector performance
+GET  /api/earnings — earnings calendar
+GET  /api/dividends — dividend data
+GET  /api/valuation — market PE/PB
+GET  /api/announcements — corporate actions
+POST /api/options — option chain analytics
+GET  /api/fii-dii — FII/DII flows
+POST /api/feedback — user feedback persistence
+POST /api/watchlist — add to watchlist
+GET  /api/watchlist — list watchlist
+DELETE /api/watchlist/{symbol} — remove from watchlist
+POST /api/export/pdf — generate PDF
+POST /api/share — create shareable link
+GET  /api/kite/status — Kite connection status
+POST /api/kite/login — trigger Kite TOTP login
+
+## Frontend Message Types (34)
+
+text, analysis, overview, news, portfolio, positions, holdings, orders, margins,
+price, scan, chart, compare, ipo, macro, rrg, sectors, earnings, dividends,
+valuation, announcements, options, fii_dii, council_progress, council_debate,
+deep_research, agent_debate, debate_progress, progress, trade_confirm,
+order_result, suggestion, error, usage
+
+## Repository Layout
+
+stocky-ai/           — Telegram bot (Python)
+stocky-web/backend/  — FastAPI REST API (Python)
+stocky-web/frontend/ — Next.js chat UI (TypeScript)
+stocky-landing/      — Marketing site (Next.js)
+
+## Documentation
+
+README.md        — Project overview and setup
+ai.md            — Deep Research & 6-Agent Council architecture
+llm.md           — LLM models, routing, prompts, analysis pipeline
+architecture.md  — Visual Mermaid diagrams (9 diagrams)
+system-flow.md   — End-to-end Mermaid flowcharts (8 diagrams)
+summary.md       — Full technical reference
+agents.txt       — AI agent navigation guide

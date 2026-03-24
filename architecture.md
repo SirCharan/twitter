@@ -13,341 +13,332 @@ graph TB
         U2[CK on Browser]
     end
 
-    subgraph Railway["Railway — fearless-determination project"]
-        TG["stocky-ai/bot/main.py\nTelegram Bot\nservice: worker"]
-        API["stocky-web/backend/app/main.py\nFastAPI REST API\nservice: stocky-web-backend"]
+    subgraph Railway["Railway — fearless-determination"]
+        TG["stocky-ai · Telegram Bot<br/>service: worker"]
+        API["stocky-web/backend · FastAPI<br/>service: stocky-web-backend<br/>29 handlers · 34 routes"]
     end
 
-    subgraph Vercel["Vercel"]
-        FE["stocky-web/frontend\nNext.js 15 Chat UI\nstocky-ai.vercel.app"]
-        LP["stocky-landing\nMarketing Site\nstockyai.xyz\n(separate repo: SirCharan/stocky-landing)"]
+    subgraph Vercel
+        FE["stocky-web/frontend<br/>Next.js 16 · React 19<br/>49 components · PWA<br/>llm.stockyai.xyz"]
+        LP["stocky-landing<br/>Marketing Site<br/>stockyai.xyz"]
     end
 
-    subgraph External["External Services"]
-        GROQ["Groq API\nllama-3.3-70b-versatile\nllama-3.1-8b-instant"]
-        KITE["Zerodha Kite\nConnect API v5"]
-        YF["yfinance\nQuarterly + Technical\n+ Fundamental data"]
-        RSS["10 RSS Feeds\nLiveMint · ET Markets\nMoneycontrol · CNBC · etc."]
-        NSE["nsetools\nNSE Index data"]
+    subgraph AI["AI Models"]
+        GROQ["Groq API × 6 keys<br/>llama-3.3-70b · llama-4-scout"]
+        OR["OpenRouter<br/>Gemini 2.5 Pro"]
     end
 
-    U1 -->|Telegram messages| TG
+    subgraph Data["Market Data Sources"]
+        KITE["Zerodha Kite v5<br/>Live quotes · Portfolio · Orders"]
+        YF["yfinance<br/>OHLCV · Fundamentals · Quarterly"]
+        GNEWS["GNews API<br/>Structured news · Sentiment"]
+        RSS["33 RSS Feeds<br/>Indian financial news"]
+        DHAN["Dhan HQ API<br/>Option chain · Live prices"]
+        NSE["NSE India<br/>FII/DII · Indices · Bhavcopy"]
+    end
+
+    U1 -->|Telegram| TG
     U2 -->|HTTPS| FE
-    FE -->|REST + JWT| API
+    FE -->|REST + SSE| API
     TG --> GROQ
     TG --> KITE
     TG --> YF
-    TG --> RSS
-    TG --> NSE
     API --> GROQ
+    API --> OR
     API --> KITE
     API --> YF
+    API --> GNEWS
     API --> RSS
+    API --> DHAN
     API --> NSE
+
+    style API fill:#c9a96e,color:#000,stroke:#c9a96e
+    style FE fill:#3b82f6,color:#fff,stroke:#3b82f6
 ```
 
 ---
 
-## 2. Telegram Bot — NLP Pipeline
+## 2. 6-Agent Council Architecture
+
+```mermaid
+graph TB
+    Q[User Query] --> CSO1["Step 1: CSO<br/>Query Decomposition"]
+    CSO1 --> DE["Step 2: DataEnricher<br/>Market data fetch"]
+
+    DE --> TS["Step 3: Technical Strategist<br/>RSI · MACD · S/R levels<br/>llama-3.3-70b · Key 1"]
+    DE --> FA["Step 4: Fundamental Analyst<br/>P/E · ROE · Moat<br/>llama-3.3-70b · Key 2"]
+    DE --> MP["Step 5: Market Pulse<br/>Sentiment · FII/DII · OI<br/>llama-4-scout · Key 3"]
+
+    TS --> RG["Step 6: Risk Guardian<br/>VaR · Position sizing · SL<br/>llama-4-scout · Key 4"]
+    FA --> RG
+    MP --> ME["Step 7: Macro Economist<br/>RBI · Sector rotation · Crude<br/>llama-4-scout · Key 5"]
+
+    RG --> CSO2["Round 2: CSO<br/>Conflict Detection + Rebuttals"]
+    ME --> CSO2
+
+    CSO2 --> TRADE["Step 8: Trade Idea<br/>Entry · Targets · SL · Sizing"]
+    TRADE --> SYNTH["Step 9: CSO<br/>Final Synthesis<br/>Confidence Score 0-100"]
+
+    SYNTH --> RESULT["CouncilData<br/>Executive Summary · Bull/Bear<br/>Risks · Trade · Sources"]
+
+    style CSO1 fill:#c9a96e,color:#000
+    style CSO2 fill:#c9a96e,color:#000
+    style SYNTH fill:#c9a96e,color:#000
+    style TS fill:#3b82f6,color:#fff
+    style FA fill:#10b981,color:#fff
+    style MP fill:#f59e0b,color:#000
+    style RG fill:#ef4444,color:#fff
+    style ME fill:#8b5cf6,color:#fff
+```
+
+---
+
+## 3. Chat Dispatch (NLP → Handler)
 
 ```mermaid
 flowchart TD
-    MSG["User Message\ne.g. 'how is reliance doing'"]
+    MSG[POST /api/chat] --> RE{Regex parse}
 
-    MSG --> NLP["handle_text()\nnlp.py"]
+    RE -->|price X| PH[price handler]
+    RE -->|analyse X| AH[analyse handler]
+    RE -->|buy/sell X| TH[trade handler]
+    RE -->|portfolio| POH[portfolio handler]
+    RE -->|news| NH[news handler]
+    RE -->|overview/market| OH[overview handler]
+    RE -->|scan X| SH[scan handler]
+    RE -->|chart X| CH[chart handler]
+    RE -->|compare X Y| CPH[compare handler]
+    RE -->|ipo| IH[ipo handler]
+    RE -->|macro| MH[macro handler]
+    RE -->|options X| OPH[options handler]
+    RE -->|fii dii| FDH[fii_dii handler]
+    RE -->|sectors| SEC[sectors handler]
+    RE -->|earnings| EH[earnings handler]
+    RE -->|dividends| DH[dividends handler]
+    RE -->|valuation| VH[valuation handler]
+    RE -->|No match| LLM
 
-    NLP --> REGEX["_parse_natural(text)\nRegex matching\n~0ms — no AI"]
+    LLM["interpret_intent()<br/>llama-3.3-70b<br/>JSON: {intent, args, reply}"]
+    LLM --> DISP[Dispatch to matched handler]
+    LLM --> TEXT[Direct text reply]
 
-    REGEX -->|"Match: analyse/buy/sell\nprice/portfolio/news/etc."| DISPATCH["DISPATCH[intent]\nDirect handler call"]
-
-    REGEX -->|"No match"| CHATCHECK{"_CHAT_RE match?\nAND no _TRADING_TERMS?"}
-
-    CHATCHECK -->|"YES\nhi/hello/what is X\nexplain Y/how does Z"| BASIC["chat_basic(text)\nai_client.py\nModel: llama-3.1-8b-instant\nmax_tokens: 200 · temp: 0.7\nLatency: 0.3–0.8s"]
-
-    CHATCHECK -->|"NO"| INTENT["interpret_intent(text)\nai_client.py\nModel: llama-3.3-70b-versatile\ntemp: 0.1 · JSON response\nLatency: 1–3s"]
-
-    INTENT --> JSON["{intent, args, reply}"]
-
-    JSON -->|"intent == 'chat'"| REPLY["Reply with 'reply' field\nfrom JSON directly"]
-
-    JSON -->|"intent == 'analyse'"| ANALYSE["analyse.analyse()"]
-    JSON -->|"intent == 'buy'/'sell'"| TRADE["trading.buy/sell_command()"]
-    JSON -->|"intent == 'price'"| PRICE["market.price()"]
-    JSON -->|"intent == 'portfolio'"| PORT["portfolio.portfolio()"]
-    JSON -->|"other intents"| OTHER["...other handlers"]
-
-    JSON -->|"Error / unknown"| FALLBACK["_offer_fallback_choices()\nInline keyboard buttons"]
-
-    BASIC --> SEND["update.message.reply_text()"]
-    REPLY --> SEND
-    DISPATCH --> SEND
-    ANALYSE --> SEND
-    TRADE --> SEND
-    PRICE --> SEND
-    PORT --> SEND
-    OTHER --> SEND
-    FALLBACK --> SEND
+    PH --> R1[PriceCard]
+    AH --> R2[AnalysisCard]
+    TH --> R3[TradeConfirmation]
+    NH --> R4[NewsCard]
+    OH --> R5[OverviewCard]
 ```
 
 ---
 
-## 3. Web Backend — Chat Dispatch
+## 4. Frontend Component Architecture
 
 ```mermaid
-flowchart TD
-    REQ["POST /api/chat\n{message, conversation_id}\nJWT authenticated"]
+graph TD
+    subgraph Shell["ChatShell.tsx"]
+        BOOT[TerminalLoadingScreen]
+        PWA[PWAProvider]
+        SIDEBAR[Sidebar]
+        MHDR[MobileHeader]
+        MNAV[MobileBottomNav]
+    end
 
-    REQ --> SAVE1["Save user message\nto conversations table"]
+    subgraph Window["ChatWindow.tsx"]
+        HDR[Header]
+        FBAR[FeatureBar + FeaturePanel]
+        MSGS["Messages (MessageBubble × N)"]
+        CHIPS[SuggestionChips]
+        THINK[ThinkingScreen]
+        INPUT[ChatInput]
+        CMD[CommandPalette]
+    end
 
-    SAVE1 --> HIST["Load last 10 messages\nfor context"]
+    subgraph Cards["34 Message Type Cards"]
+        COUNCIL["CouncilProgressCard<br/>CouncilResultCard"]
+        ANALYSIS["AnalysisCard · OverviewCard<br/>NewsCard · ScanCard"]
+        MARKET["ChartCard · CompareCard<br/>IpoCard · MacroCard · RrgCard"]
+        DATA2["OptionsCard · FiiDiiCard<br/>SectorsCard · EarningsCard"]
+        TRADE2["TradeConfirmation<br/>PortfolioCard · DataTable"]
+    end
 
-    HIST --> REGEX["_parse_natural(text)\nSame regex as TG bot\n~0ms"]
+    subgraph Actions["Message Actions"]
+        COPY[Copy]
+        REGEN["Regenerate ▾<br/>Same · Deeper · Council"]
+        THUMB["Thumbs ↑↓<br/>+ FeedbackTagsModal"]
+        CTX["Context pills<br/>Trade · Compare · Deep Dive"]
+    end
 
-    REGEX -->|"Match"| WDISPATCH["Direct handler dispatch"]
+    Shell --> Window
+    Window --> MSGS
+    MSGS --> Cards
+    MSGS --> Actions
 
-    REGEX -->|"No match"| WINTERP["interpret_intent(text, history=last_4)\nModel: llama-3.3-70b-versatile\nLatency: 1–3s"]
-
-    WINTERP --> WJSON["{intent, args, reply}"]
-
-    WJSON -->|"analyse"| WAN["handlers/analyse.py\nget_analysis(symbol)\nLatency: 8–15s total"]
-    WJSON -->|"price"| WPR["handlers/market.py\nget_price(symbol)\nLatency: ~200ms"]
-    WJSON -->|"portfolio"| WPO["handlers/portfolio.py\nLatency: ~200ms"]
-    WJSON -->|"buy / sell"| WTR["handlers/trading.py\ninitiate_trade()\nCreates pending_action row"]
-    WJSON -->|"news"| WNE["handlers/news.py\nget_news(symbol?)\nLatency: 2–5s"]
-    WJSON -->|"overview"| WOV["handlers/overview.py\nget_overview()\nLatency: 1–2s"]
-    WJSON -->|"chat"| WREP["Return reply field\nfrom JSON directly"]
-    WJSON -->|"cost"| WCOST["DB query tokens\nCompute Claude Opus 4.6 cost\n→ '$X.XX'"]
-
-    WDISPATCH --> SAVE2["Save assistant response\nto conversations table"]
-    WAN --> SAVE2
-    WPR --> SAVE2
-    WPO --> SAVE2
-    WTR --> SAVE2
-    WNE --> SAVE2
-    WOV --> SAVE2
-    WREP --> SAVE2
-    WCOST --> SAVE2
-
-    SAVE2 --> RESP["ChatResponse\n{type, content, data,\naction_id, conversation_id}"]
+    style COUNCIL fill:#c9a96e,color:#000
 ```
 
 ---
 
-## 4. Stock Analysis Pipeline
+## 5. Data Enricher Pipeline
 
 ```mermaid
-flowchart LR
-    SYM["symbol input\ne.g. 'RELIANCE'"]
+graph LR
+    subgraph Sources["Data Sources (Priority Order)"]
+        K[Kite API] --> |live quotes| Q[Quotes]
+        Y[yfinance] --> |fallback quotes| Q
+        Y --> |OHLCV| T[Technicals]
+        Y --> |ticker.info| F[Fundamentals]
+        G[GNews API] --> |structured| N[News]
+        R[RSS 33 feeds] --> |fallback| N
+        D[Dhan API] --> |option chain| O[Options]
+        NSE2[NSE India] --> |flows| FD[FII/DII]
+    end
 
-    SYM --> RES["_resolve_symbol()\nNSE symbol + yf symbol\n+ news search terms"]
+    subgraph Cache["In-Memory Cache"]
+        Q --> |TTL 60s| C1[Quote Cache]
+        T --> |TTL 300s| C2[Technical Cache]
+        F --> |TTL 300s| C3[Fundamental Cache]
+        N --> |TTL 600s| C4[News Cache]
+        O --> |TTL 120s| C5[Options Cache]
+        FD --> |TTL 600s| C6[FII/DII Cache]
+    end
 
-    RES --> TICK["yf.Ticker(yf_symbol)\nvalidation ~0.5s"]
-
-    TICK --> PAR["Parallel execution\nvia run_in_executor"]
-
-    PAR --> FUND["_get_fundamental_data()\nyfinance ticker.info\nP/E · ROE · D/E · growth\nmargins · market cap\n→ score 0–10\nLatency: ~0.5–1s"]
-
-    PAR --> TECH["_get_technical_data()\nyfinance 1y OHLCV download\nRSI(14) · MACD(12/26/9)\nSMA(50/200) · momentum\nvolume ratio · 52W range\n→ score 0–10\nLatency: ~1–3s"]
-
-    PAR --> NEWS["_get_news_data(search_terms)\n10 RSS feeds parallel\nKeyword sentiment scoring\ntitle×3 weight, body×1\n→ articles[] + score 0–10\nLatency: ~2–5s"]
-
-    PAR --> QTR["_get_quarterly_results()\nyfinance quarterly_income_stmt\n8 quarters fetched\nQoQ + YoY deltas computed\nReturn enriched top 4\nLatency: ~0.5s"]
-
-    PAR --> SHR["_get_shareholding()\nyfinance major_holders\nLatency: ~0.3s"]
-
-    FUND --> OVER["overall_score =\nfund + tech + news\nmax: 30"]
-    TECH --> OVER
-    NEWS --> OVER
-
-    NEWS --> NANAL["_generate_news_analysis()\nGroq llama-3.3-70b\nPrompt: top 6 titles\n→ 1-2 sentence summary\nLatency: ~1–2s"]
-
-    OVER --> VERDICT["analyse_verdict(name, scores)\nGroq llama-3.3-70b\nmax_tokens: 128 · temp: 0.7\n→ 1-2 sentence take\nLatency: ~0.5–1s"]
-
-    FUND --> RESP["get_analysis() return\n{name, symbol, overall_score,\nfundamental{score,pe,roe,...},\ntechnical{score,rsi,macd,...},\nnews{score,articles,analysis},\nquarterly[{+qoq+yoy}],\nshareholding, verdict}"]
-    TECH --> RESP
-    NEWS --> RESP
-    QTR --> RESP
-    SHR --> RESP
-    NANAL --> RESP
-    VERDICT --> RESP
+    Cache --> |enrich_for_council| AGENTS[6 Council Agents]
 ```
 
 ---
 
-## 5. Trade Confirmation Flow
+## 6. Trade Execution Flow
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant FE as Next.js Frontend
-    participant API as FastAPI Backend
-    participant DB as SQLite DB
-    participant KITE as Kite Connect
+    participant U as User
+    participant FE as Frontend
+    participant API as Backend
+    participant K as Kite API
 
-    User->>FE: "buy 10 TCS at 3500"
+    U->>FE: "buy 10 TCS at 3500"
     FE->>API: POST /api/chat
-    API->>API: parse intent → buy
-    API->>DB: INSERT pending_actions<br/>{action_id: uuid, status: pending,<br/>data: {symbol,qty,price,txn_type}}
-    API->>FE: {type: "trade_confirm",<br/>action_id: "abc123",<br/>data: {symbol,qty,price}}
-    FE->>User: TradeConfirmation card<br/>"Review before executing"
+    API->>API: Parse intent → buy TCS 10 3500
 
-    User->>FE: Click Confirm
-    FE->>API: POST /api/trade/confirm<br/>{action_id: "abc123", action: "confirm"}
-    API->>DB: SELECT pending_actions WHERE id=abc123
-    API->>KITE: place_order(symbol, qty, price,<br/>txn_type, product, order_type)
-    KITE->>API: {order_id: "456789"}
-    API->>DB: UPDATE pending_actions status=confirmed
-    API->>DB: INSERT trade_history
-    API->>FE: {type: "order_result",<br/>content: "BUY 10 TCS. Order ID: 456789"}
-    FE->>User: Success confirmation
+    API-->>FE: trade_confirm card
+    Note over FE: TradeConfirmation rendered<br/>Confirm / Cancel buttons
+
+    alt User confirms
+        U->>FE: Click Confirm
+        FE->>API: POST /api/trade/confirm {action_id}
+        API->>K: place_order(TCS, BUY, 10, 3500)
+        K-->>API: order_id: 12345
+        API-->>FE: order_result + confetti
+    else User cancels
+        U->>FE: Click Cancel
+        FE->>API: POST /api/trade/confirm {action_id, cancel}
+        API-->>FE: Order cancelled toast
+    end
 ```
 
 ---
 
-## 6. Kite Authentication Flow
+## 7. SSE Streaming Architecture
 
 ```mermaid
-flowchart TD
-    START["auto_login() called\n(startup or 7:40 AM scheduler)"]
+sequenceDiagram
+    participant FE as useChat.ts
+    participant API as FastAPI
+    participant C as Council Handler
+    participant G as Groq API
 
-    START --> S1["requests.Session()\nGET kite login page"]
-    S1 --> S2["POST login form\n{user_id, password}"]
-    S2 --> S3["GET TOTP challenge page"]
-    S3 --> TOTP["pyotp.TOTP(KITE_TOTP_SECRET).now()\nGenerates 6-digit code"]
-    TOTP --> S4["POST TOTP code"]
-    S4 --> S5["Follow redirect\nExtract request_token from URL"]
-    S5 --> S6["KiteConnect.generate_session\n(request_token, api_secret)\n→ {access_token}"]
-    S6 --> DB["UPDATE kite_session SET\naccess_token=... WHERE id=1"]
-    DB --> DONE["Authenticated ✓\nToken valid ~6-8 hours"]
+    FE->>API: POST /api/council-research
+    API->>C: stream_council_debate(query)
 
-    DONE -.->|"Next request"| USE["get_authenticated_kite()\nRead token from DB\nkiteconnect.KiteConnect(\n  api_key, access_token)"]
+    loop For each step (1-9)
+        C-->>API: yield SSE: step_start
+        C->>G: council_call(agent, prompt)
+        C-->>API: yield SSE: agent_thinking
+        G-->>C: Agent response
+        C-->>API: yield SSE: agent_output
+    end
+
+    C-->>API: yield SSE: result (CouncilData)
+    C-->>API: yield SSE: done
+
+    Note over FE: useChat parses SSE events<br/>Updates council_progress message<br/>Transitions to council_debate on result
 ```
 
 ---
 
-## 7. Frontend Component & Data Flow
+## 8. Database Schema
 
 ```mermaid
-flowchart TD
-    subgraph UI["Next.js Frontend"]
-        SHELL["ChatShell.tsx\n'use client'"]
-        SIDEBAR["Sidebar.tsx\nConversation list"]
-        WINDOW["ChatWindow.tsx"]
-        LIST["MessageList\nscrollable"]
-        INPUT["ChatInput.tsx\ntextarea + send"]
-        BUBBLE["MessageBubble.tsx\nroutes by message.type"]
-    end
+erDiagram
+    CONVERSATIONS {
+        text id PK
+        text user_id
+        text session_id
+        text role
+        text content
+        text type
+        text structured_data
+        datetime created_at
+    }
 
-    subgraph Cards["Rich Response Cards"]
-        AC["AnalysisCard.tsx\ntype: 'analysis'\n• ScoreBar\n• expand/collapse news\n• Stocky's Take (AI)\n• expand/collapse quarterly\n• QoQ/YoY badges"]
-        PC["PriceCard.tsx\ntype: 'price'\nLTP · OHLC · volume"]
-        PO["PortfolioCard.tsx\ntype: 'portfolio'\nday P&L · holdings"]
-        NC["NewsCard.tsx\ntype: 'news'\narticles · Stocky's Summary"]
-        OC["OverviewCard.tsx\ntype: 'overview'\nindices · breadth · gainer/loser"]
-        TC["TradeConfirmation.tsx\ntype: 'trade_confirm'\nConfirm · Cancel buttons"]
-        DT["DataTable.tsx\npositions/holdings/orders/margins"]
-    end
+    WATCHLIST {
+        integer id PK
+        text symbol
+        text notes
+        datetime added_at
+    }
 
-    subgraph Hooks["React Hooks"]
-        UC["useChat.ts\nmessages state\nsendMessage()\nconfirmTrade()"]
-        UCV["useConversations.ts\nconversations list\nloadConversation()"]
-    end
+    FEEDBACK {
+        integer id PK
+        text message_id
+        text conversation_id
+        text query
+        text response_snippet
+        text rating
+        text tags
+        text comment
+        datetime created_at
+    }
 
-    subgraph API["API Layer"]
-        APITS["api.ts\nsendMessage()\nconfirmTrade()\ngetConversations()\ngetMessages()"]
-    end
+    API_CALL_LOG {
+        text service
+        text endpoint
+        integer tokens
+        datetime ts
+    }
 
-    SHELL --> SIDEBAR
-    SHELL --> WINDOW
-    WINDOW --> LIST
-    WINDOW --> INPUT
-    LIST --> BUBBLE
-
-    BUBBLE --> AC
-    BUBBLE --> PC
-    BUBBLE --> PO
-    BUBBLE --> NC
-    BUBBLE --> OC
-    BUBBLE --> TC
-    BUBBLE --> DT
-
-    INPUT -->|"user types"| UC
-    UC --> APITS
-    APITS -->|"JWT fetch"| BACKEND["FastAPI\n/api/chat"]
-    BACKEND --> APITS
-    APITS --> UC
-    UC --> LIST
-
-    SIDEBAR --> UCV
-    UCV --> APITS
+    SHARED_SNAPSHOTS {
+        text id PK
+        text card_type
+        text data
+        datetime created_at
+        datetime expires_at
+    }
 ```
 
 ---
 
-## 8. Sentiment Scoring — News Articles
+## 9. Deployment Architecture
 
 ```mermaid
-flowchart LR
-    FEED["RSS Feed Entry\n{title, summary}"]
+graph LR
+    subgraph GitHub["GitHub · SirCharan/twitter"]
+        MAIN[main branch]
+        BRANCH[SirCharan/stocky-ai-tg-bot]
+    end
 
-    FEED --> MATCH{"Contains stock\nname/symbol?"}
+    subgraph Railway
+        RB["stocky-web-backend<br/>FastAPI · Python 3.12<br/>Auto-deploy from branch"]
+        RW["worker<br/>Telegram bot"]
+    end
 
-    MATCH -->|"No"| SKIP["Skip article"]
+    subgraph Vercel
+        VFE["stocky-ai project<br/>Next.js · llm.stockyai.xyz<br/>Manual: npx vercel --prod"]
+        VLP["stocky-landing project<br/>stockyai.xyz"]
+    end
 
-    MATCH -->|"Yes"| SPLIT["Split into:\ntitle_lower\nbody_lower"]
-
-    SPLIT --> PKWS["Positive keywords:\ngrowth · beat · surge\nupgrade · accumulate\noverweight · rally\ntarget raised · rerating..."]
-
-    SPLIT --> NKWS["Negative keywords:\ndecline · miss · downgrade\nreduce · avoid · exit\nsell rating · target cut\nunderweight · downside..."]
-
-    PKWS --> SCORE["Score calculation:\npos = title_hits×3 + body_hits×1\nneg = title_hits×3 + body_hits×1\ntotal = pos + neg + 1\nsentiment = (pos - neg) / total\nRange: -1.0 to +1.0"]
-
-    NKWS --> SCORE
-
-    SCORE --> ART["Article stored:\n{source, title, date,\nsentiment, link}"]
-
-    ART --> AGG["Aggregate all articles:\navg_sentiment = mean(sentiments)\nnews_score = 5 + avg×5\nClamped to 0–10"]
-
-    AGG --> DISP["Display:\n▲ if sentiment > 0\n▼ if sentiment < 0\n● if sentiment == 0"]
-```
-
----
-
-## 9. Latency Budget Summary
-
-```
-User asks: "how is Reliance doing"
-─────────────────────────────────────────────────────────────────
-Step                               Who            Approx Time
-─────────────────────────────────────────────────────────────────
-1. NLP intent parsing              Groq 70B       1–3s
-2. yfinance validate_ticker        yfinance       0.3–0.5s
-3. _get_fundamental_data           yfinance       0.5–1s
-4. _get_technical_data (1y OHLCV)  yfinance       1–3s
-5. _get_news_data (10 RSS feeds)   feedparser     2–5s  ← bottleneck
-6. _get_quarterly_results          yfinance       0.5–1s
-7. _get_shareholding               yfinance       0.3s
-8. _generate_news_analysis         Groq 70B       1–2s
-9. analyse_verdict                 Groq 70B       0.5–1s
-─────────────────────────────────────────────────────────────────
-Total (steps 2-9 partially parallel):             ~8–15s
-─────────────────────────────────────────────────────────────────
-
-User asks: "buy 10 TCS at 3500"
-─────────────────────────────────────────────────────────────────
-1. Regex NLP match                 local          ~0ms
-2. initiate_trade() + DB write     local          ~5ms
-─────────────────────────────────────────────────────────────────
-Total (to trade_confirm card):                    ~10ms
-
-After confirm click:
-3. Kite place_order()              Kite API       100–300ms
-─────────────────────────────────────────────────────────────────
-
-User says: "hi"
-─────────────────────────────────────────────────────────────────
-1. _CHAT_RE match                  local          ~0ms
-2. chat_basic()                    Groq 8B        300–800ms
-─────────────────────────────────────────────────────────────────
-Total:                                            ~0.3–0.8s
+    BRANCH --> |auto-deploy| RB
+    BRANCH --> |push to main| MAIN
+    MAIN --> |manual deploy| VFE
+    GitHub --> |separate repo| VLP
 ```
