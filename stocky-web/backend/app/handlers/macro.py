@@ -40,7 +40,7 @@ async def _overlay_dhan_prices(data: dict) -> dict:
         async with httpx.AsyncClient(timeout=8) as client:
             resp = await client.post(
                 f"{dhan.BASE}/marketfeed/ltp",
-                headers=dhan._headers(),
+                headers=await dhan._headers(),
                 json=payload,
             )
             if resp.status_code != 200:

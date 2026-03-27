@@ -624,6 +624,9 @@ async def get_analysis(symbol: str, deep: bool = False) -> dict:
         "verdict": verdict,
         "structured_meta": structured_meta,
     }
+    # Hoist price to top level for convenience
+    if technical.get("price"):
+        result["price"] = technical["price"]
     if ai_metadata:
         result["ai_metadata"] = ai_metadata
     return result

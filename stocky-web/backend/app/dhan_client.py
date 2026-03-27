@@ -85,18 +85,22 @@ class DhanClient:
 
     def __init__(self):
         self._client_id = DHAN_CLIENT_ID
-        self._token = DHAN_ACCESS_TOKEN
-        self._enabled = bool(self._client_id and self._token)
+        # Token is now managed dynamically by dhan_auth module
+        self._enabled = bool(self._client_id)
         if not self._enabled:
-            logger.warning("Dhan HQ credentials not configured — live quotes disabled")
+            logger.warning("Dhan HQ client ID not configured — live quotes disabled")
 
     @property
     def enabled(self) -> bool:
         return self._enabled
 
-    def _headers(self) -> dict:
+    async def _headers(self) -> dict:
+        from app.dhan_auth import get_valid_token
+        token = await get_valid_token()
+        if not token:
+            raise RuntimeError("No valid Dhan access token available")
         return {
-            "access-token": self._token,
+            "access-token": token,
             "client-id": self._client_id,
             "Content-Type": "application/json",
         }
@@ -133,7 +137,7 @@ class DhanClient:
             async with httpx.AsyncClient(timeout=10) as client:
                 resp = await client.post(
                     f"{self.BASE}/marketfeed/ltp",
-                    headers=self._headers(),
+                    headers=await self._headers(),
                     json=payload,
                 )
                 if resp.status_code != 200:
@@ -177,7 +181,7 @@ class DhanClient:
             async with httpx.AsyncClient(timeout=10) as client:
                 resp = await client.post(
                     f"{self.BASE}/marketfeed/ohlc",
-                    headers=self._headers(),
+                    headers=await self._headers(),
                     json=payload,
                 )
                 if resp.status_code != 200:
@@ -214,7 +218,7 @@ class DhanClient:
             async with httpx.AsyncClient(timeout=10) as client:
                 resp = await client.post(
                     f"{self.BASE}/optionchain/expirylist",
-                    headers=self._headers(),
+                    headers=await self._headers(),
                     json={"UnderlyingScrip": underlying_id, "UnderlyingSeg": segment},
                 )
                 if resp.status_code != 200:
@@ -234,7 +238,7 @@ class DhanClient:
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.post(
                     f"{self.BASE}/optionchain",
-                    headers=self._headers(),
+                    headers=await self._headers(),
                     json={
                         "UnderlyingScrip": underlying_id,
                         "UnderlyingSeg": segment,
@@ -382,7 +386,7 @@ class DhanClient:
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.post(
                     f"{self.BASE}/{endpoint}",
-                    headers=self._headers(),
+                    headers=await self._headers(),
                     json=payload,
                 )
                 if resp.status_code != 200:

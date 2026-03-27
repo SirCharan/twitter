@@ -239,9 +239,12 @@ async def _deep_pipeline(
     )
 
     # Stage 3: Synthesis
+    from datetime import datetime, timedelta, timezone
+    _IST = timezone(timedelta(hours=5, minutes=30))
     synthesis_prompt = DEEP_SYNTHESIS_UNIVERSAL.format(
         primary_analysis=_truncate(primary_analysis, 3000),
         critique=_truncate(critique, 2000),
+        timestamp=datetime.now(_IST).strftime("%Y-%m-%d %H:%M IST"),
     )
     synthesis = await _rotated_call(
         prompt=synthesis_prompt,
@@ -266,10 +269,16 @@ async def _deep_pipeline(
 
 def _build_format_kwargs(raw_data: dict, data_text: str) -> dict[str, str]:
     """Build a dict of format kwargs that covers all possible prompt placeholders."""
+    from datetime import datetime, timedelta, timezone
+    _IST = timezone(timedelta(hours=5, minutes=30))
+    now = datetime.now(_IST)
     return {
         "data": data_text,
         "name": str(raw_data.get("name", raw_data.get("symbol", ""))),
         "stock": str(raw_data.get("stock", raw_data.get("symbol", raw_data.get("name", "")))),
         "scan_type": str(raw_data.get("scan_type", "")),
         "text": str(raw_data.get("text", data_text)),
+        "timestamp": now.strftime("%Y-%m-%d %H:%M IST"),
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M IST"),
     }

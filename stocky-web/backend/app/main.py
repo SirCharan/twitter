@@ -43,10 +43,34 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
     await init_db()
+
+    # Initialize Dhan token from DB/env and attempt renewal
+    from app.dhan_auth import init_dhan_token, renew_token
+    await init_dhan_token()
+    try:
+        await renew_token()
+    except Exception as e:
+        logger.warning("Initial Dhan token renewal failed (will retry): %s", e)
+
+    # Background task: renew Dhan token every 20 hours
+    async def _dhan_renewal_loop():
+        while True:
+            await asyncio.sleep(72000)  # 20 hours
+            try:
+                result = await renew_token()
+                if not result:
+                    logger.warning("Scheduled Dhan token renewal returned no token")
+            except Exception as e:
+                logger.error("Dhan renewal loop error: %s", e)
+
+    renewal_task = asyncio.create_task(_dhan_renewal_loop())
+
     from app.config import OPENROUTER_API_KEY
     logger.info("Stocky Web API started | OpenRouter configured: %s", bool(OPENROUTER_API_KEY))
     yield
+    renewal_task.cancel()
     logger.info("Stocky Web API shutting down")
 
 

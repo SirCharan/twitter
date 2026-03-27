@@ -18,6 +18,14 @@ async def init_db():
 
             INSERT OR IGNORE INTO kite_session (id) VALUES (1);
 
+            CREATE TABLE IF NOT EXISTS dhan_session (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                access_token TEXT,
+                refreshed_at TEXT
+            );
+
+            INSERT OR IGNORE INTO dhan_session (id) VALUES (1);
+
             CREATE TABLE IF NOT EXISTS web_users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -166,6 +174,35 @@ async def clear_session():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             "UPDATE kite_session SET access_token = NULL, login_time = NULL WHERE id = 1"
+        )
+        await db.commit()
+
+
+# --- Dhan Session ---
+
+async def save_dhan_session(access_token: str, refreshed_at: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE dhan_session SET access_token = ?, refreshed_at = ? WHERE id = 1",
+            (access_token, refreshed_at),
+        )
+        await db.commit()
+
+
+async def get_dhan_session() -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT * FROM dhan_session WHERE id = 1")
+        row = await cursor.fetchone()
+        if row and row["access_token"]:
+            return dict(row)
+        return None
+
+
+async def clear_dhan_session():
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE dhan_session SET access_token = NULL, refreshed_at = NULL WHERE id = 1"
         )
         await db.commit()
 

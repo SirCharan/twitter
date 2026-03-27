@@ -56,7 +56,7 @@ async def _fetch_indices_dhan() -> list[dict]:
         async with httpx.AsyncClient(timeout=8) as client:
             resp = await client.post(
                 f"{dhan.BASE}/marketfeed/ltp",
-                headers=dhan._headers(),
+                headers=await dhan._headers(),
                 json=payload,
             )
             if resp.status_code != 200:
@@ -140,7 +140,8 @@ def _fetch_nse_overview() -> dict:
         if vix_price:
             result["vix"] = {
                 "value": round(float(vix_price), 2),
-                "change_pct": round(float(vix_info.get("regularMarketChangePercent", 0) or 0), 2),
+                "change": round(float(vix_info.get("regularMarketChange", 0) or 0), 2),
+                "pct_change": round(float(vix_info.get("regularMarketChangePercent", 0) or 0), 2),
             }
     except Exception:
         pass
