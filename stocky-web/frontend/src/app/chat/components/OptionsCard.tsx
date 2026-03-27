@@ -13,6 +13,7 @@ interface Props {
 interface OiEntry {
   strike: number;
   oi: number;
+  oi_interpretation?: string;
 }
 
 interface ChainSummary {
@@ -37,6 +38,22 @@ interface IvSkew {
   otm_call_5pct: number | null;
   otm_put_5pct: number | null;
   skew_ratio: number | null;
+}
+
+interface Verdict {
+  verdict: string;
+  confidence: number;
+  score: number;
+  reasoning: string;
+}
+
+interface ExpectedMove {
+  straddle_premium: number;
+  atm_call_ltp: number;
+  atm_put_ltp: number;
+  lower: number;
+  upper: number;
+  pct: number;
 }
 
 /* ── Helper components ── */
@@ -156,6 +173,8 @@ export default function OptionsCard({ data }: Props) {
   const monthly = data.monthly as ChainSummary | null;
   const ivSkew = data.iv_skew as IvSkew | null;
   const signals = (data.signals as Signal[]) || [];
+  const verdict = data.verdict as Verdict | null;
+  const expectedMove = data.expected_move as ExpectedMove | null;
   const error = data.error as string | undefined;
 
   if (error) {
@@ -187,11 +206,33 @@ export default function OptionsCard({ data }: Props) {
               Spot: <AnimatedNumber value={spot} decimals={2} locale="en-IN" />
             </span>
           )}
+          {verdict && (
+            <span
+              className="ml-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase"
+              style={{
+                background: verdict.verdict.includes("BULLISH")
+                  ? "rgba(34,197,94,0.15)" : verdict.verdict.includes("BEARISH")
+                    ? "rgba(239,68,68,0.15)" : "rgba(201,169,110,0.15)",
+                color: verdict.verdict.includes("BULLISH")
+                  ? "var(--positive)" : verdict.verdict.includes("BEARISH")
+                    ? "var(--negative)" : "var(--accent)",
+              }}
+            >
+              {verdict.verdict} {verdict.confidence}%
+            </span>
+          )}
         </div>
         {timestamp && (
           <span className="text-[10px]" style={{ color: "var(--muted)" }}>{timestamp}</span>
         )}
       </div>
+
+      {/* Verdict reasoning */}
+      {verdict?.reasoning && (
+        <p className="text-[10px] mb-3 px-1" style={{ color: "var(--muted)" }}>
+          {verdict.reasoning}
+        </p>
+      )}
 
       {/* PCR Gauges */}
       {(weekly?.pcr != null || monthly?.pcr != null) && (
@@ -257,9 +298,17 @@ export default function OptionsCard({ data }: Props) {
                 Call OI (Resistance)
               </p>
               {weekly.top_call_oi?.slice(0, 5).map((entry, i) => (
-                <div key={i} className="flex justify-between text-[10px] py-0.5" style={{ color: "var(--muted)" }}>
+                <div key={i} className="flex items-center justify-between text-[10px] py-0.5" style={{ color: "var(--muted)" }}>
                   <span>{entry.strike.toLocaleString("en-IN")}</span>
-                  <span>{(entry.oi / 1000).toFixed(0)}K</span>
+                  <div className="flex items-center gap-1.5">
+                    {entry.oi_interpretation && (
+                      <span className="text-[8px] px-1 py-0.5 rounded" style={{
+                        background: entry.oi_interpretation.includes("Short Buildup") ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)",
+                        color: entry.oi_interpretation.includes("Short Buildup") ? "var(--negative)" : "var(--muted)",
+                      }}>{entry.oi_interpretation}</span>
+                    )}
+                    <span>{(entry.oi / 1000).toFixed(0)}K</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -269,9 +318,17 @@ export default function OptionsCard({ data }: Props) {
                 Put OI (Support)
               </p>
               {weekly.top_put_oi?.slice(0, 5).map((entry, i) => (
-                <div key={i} className="flex justify-between text-[10px] py-0.5" style={{ color: "var(--muted)" }}>
+                <div key={i} className="flex items-center justify-between text-[10px] py-0.5" style={{ color: "var(--muted)" }}>
                   <span>{entry.strike.toLocaleString("en-IN")}</span>
-                  <span>{(entry.oi / 1000).toFixed(0)}K</span>
+                  <div className="flex items-center gap-1.5">
+                    {entry.oi_interpretation && (
+                      <span className="text-[8px] px-1 py-0.5 rounded" style={{
+                        background: entry.oi_interpretation.includes("Long Buildup") ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.05)",
+                        color: entry.oi_interpretation.includes("Long Buildup") ? "var(--positive)" : "var(--muted)",
+                      }}>{entry.oi_interpretation}</span>
+                    )}
+                    <span>{(entry.oi / 1000).toFixed(0)}K</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -298,6 +355,56 @@ export default function OptionsCard({ data }: Props) {
             />
           )}
         </Section>
+      )}
+
+      {/* Expected Move */}
+      {expectedMove && expectedMove.straddle_premium > 0 && spot > 0 && (
+        <div className="mb-4">
+          <div className="mb-2 flex items-center gap-1.5">
+            <span className="text-[11px]">📐</span>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+              Expected Move (ATM Straddle)
+            </p>
+            <div className="flex-1 h-px ml-2" style={{ background: "rgba(201,169,110,0.1)" }} />
+          </div>
+          <div
+            className="rounded-xl px-4 py-3"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--card-border)" }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+                Straddle: ₹{expectedMove.straddle_premium.toLocaleString("en-IN")} (±{expectedMove.pct}%)
+              </span>
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+                CE ₹{expectedMove.atm_call_ltp} + PE ₹{expectedMove.atm_put_ltp}
+              </span>
+            </div>
+            {/* Range bar */}
+            <div className="relative h-6 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 0.8 }}
+                className="absolute inset-0 flex items-center"
+              >
+                <div className="flex-1 h-full" style={{ background: "linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05))" }} />
+                <div className="w-px h-full" style={{ background: "var(--accent)" }} />
+                <div className="flex-1 h-full" style={{ background: "linear-gradient(90deg, rgba(34,197,94,0.05), rgba(34,197,94,0.15))" }} />
+              </motion.div>
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[10px] font-medium" style={{ color: "var(--negative)" }}>
+                {expectedMove.lower.toLocaleString("en-IN")}
+              </span>
+              <span className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
+                {spot.toLocaleString("en-IN")}
+              </span>
+              <span className="text-[10px] font-medium" style={{ color: "var(--positive)" }}>
+                {expectedMove.upper.toLocaleString("en-IN")}
+              </span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Signals */}

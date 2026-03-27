@@ -45,45 +45,68 @@ def _with_timeout(fn, timeout: int = 8):
 
 
 async def _fetch_indices_dhan() -> list[dict]:
-    """Fetch Indian index prices from Dhan HQ API (fast, reliable)."""
+    """Fetch Indian index prices from Dhan HQ API (LTP + OHLC)."""
     try:
         from app.dhan_client import dhan
         if not dhan.enabled:
             return []
 
         import httpx
-        payload = {"IDX_I": list(DHAN_INDEX_MAP.values())}
-        async with httpx.AsyncClient(timeout=8) as client:
-            resp = await client.post(
-                f"{dhan.BASE}/marketfeed/ltp",
-                headers=await dhan._headers(),
-                json=payload,
-            )
-            if resp.status_code != 200:
-                logger.warning("Dhan index LTP error %d", resp.status_code)
-                return []
+        idx_ids = list(DHAN_INDEX_MAP.values())
+        payload = {"IDX_I": idx_ids}
+        headers = await dhan._headers()
 
-            data = resp.json()
-            id_to_name = {v: k for k, v in DHAN_INDEX_MAP.items()}
-            indices = []
-            for item in data.get("data", {}).get("IDX_I", []):
+        async with httpx.AsyncClient(timeout=8) as client:
+            # Fetch LTP and OHLC in parallel for complete data
+            ltp_resp, ohlc_resp = await asyncio.gather(
+                client.post(f"{dhan.BASE}/marketfeed/ltp", headers=headers, json=payload),
+                client.post(f"{dhan.BASE}/marketfeed/ohlc", headers=headers, json=payload),
+                return_exceptions=True,
+            )
+
+        id_to_name = {v: k for k, v in DHAN_INDEX_MAP.items()}
+
+        # Parse OHLC data first (has open/high/low/close/prev_close)
+        ohlc_map: dict[int, dict] = {}
+        if isinstance(ohlc_resp, httpx.Response) and ohlc_resp.status_code == 200:
+            ohlc_data = ohlc_resp.json()
+            for item in ohlc_data.get("data", {}).get("IDX_I", []):
+                sec_id = item.get("security_id")
+                if sec_id is not None:
+                    ohlc_map[sec_id] = item
+
+        # Parse LTP data (has real-time last traded price)
+        indices = []
+        if isinstance(ltp_resp, httpx.Response) and ltp_resp.status_code == 200:
+            ltp_data = ltp_resp.json()
+            for item in ltp_data.get("data", {}).get("IDX_I", []):
                 sec_id = item.get("security_id")
                 name = id_to_name.get(sec_id)
-                if name and item.get("LTP"):
-                    ltp = float(item["LTP"])
-                    prev = float(item.get("prev_close", 0) or 0)
-                    change = round(ltp - prev, 2) if prev else 0
-                    pct = round((change / prev) * 100, 2) if prev else 0
-                    indices.append({
-                        "name": name,
-                        "value": round(ltp, 2),
-                        "change": change,
-                        "pct_change": pct,
-                        "open": round(float(item.get("open", 0) or 0), 2),
-                        "high": round(float(item.get("high", 0) or 0), 2),
-                        "low": round(float(item.get("low", 0) or 0), 2),
-                    })
-            return indices
+                if not name or not item.get("LTP"):
+                    continue
+
+                ltp = float(item["LTP"])
+                ohlc = ohlc_map.get(sec_id, {})
+
+                # Use OHLC prev_close for change calculation (more reliable than LTP response)
+                prev = float(ohlc.get("close", 0) or ohlc.get("prev_close", 0) or 0)
+                change = round(ltp - prev, 2) if prev else 0
+                pct = round((change / prev) * 100, 2) if prev else 0
+
+                indices.append({
+                    "name": name,
+                    "value": round(ltp, 2),
+                    "change": change,
+                    "pct_change": pct,
+                    "open": round(float(ohlc.get("open", 0) or 0), 2),
+                    "high": round(float(ohlc.get("high", 0) or 0), 2),
+                    "low": round(float(ohlc.get("low", 0) or 0), 2),
+                })
+        else:
+            logger.warning("Dhan index LTP error: %s",
+                           ltp_resp.status_code if isinstance(ltp_resp, httpx.Response) else ltp_resp)
+
+        return indices
     except Exception as e:
         logger.warning("Dhan index fetch failed: %s", e)
         return []

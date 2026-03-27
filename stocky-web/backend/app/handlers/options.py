@@ -51,9 +51,19 @@ def _classify_expiries(expiries: list[str]) -> tuple[str | None, str | None]:
 
 
 def _compute_iv_skew(chain_data: dict, spot: float) -> dict | None:
-    """Compute IV skew: ATM vs OTM call (+5%) and OTM put (-5%)."""
-    strikes = chain_data.get("data", [])
-    if not strikes or not spot or not isinstance(strikes, list):
+    """Compute IV skew: ATM vs OTM call (+5%) and OTM put (-5%).
+
+    Dhan format: chain_data["data"]["oc"] = {"23000.0": {"ce": {"implied_volatility": X}, "pe": {...}}, ...}
+    """
+    if not spot:
+        return None
+
+    # Parse Dhan dict-keyed format
+    inner = chain_data.get("data", {})
+    if not isinstance(inner, dict):
+        return None
+    oc = inner.get("oc", {})
+    if not oc or not isinstance(oc, dict):
         return None
 
     atm_iv = None
@@ -68,31 +78,34 @@ def _compute_iv_skew(chain_data: dict, spot: float) -> dict | None:
     best_call_dist = float("inf")
     best_put_dist = float("inf")
 
-    for s in strikes:
-        if not isinstance(s, dict):
+    for strike_str, sides in oc.items():
+        if not isinstance(sides, dict):
             continue
-        strike = s.get("strikePrice", 0) or s.get("strike_price", 0)
-        if not strike:
+        try:
+            strike = float(strike_str)
+        except (ValueError, TypeError):
             continue
 
-        ce_iv = s.get("ce_iv", 0) or s.get("CE_IV", 0) or 0
-        pe_iv = s.get("pe_iv", 0) or s.get("PE_IV", 0) or 0
+        ce = sides.get("ce", {}) or {}
+        pe = sides.get("pe", {}) or {}
+        ce_iv = float(ce.get("implied_volatility", 0) or 0)
+        pe_iv = float(pe.get("implied_volatility", 0) or 0)
 
         # ATM
         d = abs(strike - atm_target)
-        if d < best_atm_dist and ce_iv:
+        if d < best_atm_dist and ce_iv > 0:
             best_atm_dist = d
             atm_iv = ce_iv
 
         # OTM Call
         d = abs(strike - otm_call_target)
-        if d < best_call_dist and ce_iv:
+        if d < best_call_dist and ce_iv > 0:
             best_call_dist = d
             otm_call_iv = ce_iv
 
         # OTM Put
         d = abs(strike - otm_put_target)
-        if d < best_put_dist and pe_iv:
+        if d < best_put_dist and pe_iv > 0:
             best_put_dist = d
             otm_put_iv = pe_iv
 
@@ -110,18 +123,30 @@ def _compute_iv_skew(chain_data: dict, spot: float) -> dict | None:
 
 
 def _compute_volume_hotspots(chain_data: dict) -> list[dict]:
-    """Find top 5 strikes by volume (call + put combined)."""
-    strikes = chain_data.get("data", [])
-    if not isinstance(strikes, list):
-        return []
-    volumes = []
+    """Find top 5 strikes by volume (call + put combined).
 
-    for s in strikes:
-        if not isinstance(s, dict):
+    Dhan format: chain_data["data"]["oc"] = {"23000.0": {"ce": {"volume": X}, "pe": {"volume": X}}, ...}
+    """
+    inner = chain_data.get("data", {})
+    if not isinstance(inner, dict):
+        return []
+    oc = inner.get("oc", {})
+    if not oc or not isinstance(oc, dict):
+        return []
+
+    volumes = []
+    for strike_str, sides in oc.items():
+        if not isinstance(sides, dict):
             continue
-        strike = s.get("strikePrice", 0) or s.get("strike_price", 0)
-        ce_vol = s.get("ce_volume", 0) or s.get("CE_Volume", 0) or 0
-        pe_vol = s.get("pe_volume", 0) or s.get("PE_Volume", 0) or 0
+        try:
+            strike = float(strike_str)
+        except (ValueError, TypeError):
+            continue
+
+        ce = sides.get("ce", {}) or {}
+        pe = sides.get("pe", {}) or {}
+        ce_vol = int(ce.get("volume", 0) or 0)
+        pe_vol = int(pe.get("volume", 0) or 0)
         total = ce_vol + pe_vol
         if strike and total > 0:
             volumes.append({
@@ -133,6 +158,196 @@ def _compute_volume_hotspots(chain_data: dict) -> list[dict]:
 
     volumes.sort(key=lambda x: x["total"], reverse=True)
     return volumes[:5]
+
+
+def _compute_expected_move(chain_data: dict, spot: float) -> dict | None:
+    """Compute expected move from ATM straddle premium.
+
+    Finds the ATM call + put LTP, sums them for straddle premium.
+    Expected range = [spot - premium, spot + premium].
+    """
+    if not spot:
+        return None
+
+    inner = chain_data.get("data", {})
+    if not isinstance(inner, dict):
+        return None
+    oc = inner.get("oc", {})
+    if not oc or not isinstance(oc, dict):
+        return None
+
+    best_dist = float("inf")
+    atm_call_ltp = 0
+    atm_put_ltp = 0
+
+    for strike_str, sides in oc.items():
+        if not isinstance(sides, dict):
+            continue
+        try:
+            strike = float(strike_str)
+        except (ValueError, TypeError):
+            continue
+
+        dist = abs(strike - spot)
+        if dist < best_dist:
+            best_dist = dist
+            ce = sides.get("ce", {}) or {}
+            pe = sides.get("pe", {}) or {}
+            atm_call_ltp = float(ce.get("ltp", 0) or ce.get("last_price", 0) or 0)
+            atm_put_ltp = float(pe.get("ltp", 0) or pe.get("last_price", 0) or 0)
+
+    if atm_call_ltp <= 0 and atm_put_ltp <= 0:
+        return None
+
+    straddle = round(atm_call_ltp + atm_put_ltp, 2)
+    lower = round(spot - straddle, 2)
+    upper = round(spot + straddle, 2)
+    pct = round((straddle / spot) * 100, 2) if spot else 0
+
+    return {
+        "straddle_premium": straddle,
+        "atm_call_ltp": round(atm_call_ltp, 2),
+        "atm_put_ltp": round(atm_put_ltp, 2),
+        "lower": lower,
+        "upper": upper,
+        "pct": pct,
+    }
+
+
+def _compute_verdict(
+    weekly_summary: dict | None,
+    spot: float,
+    signals: list[dict],
+    iv_skew: dict | None,
+) -> dict:
+    """Compute overall BULLISH / BEARISH / NEUTRAL verdict with confidence."""
+    score = 0  # positive = bullish, negative = bearish
+    reasons = []
+
+    if weekly_summary:
+        pcr = weekly_summary.get("pcr")
+        max_pain = weekly_summary.get("max_pain")
+
+        if pcr is not None:
+            if pcr > 1.2:
+                score += 3
+                reasons.append(f"PCR {pcr} (bullish)")
+            elif pcr > 1.0:
+                score += 1
+                reasons.append(f"PCR {pcr} (mildly bullish)")
+            elif pcr < 0.7:
+                score -= 3
+                reasons.append(f"PCR {pcr} (bearish)")
+            elif pcr < 0.9:
+                score -= 1
+                reasons.append(f"PCR {pcr} (mildly bearish)")
+
+        if max_pain and spot:
+            dist_pct = ((max_pain - spot) / spot) * 100
+            if dist_pct > 1:
+                score += 1
+                reasons.append(f"Max Pain {max_pain} above spot (bullish pull)")
+            elif dist_pct < -1:
+                score -= 1
+                reasons.append(f"Max Pain {max_pain} below spot (bearish pull)")
+
+    # Score from derived signals
+    for sig in signals:
+        name = sig.get("signal", "").lower()
+        strength_val = 2 if sig.get("strength") == "Strong" else 1
+        if any(w in name for w in ["bullish", "put wall", "support"]):
+            score += strength_val
+        elif any(w in name for w in ["bearish", "call wall", "resistance"]):
+            score -= strength_val
+
+    # IV skew
+    if iv_skew and iv_skew.get("skew_ratio"):
+        skew = iv_skew["skew_ratio"]
+        if skew > 1.3:
+            score -= 1
+            reasons.append(f"Fear skew {skew}x")
+        elif skew < 0.8:
+            score += 1
+            reasons.append(f"Complacent skew {skew}x")
+
+    # Determine verdict
+    if score >= 3:
+        verdict = "BULLISH"
+    elif score <= -3:
+        verdict = "BEARISH"
+    elif score >= 1:
+        verdict = "MILDLY BULLISH"
+    elif score <= -1:
+        verdict = "MILDLY BEARISH"
+    else:
+        verdict = "NEUTRAL"
+
+    # Confidence: map absolute score to 0-100 range
+    confidence = min(95, max(25, 50 + abs(score) * 10))
+
+    return {
+        "verdict": verdict,
+        "confidence": confidence,
+        "score": score,
+        "reasoning": "; ".join(reasons[:4]) if reasons else "Insufficient data for strong conviction",
+    }
+
+
+def _enrich_oi_with_interpretation(chain_data: dict, summary: dict | None, spot: float) -> dict | None:
+    """Add OI change interpretation (Long Buildup / Short Covering / etc.) to top strikes.
+
+    Uses `oi_day_change` + price direction from Dhan if available.
+    Returns enriched summary with `oi_interpretation` per top strike.
+    """
+    if not summary or not spot:
+        return summary
+
+    inner = chain_data.get("data", {})
+    if not isinstance(inner, dict):
+        return summary
+    oc = inner.get("oc", {})
+    if not oc:
+        return summary
+
+    def _interpret(oi_change: float, ltp: float, prev: float) -> str:
+        """Derive buildup type from OI change + price direction."""
+        if oi_change == 0:
+            return ""
+        price_up = ltp > prev if prev else False
+        if oi_change > 0 and price_up:
+            return "Long Buildup"
+        elif oi_change > 0 and not price_up:
+            return "Short Buildup"
+        elif oi_change < 0 and price_up:
+            return "Short Covering"
+        elif oi_change < 0 and not price_up:
+            return "Long Unwinding"
+        return ""
+
+    # Enrich top call OI strikes
+    for entry in summary.get("top_call_oi", []):
+        strike_str = str(int(entry["strike"])) if entry["strike"] == int(entry["strike"]) else str(entry["strike"])
+        # Try exact match or closest
+        sides = oc.get(strike_str) or oc.get(f"{entry['strike']}")
+        if isinstance(sides, dict):
+            ce = sides.get("ce", {}) or {}
+            oi_change = float(ce.get("oi_day_change", 0) or ce.get("oi_change", 0) or 0)
+            ltp = float(ce.get("ltp", 0) or ce.get("last_price", 0) or 0)
+            prev = float(ce.get("prev_close", 0) or 0)
+            entry["oi_interpretation"] = _interpret(oi_change, ltp, prev)
+
+    # Enrich top put OI strikes
+    for entry in summary.get("top_put_oi", []):
+        strike_str = str(int(entry["strike"])) if entry["strike"] == int(entry["strike"]) else str(entry["strike"])
+        sides = oc.get(strike_str) or oc.get(f"{entry['strike']}")
+        if isinstance(sides, dict):
+            pe = sides.get("pe", {}) or {}
+            oi_change = float(pe.get("oi_day_change", 0) or pe.get("oi_change", 0) or 0)
+            ltp = float(pe.get("ltp", 0) or pe.get("last_price", 0) or 0)
+            prev = float(pe.get("prev_close", 0) or 0)
+            entry["oi_interpretation"] = _interpret(oi_change, ltp, prev)
+
+    return summary
 
 
 def _derive_signals(
@@ -325,9 +540,13 @@ async def _get_options_analytics_impl(symbol: str, deep: bool) -> dict:
         except Exception as e:
             logger.warning("Monthly chain failed for %s: %s", clean, e)
 
-    # Get spot from chain data
+    # Get spot from chain data (Dhan nests it inside data.last_price)
     if weekly_chain:
-        spot = weekly_chain.get("last_price", 0) or 0
+        inner = weekly_chain.get("data", {})
+        if isinstance(inner, dict):
+            spot = inner.get("last_price", 0) or 0
+        else:
+            spot = weekly_chain.get("last_price", 0) or 0
         logger.info("Options %s spot from chain: %s", clean, spot)
 
     # Fallback: get spot from LTP (only for equity symbols)
@@ -350,7 +569,14 @@ async def _get_options_analytics_impl(symbol: str, deep: bool) -> dict:
     # 4. Extended analytics
     iv_skew = _compute_iv_skew(weekly_chain, spot) if isinstance(weekly_chain, dict) and weekly_chain else None
     volume_hotspots = _compute_volume_hotspots(weekly_chain) if isinstance(weekly_chain, dict) and weekly_chain else []
+    expected_move = _compute_expected_move(weekly_chain, spot) if isinstance(weekly_chain, dict) and weekly_chain else None
+
+    # Enrich OI data with buildup interpretation
+    if weekly_summary:
+        weekly_summary = _enrich_oi_with_interpretation(weekly_chain, weekly_summary, spot)
+
     signals = _derive_signals(weekly_summary, monthly_summary, spot, iv_skew)
+    verdict = _compute_verdict(weekly_summary, spot, signals, iv_skew)
 
     # 5. Build data payload
     data: dict = {
@@ -379,6 +605,12 @@ async def _get_options_analytics_impl(symbol: str, deep: bool) -> dict:
 
     if signals:
         data["signals"] = signals
+
+    if verdict:
+        data["verdict"] = verdict
+
+    if expected_move:
+        data["expected_move"] = expected_move
 
     # 6. AI interpretation via orchestrator
     try:

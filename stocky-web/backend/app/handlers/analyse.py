@@ -624,9 +624,27 @@ async def get_analysis(symbol: str, deep: bool = False) -> dict:
         "verdict": verdict,
         "structured_meta": structured_meta,
     }
-    # Hoist price to top level for convenience
-    if technical.get("price"):
-        result["price"] = technical["price"]
+    # Overlay Dhan real-time LTP if available (more accurate than yfinance during market hours)
+    try:
+        from app.dhan_client import dhan
+        if dhan.enabled:
+            ltp_data = await dhan.get_ltp([nse_symbol])
+            dhan_price = ltp_data.get(nse_symbol, 0)
+            if dhan_price and dhan_price > 0:
+                result["price"] = dhan_price
+                result["technical"]["price"] = dhan_price
+                result["price_source"] = "dhan_live"
+            elif technical.get("price"):
+                result["price"] = technical["price"]
+                result["price_source"] = "yfinance"
+        elif technical.get("price"):
+            result["price"] = technical["price"]
+            result["price_source"] = "yfinance"
+    except Exception:
+        if technical.get("price"):
+            result["price"] = technical["price"]
+            result["price_source"] = "yfinance"
+
     if ai_metadata:
         result["ai_metadata"] = ai_metadata
     return result
