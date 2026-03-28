@@ -155,15 +155,7 @@ export default function ChatShell() {
               hideHeaderOnMobile={!isDesktop}
             />
 
-            {/* Mobile bottom nav */}
-            {!isDesktop && (
-              <MobileBottomNav
-                onSend={handleNavSend}
-                onNewChat={handleNewChat}
-                onOpenFeatureBar={handleOpenFeatureBar}
-                onEnterDeepResearch={handleEnterDeepResearch}
-              />
-            )}
+            {/* Mobile bottom nav — removed for cleaner mobile UI */}
           </div>
         </div>
         <Toaster

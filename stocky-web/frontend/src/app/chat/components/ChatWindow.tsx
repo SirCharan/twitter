@@ -282,10 +282,10 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
     onSend(text);
   }
 
-  // Input bar positioning: fixed above bottom nav on mobile, static on desktop
+  // Input bar positioning: fixed at bottom on mobile, static on desktop
   const inputBarStyle = !isDesktop
     ? {
-        bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))",
+        bottom: "env(safe-area-inset-bottom, 0px)",
         background: "var(--background)",
         borderTop: "1px solid var(--card-border)",
       }
