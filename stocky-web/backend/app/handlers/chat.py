@@ -202,9 +202,13 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
         chart_type = "analysis" if lower.startswith("analysis") else "tradingview"
         return "chart", [m.group(1).strip().upper(), chart_type]
 
-    m = re.match(r"compare stocks?:\s*(.+)\s*$", lower)
+    # Match: "compare stocks: X,Y", "compare X,Y", "compare X and Y", "compare X vs Y"
+    m = re.match(r"compare\s+(?:stocks?[:\s]+)?(.+)\s*$", lower)
     if m:
-        return "compare", [m.group(1).strip()]
+        raw = m.group(1).strip()
+        # Normalize separators: "X and Y" or "X vs Y" → "X, Y"
+        raw = re.sub(r"\s+(?:and|vs|versus|with)\s+", ", ", raw)
+        return "compare", [raw]
 
     if re.match(r"^ipo tracker\s*$", lower):
         return "ipo", []
