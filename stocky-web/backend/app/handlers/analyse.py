@@ -193,7 +193,15 @@ def _get_technical_data(yf_symbol: str) -> tuple[dict, float]:
         return {"error": "Insufficient price data"}, 5.0
 
     if hasattr(df.columns, "levels") and df.columns.nlevels > 1:
-        df.columns = df.columns.get_level_values(0)
+        # yfinance v0.2+ returns MultiIndex columns: (metric, ticker)
+        # droplevel is safer than get_level_values which can create duplicate names
+        tickers_in_cols = df.columns.get_level_values(1).unique()
+        if len(tickers_in_cols) == 1:
+            df = df.droplevel(1, axis=1)
+        elif yf_symbol in tickers_in_cols:
+            df = df.xs(yf_symbol, level=1, axis=1)
+        else:
+            df.columns = df.columns.get_level_values(0)
 
     closes = df["Close"]
     current = float(closes.iloc[-1])

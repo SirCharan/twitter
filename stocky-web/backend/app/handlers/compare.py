@@ -35,7 +35,7 @@ async def compare_stocks(stocks_input: str, deep: bool = False) -> dict:
                 display = ticker.info.get("shortName") or nse_sym
             except Exception:
                 display = nse_sym
-            return {
+            stock_data = {
                 "name": display,
                 "symbol": nse_sym,
                 "fundamental_score": fund_score,
@@ -54,9 +54,24 @@ async def compare_stocks(stocks_input: str, deep: bool = False) -> dict:
                 "macd_signal": tech.get("macd_signal"),
                 "sma_signal": tech.get("sma_signal"),
                 "price": tech.get("price"),
+                "price_source": "yfinance",
                 "volume_ratio": tech.get("volume_ratio"),
                 "changes": tech.get("changes", []),
             }
+
+            # Overlay Dhan real-time LTP (more accurate during market hours)
+            try:
+                from app.dhan_client import dhan
+                if dhan.enabled:
+                    ltp_data = await dhan.get_ltp([nse_sym])
+                    dhan_price = ltp_data.get(nse_sym, 0)
+                    if dhan_price and dhan_price > 0:
+                        stock_data["price"] = dhan_price
+                        stock_data["price_source"] = "dhan_live"
+            except Exception:
+                pass
+
+            return stock_data
         except Exception as e:
             logger.error(f"Compare fetch error for {name}: {e}")
             return None
