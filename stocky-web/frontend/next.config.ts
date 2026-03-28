@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://s3.tradingview.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
-              "connect-src 'self' https://*.stockyai.xyz https://www.google-analytics.com https://*.google-analytics.com",
+              "connect-src 'self' https://*.stockyai.xyz https://*.up.railway.app https://www.google-analytics.com https://*.google-analytics.com",
               "frame-src https://s.tradingview.com",
               "font-src 'self' data:",
             ].join("; "),
