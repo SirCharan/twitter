@@ -32,8 +32,8 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      // Cap height at 80px on mobile, 120px on desktop to prevent keyboard overlap
-      const maxH = typeof window !== "undefined" && window.innerWidth < 768 ? 80 : 120;
+      // Cap height at 40px on mobile, 60px on desktop — compact prompt
+      const maxH = typeof window !== "undefined" && window.innerWidth < 768 ? 40 : 60;
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, maxH)}px`;
     }
   }, [text, textareaRef]);
@@ -158,7 +158,7 @@ export default function ChatInput({ onSend, disabled, mode, onModeChange, textar
 
       {/* Input */}
       <div
-        className="input-focus-ring flex items-end gap-3 rounded-2xl border px-4 py-3"
+        className="input-focus-ring flex items-end gap-2 rounded-2xl border px-3 py-1.5 sm:px-4 sm:py-3"
         style={{
           background: "var(--card-bg)",
           borderColor: isDeep ? "rgba(201,169,110,0.3)" : "var(--card-border)",
