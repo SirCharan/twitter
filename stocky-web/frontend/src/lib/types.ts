@@ -33,7 +33,8 @@ export type MessageType =
   | "fii_dii"
   | "options"
   | "council_progress"
-  | "council_debate";
+  | "council_debate"
+  | "top_stocks";
 
 export interface ChatMessage {
   id: string;
