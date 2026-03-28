@@ -240,11 +240,11 @@ export default function CardActions({
   }, [cardType]);
 
   const btnClass =
-    "flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-white/5";
+    "flex items-center justify-center w-11 h-11 -m-2.5 rounded-lg transition-colors hover:bg-white/5 active:bg-white/10";
   const iconColor = "var(--muted)";
 
   return (
-    <div className="mt-3 flex items-center gap-1" ref={actionsRef}>
+    <div className="mt-3 flex items-center gap-0" ref={actionsRef}>
       {onRefresh && (
         <button onClick={onRefresh} className={btnClass} title="Refresh" aria-label="Refresh data">
           <RefreshCw

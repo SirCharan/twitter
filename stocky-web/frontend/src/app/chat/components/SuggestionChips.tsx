@@ -74,7 +74,7 @@ export default function SuggestionChips({ message, onSend }: Props) {
             track("action", "suggestion_chip", { suggestion: s, type: message.type });
             onSend(s);
           }}
-          className="shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors min-h-[44px] sm:min-h-0 flex items-center"
+          className="shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors min-h-[44px] flex items-center"
           style={{
             borderColor: "var(--card-border)",
             color: "var(--muted)",

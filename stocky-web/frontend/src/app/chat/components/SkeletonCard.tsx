@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { CARD_ENTER } from "@/lib/motion";
 
 export function SkeletonLine({ width = "100%" }: { width?: string }) {
   return (
@@ -20,7 +21,7 @@ export function SkeletonMessage() {
       className="flex justify-start"
     >
       <div
-        className="max-w-[85%] rounded-2xl px-4 py-4 mr-6 sm:mr-12 space-y-3"
+        className="max-w-[85%] rounded-2xl px-4 py-3 mr-6 sm:mr-12 space-y-3"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--card-border)",
@@ -253,12 +254,12 @@ export function SkeletonFor({ type }: { type?: string }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      initial={CARD_ENTER.initial}
+      animate={CARD_ENTER.animate}
+      transition={CARD_ENTER.transition}
     >
       <div
-        className="rounded-2xl border p-5"
+        className="rounded-2xl border px-3 py-3.5 sm:px-5 sm:py-4"
         style={{
           background: "var(--card-bg)",
           borderColor: "var(--card-border)",

@@ -365,7 +365,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
                       key={cat.label}
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: catIdx * 0.06, duration: 0.3 }}
+                      transition={{ delay: catIdx * 0.04, duration: 0.25 }}
                     >
                       <span
                         className="mb-1 sm:mb-1.5 block text-[9px] font-semibold uppercase tracking-widest hidden sm:block"
@@ -379,7 +379,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
                             key={f.id}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: catIdx * 0.06 + i * 0.04, duration: 0.25 }}
+                            transition={{ delay: catIdx * 0.04 + i * 0.025, duration: 0.2 }}
                             whileHover={{ y: -2, boxShadow: "0 0 16px rgba(201,169,110,0.06)" }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleFeatureSelect(f.id)}

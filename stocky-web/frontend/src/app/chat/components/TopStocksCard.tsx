@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import MarkdownRich from "./MarkdownRich";
 import CardWrapper from "./ui/CardWrapper";
 import Disclaimer from "./ui/Disclaimer";
@@ -90,31 +90,50 @@ export default function TopStocksCard({ data }: Props) {
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setShowAll(false); }}
-              className="flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors shrink-0"
+              className="relative flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium shrink-0"
               style={{
-                borderColor: isActive ? "var(--accent)" : "var(--card-border)",
-                background: isActive ? "rgba(201,169,110,0.1)" : "transparent",
                 color: isActive ? "var(--accent)" : "var(--muted)",
               }}
             >
-              <span style={{ fontSize: 11 }}>{tab.icon}</span>
-              {tab.label}
-              {count > 0 && (
-                <span
-                  className="rounded-full px-1.5 text-[9px] font-semibold"
-                  style={{
-                    background: isActive ? "rgba(201,169,110,0.15)" : "rgba(255,255,255,0.05)",
-                    color: isActive ? "var(--accent)" : "var(--muted)",
-                  }}
-                >
-                  {count}
-                </span>
+              {isActive && (
+                <motion.div
+                  layoutId="top-stocks-tab"
+                  className="absolute inset-0 rounded-full border"
+                  style={{ borderColor: "var(--accent)", background: "rgba(201,169,110,0.1)" }}
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
               )}
+              {!isActive && (
+                <span className="absolute inset-0 rounded-full border" style={{ borderColor: "var(--card-border)" }} />
+              )}
+              <span className="relative z-10 flex items-center gap-1">
+                <span style={{ fontSize: 11 }}>{tab.icon}</span>
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className="rounded-full px-1.5 text-[9px] font-semibold"
+                    style={{
+                      background: isActive ? "rgba(201,169,110,0.15)" : "rgba(255,255,255,0.05)",
+                      color: isActive ? "var(--accent)" : "var(--muted)",
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </span>
             </button>
           );
         })}
       </div>
 
+      <AnimatePresence mode="wait">
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+      >
       {/* Empty state */}
       {rows.length === 0 && (
         <p className="text-sm py-4" style={{ color: "var(--muted)" }}>
@@ -226,6 +245,8 @@ export default function TopStocksCard({ data }: Props) {
           {showAll ? "Show less ↑" : `View all ${rows.length} results ↓`}
         </button>
       )}
+      </motion.div>
+      </AnimatePresence>
 
       {/* AI Analysis */}
       {(data.ai_analysis as string) && (
