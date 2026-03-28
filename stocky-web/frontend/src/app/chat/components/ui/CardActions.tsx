@@ -89,12 +89,17 @@ async function captureCardImage(buttonEl: HTMLElement): Promise<Blob | null> {
     }
     if (!card) return null;
 
-    const canvas = await html2canvas(card, {
+    // 8-second timeout to prevent UI hang on complex cards
+    const canvasPromise = html2canvas(card, {
       backgroundColor: "#0A0A0A",
       scale: 2,
       useCORS: true,
       logging: false,
     });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Capture timed out")), 8000)
+    );
+    const canvas = await Promise.race([canvasPromise, timeoutPromise]);
 
     return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
   } catch {
@@ -241,7 +246,7 @@ export default function CardActions({
   return (
     <div className="mt-3 flex items-center gap-1" ref={actionsRef}>
       {onRefresh && (
-        <button onClick={onRefresh} className={btnClass} title="Refresh">
+        <button onClick={onRefresh} className={btnClass} title="Refresh" aria-label="Refresh data">
           <RefreshCw
             size={12}
             style={{ color: iconColor }}
@@ -255,6 +260,7 @@ export default function CardActions({
           onClick={handleSaveWatchlist}
           className={btnClass}
           title={saved ? "Saved!" : "Save to watchlist"}
+          aria-label={saved ? "Saved to watchlist" : "Save to watchlist"}
         >
           {saved ? (
             <Check size={12} style={{ color: "var(--accent)" }} />
@@ -265,7 +271,7 @@ export default function CardActions({
       )}
 
       {cardType && cardData && (
-        <button onClick={handleExportPdf} className={btnClass} title="Export PDF">
+        <button onClick={handleExportPdf} className={btnClass} title="Export PDF" aria-label="Export as PDF">
           <FileDown size={12} style={{ color: iconColor }} />
         </button>
       )}
@@ -277,6 +283,7 @@ export default function CardActions({
             onClick={() => setShareOpen(!shareOpen)}
             className={btnClass}
             title="Share"
+            aria-label="Share"
           >
             {capturing ? (
               <Loader2 size={12} style={{ color: "var(--accent)" }} className="animate-spin" />
@@ -359,6 +366,7 @@ export default function CardActions({
         onClick={handleCopy}
         className={btnClass}
         title={copied ? "Copied!" : "Copy to clipboard"}
+        aria-label={copied ? "Copied to clipboard" : "Copy data to clipboard"}
       >
         {copied ? (
           <Check size={12} style={{ color: "var(--accent)" }} />

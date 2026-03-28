@@ -4,8 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "stamp-sw": "sed -i '' \"s/stocky-[0-9]*/stocky-$(date +%s)/\" public/sw.js",
+    "build": "npm run stamp-sw && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -23,10 +27,13 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

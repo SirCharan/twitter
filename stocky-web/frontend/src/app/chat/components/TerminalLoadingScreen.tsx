@@ -29,7 +29,7 @@ const PROGRESS_STAGES = [
 
 const CHARS = "アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&";
 
-export default function TerminalLoadingScreen({ onComplete, minimumDuration = 4200 }: Props) {
+export default function TerminalLoadingScreen({ onComplete, minimumDuration = 3000 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [visibleLines, setVisibleLines] = useState(0);
   const [typedChars, setTypedChars] = useState<string[]>(Array(BOOT_LINES.length).fill(""));
@@ -39,10 +39,18 @@ export default function TerminalLoadingScreen({ onComplete, minimumDuration = 42
   const [done, setDone] = useState(false);
   const completedRef = useRef(false);
 
+  // Skip boot animation for returning users in same session
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("stocky_booted")) {
+      onComplete();
+    }
+  }, [onComplete]);
+
   const complete = useCallback(() => {
     if (completedRef.current) return;
     completedRef.current = true;
     setDone(true);
+    if (typeof window !== "undefined") sessionStorage.setItem("stocky_booted", "1");
     setTimeout(onComplete, 420);
   }, [onComplete]);
 

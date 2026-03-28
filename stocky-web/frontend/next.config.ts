@@ -22,6 +22,18 @@ const nextConfig: NextConfig = {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://s3.tradingview.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "connect-src 'self' https://*.stockyai.xyz https://www.google-analytics.com https://*.google-analytics.com",
+              "frame-src https://s.tradingview.com",
+              "font-src 'self' data:",
+            ].join("; "),
+          },
         ],
       },
       {
