@@ -245,6 +245,7 @@ const SKELETON_MAP: Record<string, () => React.JSX.Element> = {
   valuation: SkeletonTable,
   announcements: SkeletonTimeline,
   options: SkeletonMacro,
+  top_stocks: SkeletonScan,
 };
 
 export function SkeletonFor({ type }: { type?: string }) {

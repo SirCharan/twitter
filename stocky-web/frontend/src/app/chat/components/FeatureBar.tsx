@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
 import {
-  TrendingUp, Newspaper, Briefcase, Search,
+  TrendingUp, Newspaper, Briefcase, Search, Trophy,
   Microscope, BarChart3, LineChart, Scale,
   Rocket, Globe, RefreshCw, Sparkles,
   Calendar, Coins, Factory, Gauge, Megaphone, ArrowLeftRight, Activity,
@@ -11,6 +11,7 @@ import {
 
 export type FeatureId =
   | "market_overview"
+  | "top_stocks"
   | "market_news"
   | "portfolio"
   | "analyse"
@@ -35,6 +36,7 @@ export const CATEGORIES: { label: string; features: { id: FeatureId; icon: React
     label: "Quick",
     features: [
       { id: "market_overview", icon: <TrendingUp size={12} />, label: "Market Overview" },
+      { id: "top_stocks",      icon: <Trophy size={12} />,     label: "Top Stocks" },
       { id: "market_news",     icon: <Newspaper size={12} />,  label: "News" },
       { id: "portfolio",       icon: <Briefcase size={12} />,  label: "Portfolio" },
       { id: "analyse",         icon: <Search size={12} />,     label: "Analyse" },

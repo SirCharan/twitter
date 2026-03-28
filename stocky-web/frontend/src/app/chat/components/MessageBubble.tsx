@@ -31,6 +31,7 @@ import ValuationCard from "./ValuationCard";
 import AnnouncementsCard from "./AnnouncementsCard";
 import FiiDiiCard from "./FiiDiiCard";
 import OptionsCard from "./OptionsCard";
+import TopStocksCard from "./TopStocksCard";
 import CouncilProgressCard from "./CouncilProgressCard";
 import CouncilResultCard from "./CouncilResultCard";
 import Confetti from "./Confetti";
@@ -91,6 +92,7 @@ const FULL_WIDTH_TYPES = new Set([
   "agent_debate", "debate_progress",
   "council_progress", "council_debate",
   "earnings", "dividends", "sectors", "valuation", "announcements", "fii_dii", "options",
+  "top_stocks",
 ]);
 
 // Types that should NOT show MessageActions
@@ -213,6 +215,9 @@ function RichContent({
 
     case "scan":
       return <ScanCard data={data as Record<string, unknown>} />;
+
+    case "top_stocks":
+      return <TopStocksCard data={data as Record<string, unknown>} />;
 
     case "chart":
       return <ChartCard data={data as Record<string, unknown>} />;

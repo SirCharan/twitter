@@ -188,6 +188,10 @@ def _parse_natural(text: str) -> tuple[str, list[str]] | None:
     if lower in ("status", "login status", "am i logged in", "am i logged in?"):
         return "status", []
 
+    # Top Stocks
+    if re.match(r"^(top stocks?|top movers?|market movers?|stock dashboard)\s*$", lower):
+        return "top_stocks", []
+
     # Feature chip messages (from FeaturePanel)
     m = re.match(r"market scan\s*[—\-]\s*(.+)\s*$", lower)
     if m:
@@ -539,6 +543,11 @@ async def _dispatch(
             if kite_obj:
                 return {"type": "text", "content": "Kite: Connected."}
             return {"type": "text", "content": "Kite: Not connected. Say 'login' to authenticate."}
+
+    if intent == "top_stocks":
+        from app.handlers.top_stocks import get_top_stocks
+        data = await get_top_stocks(deep=deep)
+        return {"type": "top_stocks", "content": "Top Stocks Dashboard", "data": data}
 
     if intent == "scan":
         from app.handlers.scan import run_scan

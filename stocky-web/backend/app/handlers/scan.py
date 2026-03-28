@@ -249,6 +249,105 @@ def _scan_stocks(scan_type: str) -> list[dict]:
         return []
 
 
+def _scan_stocks_multi(scan_types: list[str]) -> dict[str, list[dict]]:
+    """Download once, run multiple scan filters. Returns {scan_type: [results]}."""
+    results: dict[str, list[dict]] = {st: [] for st in scan_types}
+
+    try:
+        data = yf.download(SCAN_UNIVERSE, period="3mo", progress=False, auto_adjust=True)
+        if data.empty:
+            return results
+
+        closes = data["Close"] if "Close" in data.columns else data.xs("Close", axis=1, level=0)
+        try:
+            volumes = data["Volume"] if "Volume" in data.columns else data.xs("Volume", axis=1, level=0)
+        except Exception:
+            volumes = None
+        try:
+            opens = data["Open"] if "Open" in data.columns else data.xs("Open", axis=1, level=0)
+        except Exception:
+            opens = None
+
+        for sym in SCAN_UNIVERSE:
+            try:
+                if sym not in closes.columns:
+                    continue
+                s_close = closes[sym].dropna()
+                if len(s_close) < 20:
+                    continue
+
+                current = float(s_close.iloc[-1])
+                high_52 = float(s_close.max())
+                low_52 = float(s_close.min())
+                chg_1d = 0.0
+                if len(s_close) >= 2:
+                    prev = float(s_close.iloc[-2])
+                    chg_1d = round((current - prev) / prev * 100, 2) if prev else 0
+                sparkline = [round(float(x), 2) for x in s_close.tail(5).tolist()]
+                short = sym.replace(".NS", "")
+
+                for scan_type in scan_types:
+                    if scan_type == "volume_pump" and volumes is not None and sym in volumes.columns:
+                        s_vol = volumes[sym].dropna()
+                        if len(s_vol) >= 20:
+                            vol_today = float(s_vol.iloc[-1])
+                            vol_avg = float(s_vol.tail(20).mean())
+                            ratio = vol_today / vol_avg if vol_avg else 0
+                            if ratio >= 2.0:
+                                results[scan_type].append({
+                                    "symbol": short, "ltp": round(current, 2),
+                                    "change_pct": chg_1d, "sparkline": sparkline,
+                                    "volume_ratio": round(ratio, 1),
+                                    "trigger": f"{round(ratio, 1)}× avg volume",
+                                })
+
+                    elif scan_type == "breakout":
+                        if high_52 > 0 and current >= high_52 * 0.97:
+                            pct = round((current / high_52 - 1) * 100, 1)
+                            results[scan_type].append({
+                                "symbol": short, "ltp": round(current, 2),
+                                "change_pct": chg_1d, "sparkline": sparkline,
+                                "high_52w": round(high_52, 2), "pct_from_high": pct,
+                                "trigger": f"Near 52W high ({pct}%)",
+                            })
+
+                    elif scan_type == "52w_high":
+                        pct = round((current / high_52 - 1) * 100, 1) if high_52 else 0
+                        results[scan_type].append({
+                            "symbol": short, "ltp": round(current, 2),
+                            "change_pct": chg_1d, "sparkline": sparkline,
+                            "high_52w": round(high_52, 2), "pct_from_high": pct,
+                            "trigger": f"{pct}% from 52W high",
+                        })
+
+                    elif scan_type == "52w_low":
+                        pct = round((current / low_52 - 1) * 100, 1) if low_52 else 0
+                        results[scan_type].append({
+                            "symbol": short, "ltp": round(current, 2),
+                            "change_pct": chg_1d, "sparkline": sparkline,
+                            "low_52w": round(low_52, 2), "pct_from_low": pct,
+                            "trigger": f"{pct}% from 52W low",
+                        })
+
+            except Exception:
+                continue
+
+        # Sort each scan type
+        for st in scan_types:
+            if st == "volume_pump":
+                results[st].sort(key=lambda x: x.get("volume_ratio", 0), reverse=True)
+            elif st in ("breakout", "52w_high"):
+                results[st].sort(key=lambda x: x.get("pct_from_high", -100), reverse=True)
+            elif st == "52w_low":
+                results[st].sort(key=lambda x: x.get("pct_from_low", 9999))
+            results[st] = results[st][:15]
+
+    except Exception as e:
+        logger.error(f"Multi-scan error: {e}")
+
+    return results
+
+
 def _get_sector_movers() -> list[dict]:
     """Sector performance via index tickers."""
     results = []

@@ -12,6 +12,7 @@ interface Props {
 
 const FEATURE_META: Record<FeatureId, { icon: string; label: string }> = {
   market_overview: { icon: "📈", label: "Market Overview" },
+  top_stocks:      { icon: "🏆", label: "Top Stocks Dashboard" },
   market_news:     { icon: "📰", label: "News" },
   portfolio:       { icon: "💼", label: "Portfolio" },
   analyse:         { icon: "🔍", label: "Analyse" },

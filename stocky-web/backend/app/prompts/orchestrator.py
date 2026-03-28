@@ -812,4 +812,40 @@ BUTTON_CONFIGS: dict[str, dict] = {
         "deep_max_tokens": 2048,
         "temperature": 0.4,
     },
+
+    # ─── TOP STOCKS DASHBOARD ──────────────────────────────────────
+    "top_stocks": {
+        "quick_prompt": (
+            "You are Stocky AI analyzing a Top Stocks dashboard (as of {timestamp}).\n\n"
+            "Data across multiple categories:\n{data}\n\n"
+            "### Market Pulse Score: X/20\n"
+            "(Breadth 0-5, Momentum 0-5, Volume 0-5, Sector rotation 0-5)\n\n"
+            "### Key Theme\n"
+            "2-3 sentence narrative connecting today's gainers, volume activity, "
+            "breakouts, and sector rotation. What story is the market telling?\n\n"
+            "### Cross-Scan Conviction Picks\n"
+            "Stocks appearing in MULTIPLE scans (e.g., gainer + volume pump = high conviction). "
+            "If any stock appears in 2+ categories, highlight it.\n\n"
+            "### Sector Signal\n"
+            "Which sectors dominate the gainers/breakouts? Rotation direction.\n\n"
+            "### Risk Flag\n"
+            "One contrarian warning from today's data.\n\n"
+            "Skip any section if you lack data. Output ONLY clean markdown."
+        ),
+        "quick_max_tokens": 512,
+        "deep_primary": (
+            "You are Stocky AI — market strategist analyzing today's Top Stocks dashboard "
+            "(as of {timestamp}).\n\n"
+            "Data:\n{data}\n\n"
+            "1. **Market Pulse Score: X/20** with breakdown\n"
+            "2. **Narrative** — what story connects gainers, volume, breakouts, sectors?\n"
+            "3. **Cross-Scan Matrix** — stocks appearing in 2+ scans = highest conviction\n"
+            "4. **Sector Rotation** — what's rotating in/out based on this data?\n"
+            "5. **Trade Ideas** — top 3 actionable setups with Entry/SL/Target\n"
+            "6. **What the Market is Missing** — one contrarian observation\n\n"
+            "500-800 words. Be quantitative."
+        ),
+        "deep_max_tokens": 1536,
+        "temperature": 0.4,
+    },
 }

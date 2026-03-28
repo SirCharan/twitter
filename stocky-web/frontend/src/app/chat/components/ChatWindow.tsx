@@ -45,10 +45,11 @@ const ANALYSE_MODES = [
 ] as const;
 type AnalyseMode = typeof ANALYSE_MODES[number]["id"];
 
-const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's|earnings?|dividends?|sectors?|valuation|announcements?|fii.?dii|institutional flows?|fpi|options?\s*(?:analytics|chain|signals?)?|pcr|max pain|oi analysis)\b/i;
+const CARD_KEYWORDS = /\b(analy[sz]|market|overview|portfolio|scan|chart|compare|ipo|macro|rrg|news|deep research|how is|how's|earnings?|dividends?|sectors?|valuation|announcements?|fii.?dii|institutional flows?|fpi|options?\s*(?:analytics|chain|signals?)?|pcr|max pain|oi analysis|top stocks?|top movers?)\b/i;
 
 function inferSkeletonType(text: string): string | undefined {
   const t = text.toLowerCase();
+  if (/\btop stocks?\b|\btop movers?\b/.test(t)) return "top_stocks";
   if (/\b(analy[sz]|how is|how's)\b/.test(t)) return "analysis";
   if (/\boverview\b|\bmarket\b/.test(t) && !/\bnews\b/.test(t)) return "overview";
   if (/\bnews\b/.test(t)) return "news";
@@ -79,11 +80,13 @@ const FEATURE_TOOLTIPS: Partial<Record<FeatureId, string>> = {
   dividends: "Dividend history, yields, and sustainability scores",
   announcements: "Latest corporate actions and announcements",
   options: "Live options chain: PCR, Max Pain, OI, IV & strategy signals",
+  top_stocks: "Gainers, losers, volume pumps, breakouts, 52W highs/lows & more",
 };
 
 function composeFeatureMessage(feature: FeatureId, params: Record<string, string>): string {
   switch (feature) {
     case "market_overview": return "how's the market";
+    case "top_stocks": return "top stocks";
     case "market_news": return "market news";
     case "portfolio": return "my portfolio";
     case "analyse": return "";
@@ -244,7 +247,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
     setAnalyseNote("");
   }
 
-  const QUICK_SEND_FEATURES = new Set(["market_overview", "market_news", "portfolio", "ipo", "macro", "rrg", "sectors", "valuation", "announcements", "fii_dii", "options"]);
+  const QUICK_SEND_FEATURES = new Set(["market_overview", "top_stocks", "market_news", "portfolio", "ipo", "macro", "rrg", "sectors", "valuation", "announcements", "fii_dii", "options"]);
 
   function handleFeatureSelect(id: FeatureId | null) {
     if (!id) { setActiveFeature(null); return; }
