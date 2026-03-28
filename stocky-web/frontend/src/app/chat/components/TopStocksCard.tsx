@@ -24,13 +24,13 @@ interface Props {
 }
 
 const TABS = [
-  { id: "gainers",       label: "Top Gainers",   icon: "🟢" },
-  { id: "losers",        label: "Top Losers",    icon: "🔴" },
-  { id: "volume_pump",   label: "Volume Pump",   icon: "📊" },
-  { id: "breakout",      label: "Breakouts",     icon: "🚀" },
-  { id: "52w_high",      label: "52W High",      icon: "🔝" },
-  { id: "52w_low",       label: "52W Low",       icon: "📉" },
-  { id: "sector_movers", label: "Sector Movers", icon: "🏭" },
+  { id: "gainers",       label: "Gainers",   icon: "🟢" },
+  { id: "losers",        label: "Losers",    icon: "🔴" },
+  { id: "volume_pump",   label: "Volume",    icon: "📊" },
+  { id: "breakout",      label: "Breakout",  icon: "🚀" },
+  { id: "52w_high",      label: "52W High",  icon: "🔝" },
+  { id: "52w_low",       label: "52W Low",   icon: "📉" },
+  { id: "sector_movers", label: "Sectors",   icon: "🏭" },
 ] as const;
 
 function Sparkline({ data, color }: { data: number[]; color: string }) {
@@ -81,8 +81,8 @@ export default function TopStocksCard({ data }: Props) {
 
   return (
     <CardWrapper icon="🏆" title="Top Stocks">
-      {/* Tab chips */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-none mb-4 -mx-1 px-1 pb-1">
+      {/* Tab chips — wrapped grid, all visible */}
+      <div className="flex flex-wrap gap-1.5 mb-4">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const count = tabCounts[tab.id] || 0;
@@ -90,7 +90,7 @@ export default function TopStocksCard({ data }: Props) {
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setShowAll(false); }}
-              className="relative flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium shrink-0"
+              className="relative flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium"
               style={{
                 color: isActive ? "var(--accent)" : "var(--muted)",
               }}
@@ -110,15 +110,7 @@ export default function TopStocksCard({ data }: Props) {
                 <span style={{ fontSize: 11 }}>{tab.icon}</span>
                 {tab.label}
                 {count > 0 && (
-                  <span
-                    className="rounded-full px-1.5 text-[9px] font-semibold"
-                    style={{
-                      background: isActive ? "rgba(201,169,110,0.15)" : "rgba(255,255,255,0.05)",
-                      color: isActive ? "var(--accent)" : "var(--muted)",
-                    }}
-                  >
-                    {count}
-                  </span>
+                  <span className="text-[9px] opacity-60">({count})</span>
                 )}
               </span>
             </button>
@@ -143,35 +135,48 @@ export default function TopStocksCard({ data }: Props) {
 
       {/* Mobile card-stack */}
       {rows.length > 0 && (
-        <div className="md:hidden space-y-2">
+        <div className="md:hidden space-y-1.5">
           {visible.map((r, i) => {
             const isPositive = r.change_pct >= 0;
             const chgColor = isPositive ? "var(--positive)" : "var(--negative)";
+            const rank = i + 1;
+            const isTop3 = rank <= 3;
             return (
               <motion.div
                 key={`${activeTab}-${i}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03, type: "spring", stiffness: 300, damping: 25 }}
-                className="flex items-center justify-between rounded-xl border px-3 py-3"
-                style={{ borderColor: "var(--card-border)", background: "var(--surface)" }}
+                className="flex items-center justify-between rounded-xl border-l-2 border px-3 py-2.5"
+                style={{
+                  borderColor: "var(--card-border)",
+                  borderLeftColor: chgColor,
+                  background: "var(--surface)",
+                }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
+                  {/* Rank */}
+                  <span
+                    className="text-[10px] font-bold tabular-nums w-4 text-center shrink-0"
+                    style={{ color: isTop3 ? "var(--accent)" : "var(--muted)", opacity: isTop3 ? 1 : 0.5 }}
+                  >
+                    {rank}
+                  </span>
                   {r.sparkline && r.sparkline.length >= 2 && (
                     <Sparkline data={r.sparkline} color={chgColor} />
                   )}
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--foreground)" }}>
                       {r.symbol}
                     </p>
-                    <p className="text-[11px]" style={{ color: "var(--muted)" }}>{r.trigger}</p>
+                    <p className="text-[10px] truncate" style={{ color: "var(--muted)" }}>{r.trigger}</p>
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
+                <div className="text-right shrink-0 ml-2">
                   <p className="text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
                     ₹{r.ltp?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </p>
-                  <p className="text-xs font-medium tabular-nums" style={{ color: chgColor }}>
+                  <p className="text-[11px] font-medium tabular-nums" style={{ color: chgColor }}>
                     {isPositive ? "+" : ""}{r.change_pct?.toFixed(2)}%
                   </p>
                   {r.volume_ratio != null && <VolumeBar ratio={r.volume_ratio} />}
@@ -188,6 +193,7 @@ export default function TopStocksCard({ data }: Props) {
           <table className="w-full text-xs">
             <thead>
               <tr style={{ color: "var(--muted)" }}>
+                <th className="pb-2 text-left font-medium w-6">#</th>
                 <th className="pb-2 text-left font-medium">Symbol</th>
                 {hasSparkline && <th className="pb-2 text-center font-medium">5D</th>}
                 <th className="pb-2 text-right font-medium">LTP</th>
@@ -200,6 +206,7 @@ export default function TopStocksCard({ data }: Props) {
               {visible.map((r, i) => {
                 const isPositive = r.change_pct >= 0;
                 const chgColor = isPositive ? "var(--positive)" : "var(--negative)";
+                const rank = i + 1;
                 return (
                   <motion.tr
                     key={`${activeTab}-${i}`}
@@ -208,6 +215,7 @@ export default function TopStocksCard({ data }: Props) {
                     transition={{ delay: i * 0.02 }}
                     className="hover:opacity-80 transition-opacity"
                   >
+                    <td className="py-2 tabular-nums" style={{ color: rank <= 3 ? "var(--accent)" : "var(--muted)" }}>{rank}</td>
                     <td className="py-2 font-medium" style={{ color: "var(--foreground)" }}>{r.symbol}</td>
                     {hasSparkline && (
                       <td className="py-2 text-center">
@@ -239,10 +247,10 @@ export default function TopStocksCard({ data }: Props) {
       {hasMore && (
         <button
           onClick={() => setShowAll((v) => !v)}
-          className="mt-3 text-xs underline-offset-2 hover:underline min-h-[44px] flex items-center"
-          style={{ color: "var(--muted)" }}
+          className="mt-3 w-full rounded-lg border py-2 text-xs font-medium transition-colors hover:bg-white/5 min-h-[44px] flex items-center justify-center gap-1"
+          style={{ color: "var(--muted)", borderColor: "var(--card-border)" }}
         >
-          {showAll ? "Show less ↑" : `View all ${rows.length} results ↓`}
+          {showAll ? "Show less ↑" : `Show all ${rows.length} results →`}
         </button>
       )}
       </motion.div>
