@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   RefreshCw,
   Bookmark,
@@ -11,6 +11,8 @@ import {
   MessageCircle,
   Send,
   Copy,
+  Image,
+  Loader2,
 } from "lucide-react";
 import { saveToWatchlist, exportPdf } from "@/lib/api";
 
@@ -33,62 +35,70 @@ function buildShareText(cardType: string, data: Record<string, unknown>): string
   const ai = (data.ai_analysis as string) || (data.ai_mood as string) || (data.verdict as string) || "";
   const aiSnippet = ai ? "\n\n" + truncate(ai.replace(/[#*_`]/g, "").trim(), 300) : "";
   const footer = "\n\n— via Stocky AI (llm.stockyai.xyz)";
+  const parts: string[] = [];
 
   switch (cardType) {
     case "fii_dii": {
       const cash = data.cash as Record<string, Record<string, number>> | undefined;
       const fiiNet = cash?.fii?.net;
       const diiNet = cash?.dii?.net;
-      const fii = fiiNet != null ? `FII Net: ₹${fiiNet.toLocaleString("en-IN")} Cr` : "";
-      const dii = diiNet != null ? `DII Net: ₹${diiNet.toLocaleString("en-IN")} Cr` : "";
-      return `🏛 FII/DII Institutional Flows\n${[fii, dii].filter(Boolean).join(" | ")}${aiSnippet}${footer}`;
+      if (fiiNet != null) parts.push(`FII Net: ₹${fiiNet.toLocaleString("en-IN")} Cr`);
+      if (diiNet != null) parts.push(`DII Net: ₹${diiNet.toLocaleString("en-IN")} Cr`);
+      return `🏛 FII/DII Institutional Flows${parts.length ? "\n" + parts.join(" | ") : ""}${aiSnippet}${footer}`;
     }
 
     case "overview": {
       const indices = data.indices as Array<Record<string, unknown>> | undefined;
       const nifty = indices?.find((i) => String(i.name).toLowerCase().includes("nifty"));
-      const niftyLine = nifty ? `Nifty: ${nifty.value} (${Number(nifty.pct_change) >= 0 ? "+" : ""}${nifty.pct_change}%)` : "";
-      return `📊 Market Overview\n${niftyLine}${aiSnippet}${footer}`;
+      if (nifty?.value) parts.push(`Nifty: ${nifty.value} (${Number(nifty.pct_change) >= 0 ? "+" : ""}${nifty.pct_change}%)`);
+      return `📊 Market Overview${parts.length ? "\n" + parts.join(" | ") : ""}${aiSnippet}${footer}`;
     }
 
     case "macro": {
       const indices = data.indices as Record<string, Record<string, number>> | undefined;
-      const nifty = indices?.nifty;
-      const vix = indices?.vix;
-      const lines: string[] = [];
-      if (nifty?.price) lines.push(`Nifty: ${nifty.price} (${nifty.change_pct >= 0 ? "+" : ""}${nifty.change_pct}%)`);
-      if (vix?.price) lines.push(`VIX: ${vix.price}`);
-      return `🌐 Macro Dashboard\n${lines.join(" | ")}${aiSnippet}${footer}`;
+      if (indices?.nifty?.price) parts.push(`Nifty: ${indices.nifty.price} (${indices.nifty.change_pct >= 0 ? "+" : ""}${indices.nifty.change_pct}%)`);
+      if (indices?.vix?.price) parts.push(`VIX: ${indices.vix.price}`);
+      return `🌐 Macro Dashboard${parts.length ? "\n" + parts.join(" | ") : ""}${aiSnippet}${footer}`;
     }
 
     case "analysis": {
-      const name = (data.name as string) || (data.symbol as string) || "Stock";
+      const name = (data.name as string) || (data.symbol as string) || "";
       const score = data.overall_score as number | undefined;
-      const scoreLine = score != null ? `\nScore: ${score}/20` : "";
-      return `🔍 ${name} Analysis${scoreLine}${aiSnippet}${footer}`;
-    }
-
-    case "news": {
-      return `📰 Market News${aiSnippet}${footer}`;
-    }
-
-    case "scan": {
-      const scanType = (data.scan_type as string) || "scan";
-      return `📊 Market Scan — ${scanType}${aiSnippet}${footer}`;
-    }
-
-    case "earnings": {
-      return `📅 Earnings Calendar${aiSnippet}${footer}`;
-    }
-
-    case "sectors": {
-      return `🏭 Sector Performance${aiSnippet}${footer}`;
+      if (name) parts.push(name);
+      if (score != null) parts.push(`Score: ${score}/20`);
+      return `🔍 ${parts.length ? parts.join(" — ") : "Stock Analysis"}${aiSnippet}${footer}`;
     }
 
     default: {
       const label = cardType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
       return `📈 ${label}${aiSnippet}${footer}`;
     }
+  }
+}
+
+/* ── Capture card as image ── */
+
+async function captureCardImage(buttonEl: HTMLElement): Promise<Blob | null> {
+  try {
+    const html2canvas = (await import("html2canvas")).default;
+    // Walk up to find the CardWrapper (rounded-2xl border container)
+    let card: HTMLElement | null = buttonEl;
+    for (let i = 0; i < 10 && card; i++) {
+      card = card.parentElement;
+      if (card?.classList.contains("rounded-2xl")) break;
+    }
+    if (!card) return null;
+
+    const canvas = await html2canvas(card, {
+      backgroundColor: "#0A0A0A",
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+  } catch {
+    return null;
   }
 }
 
@@ -105,9 +115,10 @@ export default function CardActions({
   const [saved, setSaved] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
 
-  // Close share menu on outside click
   useEffect(() => {
     if (!shareOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -121,15 +132,11 @@ export default function CardActions({
 
   const handleCopy = async () => {
     try {
-      const text = cardData
-        ? JSON.stringify(cardData, null, 2)
-        : "No data to copy";
+      const text = cardData ? JSON.stringify(cardData, null, 2) : "No data to copy";
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard API may not be available */
-    }
+    } catch { /* silent */ }
   };
 
   const handleSaveWatchlist = async () => {
@@ -138,9 +145,7 @@ export default function CardActions({
       await saveToWatchlist(ticker);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch {
-      /* silent */
-    }
+    } catch { /* silent */ }
   };
 
   const handleExportPdf = async () => {
@@ -153,9 +158,7 @@ export default function CardActions({
       a.download = `stocky_${cardType}_report.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      /* silent */
-    }
+    } catch { /* silent */ }
   };
 
   const shareText = cardType && cardData ? buildShareText(cardType, cardData) : "";
@@ -168,25 +171,74 @@ export default function CardActions({
     } catch { /* silent */ }
   };
 
-  const handleWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
-    setShareOpen(false);
-  };
+  // Share with image via Web Share API (mobile) or text-only (desktop)
+  const shareWithImage = useCallback(async (target: "whatsapp" | "telegram" | "native") => {
+    if (!actionsRef.current) return;
+    setCapturing(true);
 
-  const handleTelegram = () => {
-    window.open(
-      `https://t.me/share/url?url=${encodeURIComponent("https://llm.stockyai.xyz")}&text=${encodeURIComponent(shareText)}`,
-      "_blank",
-    );
+    try {
+      const imageBlob = await captureCardImage(actionsRef.current);
+
+      // Try native Web Share API with image (works on mobile)
+      if (target === "native" && navigator.share && imageBlob) {
+        const file = new File([imageBlob], `stocky_${cardType || "card"}.png`, { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ text: shareText, files: [file] });
+          setShareOpen(false);
+          setCapturing(false);
+          return;
+        }
+      }
+
+      // For WhatsApp/Telegram: if we have an image, copy it to clipboard + open share link
+      // The user can paste the image in the chat
+      if (imageBlob) {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": imageBlob }),
+          ]);
+        } catch { /* some browsers don't support image clipboard */ }
+      }
+
+      if (target === "whatsapp") {
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+      } else if (target === "telegram") {
+        window.open(
+          `https://t.me/share/url?url=${encodeURIComponent("https://llm.stockyai.xyz")}&text=${encodeURIComponent(shareText)}`,
+          "_blank",
+        );
+      }
+    } catch { /* silent */ }
+
+    setCapturing(false);
     setShareOpen(false);
-  };
+  }, [shareText, cardType]);
+
+  // Download card as image
+  const handleDownloadImage = useCallback(async () => {
+    if (!actionsRef.current) return;
+    setCapturing(true);
+    try {
+      const imageBlob = await captureCardImage(actionsRef.current);
+      if (imageBlob) {
+        const url = URL.createObjectURL(imageBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `stocky_${cardType || "card"}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch { /* silent */ }
+    setCapturing(false);
+    setShareOpen(false);
+  }, [cardType]);
 
   const btnClass =
     "flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-white/5";
   const iconColor = "var(--muted)";
 
   return (
-    <div className="mt-3 flex items-center gap-1">
+    <div className="mt-3 flex items-center gap-1" ref={actionsRef}>
       {onRefresh && (
         <button onClick={onRefresh} className={btnClass} title="Refresh">
           <RefreshCw
@@ -225,12 +277,16 @@ export default function CardActions({
             className={btnClass}
             title="Share"
           >
-            <Share2 size={12} style={{ color: shareOpen ? "var(--accent)" : iconColor }} />
+            {capturing ? (
+              <Loader2 size={12} style={{ color: "var(--accent)" }} className="animate-spin" />
+            ) : (
+              <Share2 size={12} style={{ color: shareOpen ? "var(--accent)" : iconColor }} />
+            )}
           </button>
 
           {shareOpen && (
             <div
-              className="absolute bottom-8 left-0 z-50 min-w-[160px] rounded-xl border py-1 shadow-xl"
+              className="absolute bottom-8 left-0 z-50 min-w-[180px] rounded-xl border py-1 shadow-xl"
               style={{
                 background: "var(--surface)",
                 borderColor: "var(--card-border)",
@@ -251,7 +307,7 @@ export default function CardActions({
               </button>
 
               <button
-                onClick={handleWhatsApp}
+                onClick={() => shareWithImage("whatsapp")}
                 className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
                 style={{ color: "var(--foreground)" }}
               >
@@ -260,13 +316,35 @@ export default function CardActions({
               </button>
 
               <button
-                onClick={handleTelegram}
+                onClick={() => shareWithImage("telegram")}
                 className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
                 style={{ color: "var(--foreground)" }}
               >
                 <Send size={12} style={{ color: "#0088cc" }} />
                 Telegram
               </button>
+
+              <div className="my-1 h-px" style={{ background: "var(--card-border)" }} />
+
+              <button
+                onClick={handleDownloadImage}
+                className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
+                style={{ color: "var(--foreground)" }}
+              >
+                <Image size={12} style={{ color: iconColor }} />
+                Save as image
+              </button>
+
+              {typeof navigator !== "undefined" && "share" in navigator && (
+                <button
+                  onClick={() => shareWithImage("native")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  <Share2 size={12} style={{ color: iconColor }} />
+                  More options…
+                </button>
+              )}
             </div>
           )}
         </div>
