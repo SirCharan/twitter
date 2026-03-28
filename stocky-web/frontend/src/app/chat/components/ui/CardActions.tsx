@@ -171,45 +171,46 @@ export default function CardActions({
     } catch { /* silent */ }
   };
 
-  // Share with image via Web Share API (mobile) or text-only (desktop)
-  const shareWithImage = useCallback(async (target: "whatsapp" | "telegram" | "native") => {
+  // Open WhatsApp/Telegram immediately (sync, so browser won't block popup)
+  const handleWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+    setShareOpen(false);
+    // Copy card image to clipboard in background (user can paste it)
+    if (actionsRef.current) {
+      captureCardImage(actionsRef.current).then((blob) => {
+        if (blob) navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).catch(() => {});
+      });
+    }
+  };
+
+  const handleTelegram = () => {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent("https://llm.stockyai.xyz")}&text=${encodeURIComponent(shareText)}`,
+      "_blank",
+    );
+    setShareOpen(false);
+    if (actionsRef.current) {
+      captureCardImage(actionsRef.current).then((blob) => {
+        if (blob) navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).catch(() => {});
+      });
+    }
+  };
+
+  // Native share with image (mobile)
+  const handleNativeShare = useCallback(async () => {
     if (!actionsRef.current) return;
     setCapturing(true);
-
     try {
       const imageBlob = await captureCardImage(actionsRef.current);
-
-      // Try native Web Share API with image (works on mobile)
-      if (target === "native" && navigator.share && imageBlob) {
+      if (imageBlob && navigator.share) {
         const file = new File([imageBlob], `stocky_${cardType || "card"}.png`, { type: "image/png" });
         if (navigator.canShare?.({ files: [file] })) {
           await navigator.share({ text: shareText, files: [file] });
-          setShareOpen(false);
-          setCapturing(false);
-          return;
+        } else {
+          await navigator.share({ text: shareText });
         }
       }
-
-      // For WhatsApp/Telegram: if we have an image, copy it to clipboard + open share link
-      // The user can paste the image in the chat
-      if (imageBlob) {
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": imageBlob }),
-          ]);
-        } catch { /* some browsers don't support image clipboard */ }
-      }
-
-      if (target === "whatsapp") {
-        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
-      } else if (target === "telegram") {
-        window.open(
-          `https://t.me/share/url?url=${encodeURIComponent("https://llm.stockyai.xyz")}&text=${encodeURIComponent(shareText)}`,
-          "_blank",
-        );
-      }
-    } catch { /* silent */ }
-
+    } catch { /* user cancelled or not supported */ }
     setCapturing(false);
     setShareOpen(false);
   }, [shareText, cardType]);
@@ -307,7 +308,7 @@ export default function CardActions({
               </button>
 
               <button
-                onClick={() => shareWithImage("whatsapp")}
+                onClick={handleWhatsApp}
                 className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
                 style={{ color: "var(--foreground)" }}
               >
@@ -316,7 +317,7 @@ export default function CardActions({
               </button>
 
               <button
-                onClick={() => shareWithImage("telegram")}
+                onClick={handleTelegram}
                 className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
                 style={{ color: "var(--foreground)" }}
               >
@@ -337,12 +338,16 @@ export default function CardActions({
 
               {typeof navigator !== "undefined" && "share" in navigator && (
                 <button
-                  onClick={() => shareWithImage("native")}
+                  onClick={handleNativeShare}
                   className="flex w-full items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
                   style={{ color: "var(--foreground)" }}
                 >
-                  <Share2 size={12} style={{ color: iconColor }} />
-                  More options…
+                  {capturing ? (
+                    <Loader2 size={12} style={{ color: "var(--accent)" }} className="animate-spin" />
+                  ) : (
+                    <Share2 size={12} style={{ color: iconColor }} />
+                  )}
+                  {capturing ? "Capturing…" : "More options…"}
                 </button>
               )}
             </div>
