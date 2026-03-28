@@ -359,7 +359,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
 
               {/* Feature card grid — hidden on mobile */}
               {!analyseOpen && activeFeature === null && (
-                <div className="mt-3 sm:mt-6 w-full space-y-1 sm:space-y-3 text-left hidden sm:block">
+                <div className="mt-3 sm:mt-6 w-full space-y-1 sm:space-y-3 text-left">
                   {CATEGORIES.map((cat, catIdx) => (
                     <motion.div
                       key={cat.label}
@@ -606,7 +606,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow({
         <div className="mx-auto max-w-3xl">
           {/* Feature bar toggle — hidden on mobile, only show on desktop when messages exist */}
           {!showEmpty && !analyseOpen && !isLoading && (
-            <div className="hidden sm:flex justify-center mb-1">
+            <div className="flex justify-center mb-1">
               <button
                 onClick={() => setFeatureBarVisible((v) => !v)}
                 className="text-[10px] px-3 py-1 rounded-full border transition-colors hover:border-[var(--accent-dim)]"

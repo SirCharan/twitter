@@ -132,7 +132,7 @@ export default function FeatureBar({ active, onSelect, disabled, visible = true 
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           role="toolbar"
           aria-label="Feature shortcuts"
-          className="mb-1.5 overflow-hidden hidden sm:block"
+          className="mb-1.5 overflow-hidden"
           style={{ borderTop: "1px solid var(--card-border)", paddingTop: 8 }}
         >
           {/* Mobile: single scrollable row, no category labels */}
