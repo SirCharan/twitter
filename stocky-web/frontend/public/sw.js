@@ -1,6 +1,6 @@
 // Stocky AI Service Worker — smart caching + offline fallback
 // Cache name includes build timestamp — SW byte-diff triggers update on deploy
-const CACHE_NAME = "stocky-1711612800";
+const CACHE_NAME = "stocky-1774690793492";
 const OFFLINE_URL = "/offline.html";
 
 // Assets to precache on install

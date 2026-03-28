@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "stamp-sw": "sed -i '' \"s/stocky-[0-9]*/stocky-$(date +%s)/\" public/sw.js",
+    "stamp-sw": "node -e \"const fs=require('fs');const f='public/sw.js';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/stocky-\\d+/,'stocky-'+Date.now()))\"",
     "build": "npm run stamp-sw && next build",
     "start": "next start",
     "lint": "next lint",
