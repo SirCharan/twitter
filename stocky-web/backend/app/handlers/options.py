@@ -229,18 +229,21 @@ def _compute_verdict(
         max_pain = weekly_summary.get("max_pain")
 
         if pcr is not None:
-            if pcr > 1.2:
+            # PCR is a CONTRARIAN indicator:
+            # PCR < 1 = heavy call writing = retail bearish = smart money bullish → reversal UP
+            # PCR > 1 = heavy put writing = retail bullish = smart money bearish → reversal DOWN
+            if pcr < 0.7:
                 score += 3
-                reasons.append(f"PCR {pcr} (bullish)")
-            elif pcr > 1.0:
-                score += 1
-                reasons.append(f"PCR {pcr} (mildly bullish)")
-            elif pcr < 0.7:
-                score -= 3
-                reasons.append(f"PCR {pcr} (bearish)")
+                reasons.append(f"PCR {pcr} (contrarian bullish — extreme call writing)")
             elif pcr < 0.9:
+                score += 1
+                reasons.append(f"PCR {pcr} (contrarian mildly bullish)")
+            elif pcr > 1.3:
+                score -= 3
+                reasons.append(f"PCR {pcr} (contrarian bearish — extreme put writing)")
+            elif pcr > 1.1:
                 score -= 1
-                reasons.append(f"PCR {pcr} (mildly bearish)")
+                reasons.append(f"PCR {pcr} (contrarian mildly bearish)")
 
         if max_pain and spot:
             dist_pct = ((max_pain - spot) / spot) * 100
@@ -364,23 +367,38 @@ def _derive_signals(
         max_pain = weekly_summary.get("max_pain")
 
         if pcr is not None:
-            if pcr > 1.2:
+            # PCR is a CONTRARIAN indicator:
+            # Low PCR = heavy call writing = retail bearish = smart money bullish
+            # High PCR = heavy put writing = retail bullish = smart money bearish
+            if pcr < 0.7:
                 signals.append({
-                    "signal": "Bullish PCR",
+                    "signal": "Bullish PCR (Contrarian)",
                     "strength": "Strong",
-                    "detail": f"Weekly PCR {pcr} > 1.2 — heavy put writing indicates support",
+                    "detail": f"Weekly PCR {pcr} < 0.7 — extreme call writing = retail bearish = reversal to bullish likely",
                 })
-            elif pcr < 0.7:
+            elif pcr < 0.9:
                 signals.append({
-                    "signal": "Bearish PCR",
+                    "signal": "Mildly Bullish PCR",
+                    "strength": "Moderate",
+                    "detail": f"Weekly PCR {pcr} < 0.9 — moderate call bias = potential upside reversal",
+                })
+            elif pcr > 1.3:
+                signals.append({
+                    "signal": "Bearish PCR (Contrarian)",
                     "strength": "Strong",
-                    "detail": f"Weekly PCR {pcr} < 0.7 — heavy call writing indicates resistance",
+                    "detail": f"Weekly PCR {pcr} > 1.3 — extreme put writing = retail bullish = reversal to bearish likely",
+                })
+            elif pcr > 1.1:
+                signals.append({
+                    "signal": "Mildly Bearish PCR",
+                    "strength": "Moderate",
+                    "detail": f"Weekly PCR {pcr} > 1.1 — moderate put bias = potential downside risk",
                 })
             elif 0.9 <= pcr <= 1.1:
                 signals.append({
                     "signal": "Neutral PCR",
                     "strength": "Moderate",
-                    "detail": f"Weekly PCR {pcr} near 1.0 — balanced positioning",
+                    "detail": f"Weekly PCR {pcr} near 1.0 — balanced positioning, no contrarian signal",
                 })
 
         if max_pain and spot:
